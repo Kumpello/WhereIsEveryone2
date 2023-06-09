@@ -12,11 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.Button
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
-import androidx.compose.material.TextField
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -39,19 +36,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.kumpello.poker.app.PokerApplication
-import com.kumpello.poker.data.model.authorization.AccountType
-import com.kumpello.poker.data.model.authorization.AuthData
-import com.kumpello.poker.domain.usecase.AuthenticationService
-import com.kumpello.poker.ui.login.LoginActivity
-import com.kumpello.poker.ui.main.MainActivity
-import com.kumpello.poker.ui.navigation.LoginRoutes
-import com.kumpello.poker.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
 import com.kumpello.whereiseveryone.data.model.authorization.AccountType
 import com.kumpello.whereiseveryone.data.model.authorization.AuthData
 import com.kumpello.whereiseveryone.domain.usecase.AuthenticationService
 import com.kumpello.whereiseveryone.ui.login.LoginActivity
+import com.kumpello.whereiseveryone.ui.main.MainActivity
 import com.kumpello.whereiseveryone.ui.navigation.LoginRoutes
 import com.kumpello.whereiseveryone.ui.theme.WhereIsEveryoneTheme
 import kotlinx.coroutines.Dispatchers
@@ -59,6 +49,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Optional
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUp(
     navController: NavHostController,
@@ -159,7 +150,7 @@ fun SignUp(
                     fontSize = 14.sp,
                     fontFamily = FontFamily.Default,
                     textDecoration = TextDecoration.Underline,
-                    color = MaterialTheme.colors.primaryVariant
+                    color = MaterialTheme.colorScheme.primary
                 )
             )
         }

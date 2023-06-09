@@ -9,8 +9,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.Surface
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.kumpello.poker.ui.navigation.LoginRoutes
+import com.kumpello.whereiseveryone.ui.navigation.LoginRoutes
 import com.kumpello.whereiseveryone.ui.theme.WhereIsEveryoneTheme
 import kotlinx.coroutines.delay
 
@@ -63,7 +63,7 @@ fun Splash(navController: NavHostController) {
             AppLogo()
             Text(
                 text = "Read, Learn, Repeat",
-                style = MaterialTheme.typography.h5,
+                style = MaterialTheme.typography.headlineLarge,
                 color = Color.LightGray
             )
         }
@@ -75,7 +75,7 @@ fun AppLogo(modifier: Modifier = Modifier) {
     Text(
         text = "Nav With Enum",
         modifier.padding(bottom = 16.dp),
-        style = MaterialTheme.typography.h3,
+        style = MaterialTheme.typography.headlineMedium,
         color = Color.Red.copy(0.5f),
         fontSize = 40.sp
     )

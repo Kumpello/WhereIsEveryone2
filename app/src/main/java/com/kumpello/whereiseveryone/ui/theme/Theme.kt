@@ -9,14 +9,12 @@ import androidx.compose.ui.graphics.Color
 
 private val DarkColorPalette = darkColorScheme(
     primary = Purple200,
-    primaryVariant = Purple700,
     secondary = Teal200,
     background = Color.Black
 )
 
 private val LightColorPalette = lightColorScheme(
     primary = Purple500,
-    primaryVariant = Purple700,
     secondary = Teal200,
     background = Color.White
 
@@ -39,7 +37,7 @@ fun WhereIsEveryoneTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @C
     }
 
     MaterialTheme(
-        colors = colors,
+        colorScheme = colors,
         typography = Typography,
         shapes = Shapes,
         content = content
