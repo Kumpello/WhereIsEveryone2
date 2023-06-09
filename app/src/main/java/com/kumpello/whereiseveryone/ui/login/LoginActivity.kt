@@ -22,11 +22,11 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.kumpello.poker.ui.login.screens.Login
-import com.kumpello.poker.ui.login.screens.SignUp
-import com.kumpello.poker.ui.login.screens.Splash
-import com.kumpello.poker.ui.navigation.LoginRoutes
-import com.kumpello.poker.ui.theme.WhereIsEveryoneTheme
+import com.kumpello.whereiseveryone.ui.login.screens.Login
+import com.kumpello.whereiseveryone.ui.login.screens.SignUp
+import com.kumpello.whereiseveryone.ui.login.screens.Splash
+import com.kumpello.whereiseveryone.ui.navigation.LoginRoutes
+import com.kumpello.whereiseveryone.ui.theme.WhereIsEveryoneTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope

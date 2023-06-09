@@ -112,7 +112,7 @@ fun SignUp(
                                     AccountType.REGULAR_ACCOUNT.name
                                 ).also { account ->
                                     //ToDo: Password is saved in plaintext, some kind of encryption needs to be added
-                                    //PokerApplication.accountManager.addAccountExplicitly(account, password.value.text, null)
+                                    //whereiseveryoneApplication.accountManager.addAccountExplicitly(account, password.value.text, null)
                                 }
 
                                 application.saveUserID(response!!.get().id)
