@@ -1,4 +1,4 @@
-package com.kumpello.whereiseveryone
+package com.kumpello.whereiseveryone.ui.main
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity

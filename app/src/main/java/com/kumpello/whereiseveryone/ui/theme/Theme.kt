@@ -31,7 +31,7 @@ private val LightColorPalette = lightColorScheme(
 )
 
 @Composable
-fun PokerTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
+fun WhereIsEveryoneTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
     val colors = if (darkTheme) {
         DarkColorPalette
     } else {
