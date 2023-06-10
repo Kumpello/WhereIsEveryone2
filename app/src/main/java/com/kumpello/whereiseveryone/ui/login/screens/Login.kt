@@ -6,6 +6,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -27,6 +28,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
 import com.kumpello.whereiseveryone.data.model.authorization.AuthData
 import com.kumpello.whereiseveryone.domain.usecase.AuthenticationService
@@ -39,6 +41,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Login(navController: NavHostController, authService: AuthenticationService, activity: LoginActivity) {
     val mContext = LocalContext.current
@@ -115,7 +118,7 @@ fun Login(navController: NavHostController, authService: AuthenticationService, 
                     fontSize = 14.sp,
                     fontFamily = FontFamily.Default,
                     textDecoration = TextDecoration.Underline,
-                    color = MaterialTheme.colors.primaryVariant
+                    color = MaterialTheme.colorScheme.primary
                 )
             )
         }
