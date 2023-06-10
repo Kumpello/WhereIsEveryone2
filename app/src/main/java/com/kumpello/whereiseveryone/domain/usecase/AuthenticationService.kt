@@ -17,8 +17,8 @@ class AuthenticationService @Inject constructor() {
     private val retrofit = RetrofitClient.getClient()
     private val authApi = retrofit.create(AuthApi::class.java)
 
-    fun signUp(username: String, email: String, password: String): Optional<AuthData> {
-        val authResponse = authApi.signUp(SignUpRequestData(username, email, password)).execute()
+    fun signUp(username: String, password: String): Optional<AuthData> {
+        val authResponse = authApi.signUp(SignUpRequestData(username, password)).execute()
         logError(authResponse)
         return Optional.ofNullable(authResponse.body())
     }

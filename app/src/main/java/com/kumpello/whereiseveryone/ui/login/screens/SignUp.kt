@@ -13,7 +13,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -49,7 +48,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Optional
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUp(
     navController: NavHostController,
@@ -68,7 +66,6 @@ fun SignUp(
 
         //ToDo add validation!
         val username = remember { mutableStateOf(TextFieldValue()) }
-        val email = remember { mutableStateOf(TextFieldValue()) }
         val password = remember { mutableStateOf(TextFieldValue()) }
 
         Text(text = "Sign up", style = TextStyle(fontSize = 40.sp, fontFamily = FontFamily.Default))
@@ -78,12 +75,6 @@ fun SignUp(
             label = { Text(text = "Username") },
             value = username.value,
             onValueChange = { username.value = it })
-
-        Spacer(modifier = Modifier.height(20.dp))
-        TextField(
-            label = { Text(text = "Email") },
-            value = email.value,
-            onValueChange = { email.value = it })
 
         Spacer(modifier = Modifier.height(20.dp))
         TextField(
@@ -101,7 +92,6 @@ fun SignUp(
                     coroutineScope.launch(Dispatchers.IO) {
                         response = authService.signUp(
                             username.value.text,
-                            email.value.text,
                             password.value.text
                         )
                         withContext(Dispatchers.Main) {
