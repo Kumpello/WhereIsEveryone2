@@ -40,11 +40,7 @@ class AuthenticationService @Inject constructor() {
     }
 
     private fun logError(response: Response<AuthData>) {
-        if (!response.isSuccessful) {
-            Log.e("Authentication error: ", response.errorBody().toString())
-        } else {
-            Log.d("Authentication:", response.body().toString())
-        }
+        Log.e("Authentication:", response.errorBody().toString())
     }
 
 }
