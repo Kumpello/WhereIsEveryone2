@@ -13,7 +13,7 @@ import retrofit2.Response
 import javax.inject.Inject
 
 @ViewModelScoped
-class AuthenticationService @Inject constructor() {
+class MapService @Inject constructor() {
 
     private val retrofit = RetrofitClient.getClient()
     private val authApi = retrofit.create(AuthApi::class.java)
@@ -30,7 +30,6 @@ class AuthenticationService @Inject constructor() {
 
     fun logIn(username: String, password: String): AuthResponse {
         val authResponse = authApi.login(LogInRequest(username, password)).execute()
-        logError(authResponse)
         return if (authResponse.isSuccessful) {
             authResponse.body()!!
         } else {
