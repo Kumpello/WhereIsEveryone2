@@ -1,7 +1,7 @@
 package com.kumpello.whereiseveryone.domain.model
 
 import com.kumpello.whereiseveryone.domain.usecase.AuthenticationService
-import com.kumpello.whereiseveryone.domain.usecase.MapService
+import com.kumpello.whereiseveryone.domain.usecase.PositionsService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,7 +17,7 @@ object NetworkModule {
     }
 
     @Provides
-    fun providesOrganizations(): MapService {
-        return MapService()
+    fun providesOrganizations(): PositionsService {
+        return PositionsService()
     }
 }

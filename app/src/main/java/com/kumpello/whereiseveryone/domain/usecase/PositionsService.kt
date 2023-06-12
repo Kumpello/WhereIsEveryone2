@@ -14,7 +14,7 @@ import okhttp3.ResponseBody
 import javax.inject.Inject
 
 @ViewModelScoped
-class MapService @Inject constructor() {
+class PositionsService @Inject constructor() {
 
     private val retrofit = RetrofitClient.getClient()
     private val mapApi = retrofit.create(MapApi::class.java)
