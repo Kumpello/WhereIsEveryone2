@@ -1,12 +1,17 @@
 package com.kumpello.whereiseveryone.ui.login.screens
 
 import android.content.Intent
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -30,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
+import com.kumpello.whereiseveryone.data.model.ErrorData
 import com.kumpello.whereiseveryone.data.model.authorization.AuthData
 import com.kumpello.whereiseveryone.domain.usecase.AuthenticationService
 import com.kumpello.whereiseveryone.ui.login.LoginActivity
@@ -39,9 +45,7 @@ import com.kumpello.whereiseveryone.ui.theme.WhereIsEveryoneTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Login(navController: NavHostController, authService: AuthenticationService, activity: LoginActivity) {
     val mContext = LocalContext.current
@@ -78,20 +82,25 @@ fun Login(navController: NavHostController, authService: AuthenticationService, 
         Box(modifier = Modifier.padding(40.dp, 0.dp, 40.dp, 0.dp)) {
             Button(
                 onClick = {
-                    var response: Optional<AuthData>?
                     coroutineScope.launch(Dispatchers.IO){
-                        response = authService.logIn(username.value.text, password.value.text)
+                        val response = authService.logIn(
+                            username.value.text,
+                            password.value.text
+                        )
                         withContext(Dispatchers.Main){
-                            if (response != null) {
-                                application.saveUserID(response!!.get().id)
-                                application.saveUserName(username.value.text)
-                                application.saveAuthToken(response!!.get().token)
-                                application.saveAuthRefreshToken(response!!.get().refresh_token)
+                            when (response) {
+                                is AuthData -> {
+                                    application.saveUserID(response.id)
+                                    application.saveUserName(username.value.text)
+                                    application.saveAuthToken(response.token)
+                                    application.saveAuthRefreshToken(response.refresh_token)
 
-                                activity.makeToast(mContext, "Login succeeded!")
-                                mContext.startActivity(Intent(mContext, MainActivity::class.java))
-                            } else {
-                                activity.makeToast(mContext, "Login failed!")
+                                    activity.makeToast(mContext, "Login succeeded!")
+                                    mContext.startActivity(Intent(mContext, MainActivity::class.java))
+                                }
+                                is ErrorData -> {
+                                    activity.makeToast(mContext, "Login failed!")
+                                }
                             }
                         }
                     }

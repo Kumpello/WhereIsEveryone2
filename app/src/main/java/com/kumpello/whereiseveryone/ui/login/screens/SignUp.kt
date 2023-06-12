@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
+import com.kumpello.whereiseveryone.data.model.ErrorData
 import com.kumpello.whereiseveryone.data.model.authorization.AccountType
 import com.kumpello.whereiseveryone.data.model.authorization.AuthData
 import com.kumpello.whereiseveryone.domain.usecase.AuthenticationService
@@ -46,7 +47,6 @@ import com.kumpello.whereiseveryone.ui.theme.WhereIsEveryoneTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.Optional
 
 @Composable
 fun SignUp(
@@ -88,32 +88,34 @@ fun SignUp(
         Box(modifier = Modifier.padding(40.dp, 0.dp, 40.dp, 0.dp)) {
             Button(
                 onClick = {
-                    var response: Optional<AuthData>?
                     coroutineScope.launch(Dispatchers.IO) {
-                        response = authService.signUp(
+                        val response = authService.signUp(
                             username.value.text,
                             password.value.text
                         )
                         withContext(Dispatchers.Main) {
                             //ToDo Catch DiagnosticCoroutineContextException!
-                            if (response != null) {
-                                Account(
-                                    username.value.text,
-                                    AccountType.REGULAR_ACCOUNT.name
-                                ).also { account ->
-                                    //ToDo: Password is saved in plaintext, some kind of encryption needs to be added
-                                    //whereiseveryoneApplication.accountManager.addAccountExplicitly(account, password.value.text, null)
+                            when (response) {
+                                is AuthData -> {
+                                    Account(
+                                        username.value.text,
+                                        AccountType.REGULAR_ACCOUNT.name
+                                    ).also {
+                                        //ToDo: Password is saved in plaintext, some kind of encryption needs to be added
+                                        //whereiseveryoneApplication.accountManager.addAccountExplicitly(it, password.value.text, null)
+                                    }
+
+                                    application.saveUserID(response.id)
+                                    application.saveUserName(username.value.text)
+                                    application.saveAuthToken(response.token)
+                                    application.saveAuthRefreshToken(response.refresh_token)
+
+                                    activity.makeToast(mContext, "Login succeeded!")
+                                    mContext.startActivity(Intent(mContext, MainActivity::class.java))
                                 }
-
-                                application.saveUserID(response!!.get().id)
-                                application.saveUserName(username.value.text)
-                                application.saveAuthToken(response!!.get().token)
-                                application.saveAuthRefreshToken(response!!.get().refresh_token)
-
-                                activity.makeToast(mContext, "Login succeeded!")
-                                mContext.startActivity(Intent(mContext, MainActivity::class.java))
-                            } else {
-                                activity.makeToast(mContext, "Login failed!")
+                                is ErrorData -> {
+                                    activity.makeToast(mContext, "Login failed!")
+                                }
                             }
                         }
                     }
