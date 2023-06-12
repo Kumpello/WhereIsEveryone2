@@ -24,8 +24,8 @@
             android:name=".domain.usecase.LocationService"
             android:foregroundServiceType="location"
             android:enabled="true"
-            android:exported="false"></service>
-
+            android:exported="false">
+        </service>
         <activity
             android:name=".ui.main.MainActivity"
             android:exported="false">
