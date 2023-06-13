@@ -9,11 +9,11 @@ import com.kumpello.whereiseveryone.data.model.map.PositionsResponse
 import com.kumpello.whereiseveryone.data.model.map.Response
 import com.kumpello.whereiseveryone.data.services.RetrofitClient
 import com.kumpello.whereiseveryone.domain.model.MapApi
-import dagger.hilt.android.scopes.ViewModelScoped
+import dagger.hilt.android.scopes.ServiceScoped
 import okhttp3.ResponseBody
 import javax.inject.Inject
 
-@ViewModelScoped
+@ServiceScoped
 class PositionsService @Inject constructor() {
 
     private val retrofit = RetrofitClient.getClient()

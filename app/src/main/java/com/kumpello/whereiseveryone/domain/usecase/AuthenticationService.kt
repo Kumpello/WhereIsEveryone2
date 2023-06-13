@@ -2,12 +2,12 @@ package com.kumpello.whereiseveryone.domain.usecase
 
 import android.util.Log
 import com.kumpello.whereiseveryone.data.model.ErrorData
-import com.kumpello.whereiseveryone.domain.model.AuthApi
 import com.kumpello.whereiseveryone.data.model.authorization.AuthData
 import com.kumpello.whereiseveryone.data.model.authorization.AuthResponse
 import com.kumpello.whereiseveryone.data.model.authorization.LogInRequest
 import com.kumpello.whereiseveryone.data.model.authorization.SignUpRequest
 import com.kumpello.whereiseveryone.data.services.RetrofitClient
+import com.kumpello.whereiseveryone.domain.model.AuthApi
 import dagger.hilt.android.scopes.ViewModelScoped
 import retrofit2.Response
 import javax.inject.Inject
