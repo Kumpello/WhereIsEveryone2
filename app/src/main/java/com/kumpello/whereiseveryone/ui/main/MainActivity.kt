@@ -23,7 +23,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.Observer
 import com.kumpello.whereiseveryone.domain.usecase.LocationService
 import com.kumpello.whereiseveryone.ui.theme.WhereIsEveryoneTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -34,16 +33,18 @@ class MainActivity : ComponentActivity() {
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(className: ComponentName, iBinder: IBinder) {
             Log.d("MainActivity:", "ServiceConnection: connected to service.")
-            // We've bound to MyService, cast the IBinder and get MyBinder instance
             val binder = iBinder as LocationService.LocalBinder
             mService = binder.service
             mIsBound = true
-            getDataFromService()
+            mService!!.startFriendsUpdates()
+            mService!!.setUpdateInterval(mService!!.UPDATE_LOCATION_INTERVAL_FOREGROUND)
         }
 
         override fun onServiceDisconnected(arg0: ComponentName) {
             Log.d("MainActivity:", "ServiceConnection: disconnected from service.")
             mIsBound = false
+            mService!!.stopFriendsUpdates()
+            mService!!.setUpdateInterval(mService!!.UPDATE_LOCATION_INTERVAL_BACKGROUND)
         }
     }
 
@@ -112,10 +113,10 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun getDataFromService() {
-        mService?.usersLiveData?.observe(this
+/*        mService?.usersSharedFlow?.observe(this
             , Observer {
                //Do shit
-            })
+            })*/
     }
 
     private fun getPermissionsLauncher() : ActivityResultLauncher<Array<String>>{

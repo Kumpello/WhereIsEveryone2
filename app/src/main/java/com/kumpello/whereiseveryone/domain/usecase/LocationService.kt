@@ -12,7 +12,6 @@ import android.os.Process
 import android.os.SystemClock
 import android.util.Log
 import android.widget.Toast
-import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.location.CurrentLocationRequest
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.Granularity.GRANULARITY_FINE
@@ -20,12 +19,17 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.kumpello.whereiseveryone.R
+import com.kumpello.whereiseveryone.data.model.ErrorData
+import com.kumpello.whereiseveryone.data.model.map.PositionsResponse
 import com.kumpello.whereiseveryone.data.model.map.Response
-import com.kumpello.whereiseveryone.data.model.map.UserPosition
 import com.kumpello.whereiseveryone.domain.events.GetPositionsEvent
 import com.kumpello.whereiseveryone.ui.main.MainActivity
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -33,22 +37,21 @@ class LocationService : Service() {
 
     private val mBinder: IBinder = LocalBinder()
     private val CHANNEL_ID = "WhereIsEveryone notification"
-    private val MAX_UPDATE_AGE = 300000L
+    private val MAX_UPDATE_AGE = 300000L // 5 min
     private val cancellationSource = CancellationTokenSource()
-    val UPDATE_INTERVAL_FOREGROUND = 1000 // 1 min
-    val UPDATE_INTERVAL_BACKGROUND = 900000 // 15 min
-    val usersLiveData: MutableLiveData<List<UserPosition>> = MutableLiveData()
+    val UPDATE_LOCATION_INTERVAL_FOREGROUND = 1000 // 1 min
+    val UPDATE_LOCATION_INTERVAL_BACKGROUND = 900000 // 15 min
+    val UPDATE_FRIENDS_INTERVAL = 3000 // 3 min
     val event = MutableSharedFlow<GetPositionsEvent>()
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
-
     @Inject
     lateinit var positionsService: PositionsService
-
     @Inject
     lateinit var friendsService: FriendsService
-    private var updateInterval = UPDATE_INTERVAL_FOREGROUND
+    private var updateInterval = UPDATE_LOCATION_INTERVAL_FOREGROUND
     private var updateLocation = true
+    private var updateFriends = true
     var updateRequest = getForegroundRequest()
 
     inner class LocalBinder : Binder() {
@@ -98,18 +101,7 @@ class LocationService : Service() {
 
         HandlerThread("ServiceStartArguments", Process.THREAD_PRIORITY_BACKGROUND).apply {
             start()
-
-            while (updateLocation) {
-                try {
-                    fusedLocationClient.getCurrentLocation(updateRequest, cancellationSource.token)
-                        .addOnSuccessListener { location: Location? ->
-                            sendLocation(location)
-                        }
-                } catch (exception: SecurityException) {
-                    SystemClock.sleep(15000)
-                }
-                SystemClock.sleep(updateInterval.toLong())
-            }
+            startLocationUpdates()
         }
 
         // If we get killed, after returning from here, restart
@@ -120,12 +112,43 @@ class LocationService : Service() {
         Toast.makeText(this, "service done", Toast.LENGTH_SHORT).show()
     }
 
-    fun changeUpdateInterval(interval: Int) {
+    private fun startLocationUpdates() {
+        while (updateLocation) {
+            try {
+                fusedLocationClient.getCurrentLocation(updateRequest, cancellationSource.token)
+                    .addOnSuccessListener { location: Location? ->
+                        sendLocation(location)
+                    }
+            } catch (exception: SecurityException) {
+                SystemClock.sleep(15000)
+                Log.e("LocationService:", exception.toString())
+            }
+            SystemClock.sleep(updateInterval.toLong())
+        }
+    }
+
+    fun startFriendsUpdates() {
+        CoroutineScope(Dispatchers.IO).launch {
+            while (updateFriends) {
+                when(val response = getPositions()) {
+                    is PositionsResponse -> event.emit(GetPositionsEvent.GetSuccess(response))
+                    is ErrorData -> event.emit(GetPositionsEvent.GetError(response))
+                }
+                delay(UPDATE_FRIENDS_INTERVAL.toLong())
+            }
+        }
+    }
+
+    fun setUpdateInterval(interval: Int) {
         updateInterval = interval
     }
 
     fun stopUpdates() {
         updateLocation = false
+    }
+
+    fun stopFriendsUpdates() {
+        updateFriends = false
     }
 
     private fun sendLocation(location: Location?) {
