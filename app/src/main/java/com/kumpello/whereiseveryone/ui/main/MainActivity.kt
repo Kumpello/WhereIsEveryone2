@@ -26,6 +26,9 @@ import androidx.core.content.ContextCompat
 import com.kumpello.whereiseveryone.domain.usecase.LocationService
 import com.kumpello.whereiseveryone.ui.theme.WhereIsEveryoneTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -69,6 +72,15 @@ class MainActivity : ComponentActivity() {
 
         val intent = Intent(this, LocationService::class.java)
         applicationContext.startForegroundService(intent)
+
+        CoroutineScope(Dispatchers.IO).launch {
+            viewModel.onEvent(
+                SendOrganizationsEvent.GetOrganization(
+                    application.getAuthToken()!!,
+                    ID(application.getUserID()!!
+                    )
+                ))
+        }
 
         setContent {
             WhereIsEveryoneTheme {
