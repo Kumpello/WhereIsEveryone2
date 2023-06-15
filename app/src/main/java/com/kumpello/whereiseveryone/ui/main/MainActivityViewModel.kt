@@ -15,14 +15,14 @@ class MainActivityViewModel @Inject constructor() : ViewModel() {
 
     var _uiState = mutableStateOf(MapUIState(Any()))
     val uiState: State<MapUIState> = _uiState
-    lateinit var event : MutableSharedFlow<GetPositionsEvent>
+    private lateinit var event : MutableSharedFlow<GetPositionsEvent>
 
-    fun onEvent(event: GetPositionsEvent) {
+/*    fun onEvent(event: GetPositionsEvent) {
         when(event) {
             is GetPositionsEvent.GetError -> TODO()
             is GetPositionsEvent.GetSuccess -> TODO()
         }
-    }
+    }*/
 
     fun setEvent(event : MutableSharedFlow<GetPositionsEvent>) {
         this.event = event

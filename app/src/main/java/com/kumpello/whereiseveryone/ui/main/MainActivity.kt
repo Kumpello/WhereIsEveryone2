@@ -15,20 +15,28 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.content.ContextCompat
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.kumpello.whereiseveryone.domain.usecase.LocationService
+import com.kumpello.whereiseveryone.ui.main.screens.Friends
+import com.kumpello.whereiseveryone.ui.main.screens.Map
+import com.kumpello.whereiseveryone.ui.main.screens.Settings
+import com.kumpello.whereiseveryone.ui.navigation.MainRoutes
 import com.kumpello.whereiseveryone.ui.theme.WhereIsEveryoneTheme
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -39,6 +47,7 @@ class MainActivity : ComponentActivity() {
             val binder = iBinder as LocationService.LocalBinder
             mService = binder.service
             mIsBound = true
+            viewModel.setEvent(mService!!.event)
             mService!!.startFriendsUpdates()
             mService!!.setUpdateInterval(mService!!.UPDATE_LOCATION_INTERVAL_FOREGROUND)
         }
@@ -73,24 +82,9 @@ class MainActivity : ComponentActivity() {
         val intent = Intent(this, LocationService::class.java)
         applicationContext.startForegroundService(intent)
 
-        CoroutineScope(Dispatchers.IO).launch {
-            viewModel.onEvent(
-                SendOrganizationsEvent.GetOrganization(
-                    application.getAuthToken()!!,
-                    ID(application.getUserID()!!
-                    )
-                ))
-        }
-
         setContent {
             WhereIsEveryoneTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    Greeting("Android")
-                }
+                Navigation()
             }
         }
     }
@@ -122,13 +116,6 @@ class MainActivity : ComponentActivity() {
         Intent(this, LocationService::class.java).also {
             unbindService(serviceConnection)
         }
-    }
-
-    private fun getDataFromService() {
-/*        mService?.usersSharedFlow?.observe(this
-            , Observer {
-               //Do shit
-            })*/
     }
 
     private fun getPermissionsLauncher() : ActivityResultLauncher<Array<String>>{
@@ -186,6 +173,37 @@ class MainActivity : ComponentActivity() {
 
         if (permissionRequestList.isNotEmpty()) {
             permissionLauncher.launch(permissionRequestList.toTypedArray())
+        }
+    }
+
+    @Composable
+    fun NavigationGraph(navController: NavHostController) {
+        NavHost(navController, MainRoutes.Map.route) {
+            composable(MainRoutes.Map.route) {
+                Map(navController, viewModel)
+            }
+
+            composable(MainRoutes.Settings.route) {
+                Settings(navController, viewModel)
+            }
+
+            composable(MainRoutes.Friends.route) {
+                Friends(navController, viewModel)
+            }
+        }
+    }
+
+    @Composable
+    fun Navigation() {
+        val navController = rememberNavController()
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            Scaffold(
+                content = { padding -> Column(modifier = Modifier.padding(padding)) {
+                    NavigationGraph(navController)}
+                })
         }
     }
 
