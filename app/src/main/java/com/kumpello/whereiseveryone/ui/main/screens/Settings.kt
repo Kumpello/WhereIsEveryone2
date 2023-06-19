@@ -13,8 +13,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
-import com.kumpello.whereiseveryone.domain.usecase.AuthenticationService
-import com.kumpello.whereiseveryone.ui.login.LoginActivity
 import com.kumpello.whereiseveryone.ui.main.MainActivityViewModel
 import com.kumpello.whereiseveryone.ui.theme.WhereIsEveryoneTheme
 
@@ -40,6 +38,6 @@ fun Settings(
 @Composable
 fun SettingsPreview() {
     WhereIsEveryoneTheme {
-        Settings(rememberNavController(), AuthenticationService(), LoginActivity())
+        Settings(rememberNavController(), MainActivityViewModel())
     }
 }

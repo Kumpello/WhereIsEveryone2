@@ -63,6 +63,22 @@ class WhereIsEveryoneApplication: Application() {
         return sharedPreferences.getString(authRefreshTokenKey, null)
     }
 
+    fun saveLatitude(latitude: Double) {
+        sharedPreferences.edit().putFloat(latitudeKey, latitude.toFloat()).apply()
+    }
+
+    fun getLatitude(): Double? {
+        return sharedPreferences.getFloat(latitudeKey, 0F).toDouble()
+    }
+
+    fun saveLongitude(longitude: Double) {
+        sharedPreferences.edit().putFloat(longitudeKey, longitude.toFloat()).apply()
+    }
+
+    fun getLongitude(): Double? {
+        return sharedPreferences.getFloat(longitudeKey, 0F).toDouble()
+    }
+
     fun addFriend(nick : String) {
         val gson = Gson()
 
@@ -88,5 +104,7 @@ class WhereIsEveryoneApplication: Application() {
         private const val authTokenKey = "auth_token"
         private const val authRefreshTokenKey = "auth_refresh_token"
         private const val friendsKey = "friends"
+        private const val latitudeKey = "lat"
+        private const val longitudeKey = "lng"
     }
 }

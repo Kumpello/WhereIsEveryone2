@@ -30,6 +30,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.google.android.gms.maps.model.LatLng
+import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
 import com.kumpello.whereiseveryone.domain.usecase.LocationService
 import com.kumpello.whereiseveryone.ui.main.screens.Friends
 import com.kumpello.whereiseveryone.ui.main.screens.Map
@@ -59,6 +61,7 @@ class MainActivity : ComponentActivity() {
             mService!!.setUpdateInterval(mService!!.UPDATE_LOCATION_INTERVAL_BACKGROUND)
         }
     }
+    private val application = this.applicationContext as WhereIsEveryoneApplication
 
     private lateinit var viewModel: MainActivityViewModel
     lateinit var activity: MainActivity
@@ -81,6 +84,13 @@ class MainActivity : ComponentActivity() {
 
         val intent = Intent(this, LocationService::class.java)
         applicationContext.startForegroundService(intent)
+
+        viewModel._uiState.value = viewModel._uiState.value.copy(
+            position = LatLng(
+                application.getLatitude()!!,
+                application.getLongitude()!!
+            )
+        )
 
         setContent {
             WhereIsEveryoneTheme {
@@ -118,7 +128,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun getPermissionsLauncher() : ActivityResultLauncher<Array<String>>{
+    private fun getPermissionsLauncher(): ActivityResultLauncher<Array<String>> {
         return registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 isBackGroundPermissionGranted =
@@ -133,7 +143,8 @@ class MainActivity : ComponentActivity() {
                     ?: isCoarseLocationPermissionGranted
             if (!isBackGroundPermissionGranted ||
                 !isCoarseLocationPermissionGranted ||
-                !isFineLocationPermissionGranted) {
+                !isFineLocationPermissionGranted
+            ) {
                 //TODO: Action when user deny permissions
             }
         }
@@ -201,8 +212,10 @@ class MainActivity : ComponentActivity() {
             color = MaterialTheme.colorScheme.background
         ) {
             Scaffold(
-                content = { padding -> Column(modifier = Modifier.padding(padding)) {
-                    NavigationGraph(navController)}
+                content = { padding ->
+                    Column(modifier = Modifier.padding(padding)) {
+                        NavigationGraph(navController)
+                    }
                 })
         }
     }
