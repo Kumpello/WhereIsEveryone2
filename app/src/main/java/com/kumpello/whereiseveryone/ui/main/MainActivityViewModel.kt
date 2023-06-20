@@ -16,7 +16,7 @@ class MainActivityViewModel @Inject constructor() : ViewModel() {
 
     var _uiState = mutableStateOf(MapUIState())
     val uiState: State<MapUIState> = _uiState
-    private lateinit var event: MutableSharedFlow<GetPositionsEvent>
+    lateinit var event: MutableSharedFlow<GetPositionsEvent>
     lateinit var lastPosition: LatLng
 
     /*    fun onEvent(event: GetPositionsEvent) {
