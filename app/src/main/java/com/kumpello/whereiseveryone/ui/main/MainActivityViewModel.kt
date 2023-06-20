@@ -1,5 +1,6 @@
 package com.kumpello.whereiseveryone.ui.main
 
+import android.content.Context
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -7,6 +8,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.kumpello.whereiseveryone.data.model.map.MapUIState
 import com.kumpello.whereiseveryone.domain.events.GetPositionsEvent
 import com.kumpello.whereiseveryone.domain.events.UIEvent
+import com.kumpello.whereiseveryone.domain.usecase.FriendsService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import javax.inject.Inject
@@ -17,14 +19,7 @@ class MainActivityViewModel @Inject constructor() : ViewModel() {
     var _uiState = mutableStateOf(MapUIState())
     val uiState: State<MapUIState> = _uiState
     lateinit var event: MutableSharedFlow<GetPositionsEvent>
-    lateinit var lastPosition: LatLng
-
-    /*    fun onEvent(event: GetPositionsEvent) {
-            when(event) {
-                is GetPositionsEvent.GetError -> TODO()
-                is GetPositionsEvent.GetSuccess -> TODO()
-            }
-        }*/
+    private lateinit var friendsService: FriendsService
 
     fun onEvent(event: UIEvent) {
         when (event) {
@@ -39,11 +34,19 @@ class MainActivityViewModel @Inject constructor() : ViewModel() {
                     )
                 )
             }
+
+            is UIEvent.AddFriend -> {
+                friendsService.addFriend(event.context, event.nick)
+            }
         }
     }
 
     fun setEvent(event: MutableSharedFlow<GetPositionsEvent>) {
         this.event = event
+    }
+
+    fun setFriendsService(friendsService: FriendsService) {
+        this.friendsService = friendsService
     }
 
 }

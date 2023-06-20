@@ -50,6 +50,7 @@ class MainActivity : ComponentActivity() {
             mService = binder.service
             mIsBound = true
             viewModel.setEvent(mService!!.event)
+            viewModel.setFriendsService(mService!!.friendsService)
             mService!!.startFriendsUpdates()
             mService!!.setUpdateInterval(mService!!.UPDATE_LOCATION_INTERVAL_FOREGROUND)
         }
@@ -64,7 +65,6 @@ class MainActivity : ComponentActivity() {
     private val application = this.applicationContext as WhereIsEveryoneApplication
 
     private lateinit var viewModel: MainActivityViewModel
-    lateinit var activity: MainActivity
     private lateinit var permissionLauncher: ActivityResultLauncher<Array<String>>
     private var isBackGroundPermissionGranted = false
     private var isFineLocationPermissionGranted = false
@@ -77,7 +77,6 @@ class MainActivity : ComponentActivity() {
 
         val viewModel: MainActivityViewModel by viewModels()
         this.viewModel = viewModel
-        activity = this
 
         permissionLauncher = getPermissionsLauncher()
         requestPermissions()
