@@ -51,6 +51,7 @@ class MainActivity : ComponentActivity() {
             mIsBound = true
             viewModel.setEvent(mService!!.event)
             viewModel.setFriendsService(mService!!.friendsService)
+            mService!!.setCurrentToken(application.getAuthToken()!!)
             mService!!.startFriendsUpdates()
             mService!!.setUpdateInterval(mService!!.UPDATE_LOCATION_INTERVAL_FOREGROUND)
         }

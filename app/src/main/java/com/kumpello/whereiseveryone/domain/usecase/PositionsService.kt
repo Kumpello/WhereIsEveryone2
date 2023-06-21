@@ -8,7 +8,7 @@ import com.kumpello.whereiseveryone.data.model.map.PositionsRequest
 import com.kumpello.whereiseveryone.data.model.map.PositionsResponse
 import com.kumpello.whereiseveryone.data.model.map.Response
 import com.kumpello.whereiseveryone.data.services.RetrofitClient
-import com.kumpello.whereiseveryone.domain.model.MapApi
+import com.kumpello.whereiseveryone.domain.model.LocationApi
 import dagger.hilt.android.scopes.ServiceScoped
 import okhttp3.ResponseBody
 import javax.inject.Inject
@@ -17,10 +17,10 @@ import javax.inject.Inject
 class PositionsService @Inject constructor() {
 
     private val retrofit = RetrofitClient.getClient()
-    private val mapApi = retrofit.create(MapApi::class.java)
+    private val locationApi = retrofit.create(LocationApi::class.java)
 
-    fun sendLocation(longitude: Double, latitude: Double): LocationResponse {
-        val response = mapApi.sendLocation(LocationRequest(longitude, latitude)).execute()
+    fun sendLocation(token: String, longitude: Double, latitude: Double): LocationResponse {
+        val response = locationApi.sendLocation(token, LocationRequest(longitude, latitude)).execute()
         return if (response.isSuccessful) {
             LocationResponse(response.code())
         } else {
@@ -29,8 +29,8 @@ class PositionsService @Inject constructor() {
         }
     }
 
-    fun getPositions(users: List<String>, uuids: List<String>): Response {
-        val response = mapApi.getPositions(PositionsRequest(users, uuids)).execute()
+    fun getPositions(token: String, users: List<String>, uuids: List<String>): Response {
+        val response = locationApi.getPositions(token, PositionsRequest(users, uuids)).execute()
         return if (response.isSuccessful) {
             PositionsResponse(response.body()!!.positions)
         } else {

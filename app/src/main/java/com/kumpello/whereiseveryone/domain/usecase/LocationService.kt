@@ -45,8 +45,11 @@ class LocationService : Service() {
     val event = MutableSharedFlow<GetPositionsEvent>()
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var token: String
+
     @Inject
     lateinit var positionsService: PositionsService
+
     @Inject
     lateinit var friendsService: FriendsService
     private var updateInterval = UPDATE_LOCATION_INTERVAL_FOREGROUND
@@ -112,6 +115,10 @@ class LocationService : Service() {
         Toast.makeText(this, "service done", Toast.LENGTH_SHORT).show()
     }
 
+    fun setCurrentToken(token: String) {
+        this.token = token
+    }
+
     private fun startLocationUpdates() {
         while (updateLocation) {
             try {
@@ -130,7 +137,7 @@ class LocationService : Service() {
     fun startFriendsUpdates() {
         CoroutineScope(Dispatchers.IO).launch {
             while (updateFriends) {
-                when(val response = getPositions()) {
+                when (val response = getPositions()) {
                     is PositionsResponse -> event.emit(GetPositionsEvent.GetSuccess(response))
                     is ErrorData -> event.emit(GetPositionsEvent.GetError(response))
                 }
@@ -154,7 +161,7 @@ class LocationService : Service() {
     private fun sendLocation(location: Location?) {
         if (location != null) {
             when (val response =
-                positionsService.sendLocation(location.longitude, location.latitude).statusCode) {
+                positionsService.sendLocation(token, location.longitude, location.latitude).statusCode) {
                 in 200..300 -> Log.d("LocationService:", "Sending location code $response")
                 else -> Log.w("LocationService:", "Sending location code $response")
             }
@@ -164,7 +171,7 @@ class LocationService : Service() {
     private fun getPositions(): Response {
         val friends =
             friendsService.getFriends(applicationContext).map { Pair(it.nick, it.id) }.unzip()
-        return positionsService.getPositions(friends.first, friends.second)
+        return positionsService.getPositions(token, friends.first, friends.second)
     }
 
     private fun getForegroundRequest(): CurrentLocationRequest {
