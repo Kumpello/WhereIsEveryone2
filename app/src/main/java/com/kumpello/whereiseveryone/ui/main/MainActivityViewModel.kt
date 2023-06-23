@@ -36,13 +36,9 @@ class MainActivityViewModel @Inject constructor() : ViewModel() {
             }
 
             is UIEvent.AddFriend -> {
-                friendsService.addFriend(event.context, event.nick)
+                friendsService.addFriend(event.application, event.nick)
             }
         }
-    }
-
-    fun setEvent(event: MutableSharedFlow<GetPositionsEvent>) {
-        this.event = event
     }
 
     fun setFriendsService(friendsService: FriendsService) {

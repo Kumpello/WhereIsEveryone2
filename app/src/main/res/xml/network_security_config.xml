@@ -3,5 +3,7 @@
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">192.168.0.146</domain>
         <domain includeSubdomains="true">192.168.0.205</domain>
+        <domain includeSubdomains="true">192.168.0.33</domain>
+        <domain includeSubdomains="true">192.168.8.106</domain>
     </domain-config>
 </network-security-config>

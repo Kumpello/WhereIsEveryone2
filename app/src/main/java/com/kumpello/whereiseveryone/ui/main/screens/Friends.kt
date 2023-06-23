@@ -36,6 +36,7 @@ import com.kumpello.whereiseveryone.domain.events.GetPositionsEvent
 import com.kumpello.whereiseveryone.domain.events.UIEvent
 import com.kumpello.whereiseveryone.ui.main.MainActivityViewModel
 import com.kumpello.whereiseveryone.ui.theme.WhereIsEveryoneTheme
+import dagger.hilt.android.internal.Contexts.getApplication
 
 @Composable
 fun Friends(navController: NavHostController, viewModel: MainActivityViewModel) {
@@ -49,7 +50,7 @@ fun Friends(navController: NavHostController, viewModel: MainActivityViewModel) 
         viewModel.event.collect { event ->
             when (event) {
                 is GetPositionsEvent.GetError -> Toast
-                    .makeText(mContext, event.error.errorBody.string(), Toast.LENGTH_SHORT)
+                    .makeText(mContext, event.error.message, Toast.LENGTH_SHORT)
                     .show()
 
                 is GetPositionsEvent.GetSuccess -> friends = event.organizationsData.positions
@@ -92,7 +93,7 @@ fun AddFriendButton(viewModel: MainActivityViewModel, nick : String) {
 
     Button(
         onClick = {
-            viewModel.onEvent(UIEvent.AddFriend(mContext, nick))
+            viewModel.onEvent(UIEvent.AddFriend(mContext.applicationContext as WhereIsEveryoneApplication, nick))
         },
         shape = RoundedCornerShape(50.dp),
         modifier = Modifier

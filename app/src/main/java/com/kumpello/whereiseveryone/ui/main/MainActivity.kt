@@ -49,7 +49,7 @@ class MainActivity : ComponentActivity() {
             val binder = iBinder as LocationService.LocalBinder
             mService = binder.service
             mIsBound = true
-            viewModel.setEvent(mService!!.event)
+            viewModel.event = mService!!.event
             viewModel.setFriendsService(mService!!.friendsService)
             mService!!.setCurrentToken(application.getAuthToken()!!)
             mService!!.startFriendsUpdates()
@@ -63,8 +63,7 @@ class MainActivity : ComponentActivity() {
             mService!!.setUpdateInterval(mService!!.UPDATE_LOCATION_INTERVAL_BACKGROUND)
         }
     }
-    private val application = this.applicationContext as WhereIsEveryoneApplication
-
+    private lateinit var application: WhereIsEveryoneApplication
     private lateinit var viewModel: MainActivityViewModel
     private lateinit var permissionLauncher: ActivityResultLauncher<Array<String>>
     private var isBackGroundPermissionGranted = false
@@ -78,6 +77,7 @@ class MainActivity : ComponentActivity() {
 
         val viewModel: MainActivityViewModel by viewModels()
         this.viewModel = viewModel
+        this.application = getApplication() as WhereIsEveryoneApplication
 
         permissionLauncher = getPermissionsLauncher()
         requestPermissions()
@@ -219,21 +219,12 @@ class MainActivity : ComponentActivity() {
                 })
         }
     }
-
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
 }
 
 @Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
+fun MainActivityPreview() {
     WhereIsEveryoneTheme {
-        Greeting("Android")
+        MainActivity()
     }
 }

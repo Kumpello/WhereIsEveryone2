@@ -24,7 +24,7 @@ class AuthenticationService @Inject constructor() {
             authResponse.body()!!
         } else {
             logError(authResponse)
-            ErrorData(authResponse.errorBody()!!)
+            ErrorData(authResponse.code(), authResponse.errorBody().toString(), authResponse.message())
         }
     }
 
@@ -35,12 +35,12 @@ class AuthenticationService @Inject constructor() {
             authResponse.body()!!
         } else {
             logError(authResponse)
-            ErrorData(authResponse.errorBody()!!)
+            ErrorData(authResponse.code(), authResponse.errorBody().toString(), authResponse.message())
         }
     }
 
     private fun logError(response: Response<AuthData>) {
-        Log.e("Authentication:", response.errorBody().toString())
+        Log.e("Authentication:", response.message())
     }
 
 }

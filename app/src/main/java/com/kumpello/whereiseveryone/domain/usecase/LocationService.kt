@@ -1,8 +1,11 @@
 package com.kumpello.whereiseveryone.domain.usecase
 
 import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.location.Location
 import android.os.Binder
@@ -19,6 +22,7 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.kumpello.whereiseveryone.R
+import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
 import com.kumpello.whereiseveryone.data.model.ErrorData
 import com.kumpello.whereiseveryone.data.model.map.PositionsResponse
 import com.kumpello.whereiseveryone.data.model.map.Response
@@ -67,12 +71,14 @@ class LocationService : Service() {
     }
 
     private fun startNotification() {
-        /*        val channel = NotificationChannel(
-                    CHANNEL_ID,
-                    "WhereIsEveryone Channel",
-                    NotificationManager.IMPORTANCE_DEFAULT
-                )
-                (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(channel)*/
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "WhereIsEveryone Channel",
+            NotificationManager.IMPORTANCE_DEFAULT
+        )
+        (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(
+            channel
+        )
 
         val pendingIntent: PendingIntent =
             Intent(this, MainActivity::class.java).let { notificationIntent ->
@@ -122,13 +128,15 @@ class LocationService : Service() {
     private fun startLocationUpdates() {
         while (updateLocation) {
             try {
+                Log.d("LocationService", "Trying to send location")
                 fusedLocationClient.getCurrentLocation(updateRequest, cancellationSource.token)
                     .addOnSuccessListener { location: Location? ->
+                        Log.d("LocationService", "Sending location")
                         sendLocation(location)
                     }
             } catch (exception: SecurityException) {
                 SystemClock.sleep(15000)
-                Log.e("LocationService:", exception.toString())
+                Log.e("LocationService", exception.toString())
             }
             SystemClock.sleep(updateInterval.toLong())
         }
@@ -137,9 +145,16 @@ class LocationService : Service() {
     fun startFriendsUpdates() {
         CoroutineScope(Dispatchers.IO).launch {
             while (updateFriends) {
+                Log.d("LocationService", "Trying to get location")
                 when (val response = getPositions()) {
-                    is PositionsResponse -> event.emit(GetPositionsEvent.GetSuccess(response))
-                    is ErrorData -> event.emit(GetPositionsEvent.GetError(response))
+                    is PositionsResponse -> {
+                        Log.d("LocationService", "emiting friends location")
+                        event.emit(GetPositionsEvent.GetSuccess(response))
+                    }
+                    is ErrorData -> {
+                        event.emit(GetPositionsEvent.GetError(response))
+                        Log.e("LocationService", "emiting friends location error")
+                    }
                 }
                 delay(UPDATE_FRIENDS_INTERVAL.toLong())
             }
@@ -161,16 +176,20 @@ class LocationService : Service() {
     private fun sendLocation(location: Location?) {
         if (location != null) {
             when (val response =
-                positionsService.sendLocation(token, location.longitude, location.latitude).statusCode) {
-                in 200..300 -> Log.d("LocationService:", "Sending location code $response")
-                else -> Log.w("LocationService:", "Sending location code $response")
+                positionsService.sendLocation(token, location.longitude, location.latitude)) {
+                is PositionsResponse -> {
+                    Log.d("LocationService", "Sending location code $response")
+                }
+
+                else -> Log.w("LocationService", "Sending location code $response")
             }
         }
     }
 
     private fun getPositions(): Response {
         val friends =
-            friendsService.getFriends(applicationContext).map { Pair(it.nick, it.id) }.unzip()
+            friendsService.getFriends(application as WhereIsEveryoneApplication)
+                .map { Pair(it.nick, it.id) }.unzip()
         return positionsService.getPositions(token, friends.first, friends.second)
     }
 

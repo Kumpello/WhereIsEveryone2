@@ -19,23 +19,23 @@ class PositionsService @Inject constructor() {
     private val retrofit = RetrofitClient.getClient()
     private val locationApi = retrofit.create(LocationApi::class.java)
 
-    fun sendLocation(token: String, longitude: Double, latitude: Double): LocationResponse {
-        val response = locationApi.sendLocation(token, LocationRequest(longitude, latitude)).execute()
+    fun sendLocation(token: String, longitude: Double, latitude: Double): Response {
+        val response = locationApi.sendLocation("Bearer: $token", LocationRequest(longitude, latitude)).execute()
         return if (response.isSuccessful) {
             LocationResponse(response.code())
         } else {
             logError(response.errorBody())
-            LocationResponse(response.code())
+            ErrorData(response.code(), response.errorBody().toString(), response.message())
         }
     }
 
     fun getPositions(token: String, users: List<String>, uuids: List<String>): Response {
-        val response = locationApi.getPositions(token, PositionsRequest(users, uuids)).execute()
+        val response = locationApi.getPositions("Bearer: $token", PositionsRequest(users, uuids)).execute()
         return if (response.isSuccessful) {
             PositionsResponse(response.body()!!.positions)
         } else {
             logError(response.errorBody())
-            ErrorData(response.errorBody()!!)
+            ErrorData(response.code(), response.errorBody().toString(), response.message())
         }
     }
 

@@ -2,6 +2,7 @@ package com.kumpello.whereiseveryone.ui.login.screens
 
 import android.accounts.Account
 import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,14 +40,17 @@ import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
 import com.kumpello.whereiseveryone.data.model.ErrorData
 import com.kumpello.whereiseveryone.data.model.authorization.AccountType
 import com.kumpello.whereiseveryone.data.model.authorization.AuthData
+import com.kumpello.whereiseveryone.data.model.authorization.AuthResponse
 import com.kumpello.whereiseveryone.domain.usecase.AuthenticationService
 import com.kumpello.whereiseveryone.ui.login.LoginActivity
 import com.kumpello.whereiseveryone.ui.main.MainActivity
 import com.kumpello.whereiseveryone.ui.navigation.LoginRoutes
 import com.kumpello.whereiseveryone.ui.theme.WhereIsEveryoneTheme
+import dagger.hilt.android.internal.Contexts.getApplication
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.net.ConnectException
 
 @Composable
 fun SignUp(
@@ -89,10 +93,15 @@ fun SignUp(
             Button(
                 onClick = {
                     coroutineScope.launch(Dispatchers.IO) {
-                        val response = authService.signUp(
-                            username.value.text,
-                            password.value.text
-                        )
+                        lateinit var response : AuthResponse
+                        try {
+                            response = authService.signUp(
+                                username.value.text,
+                                password.value.text
+                            )
+                        } catch (exception: ConnectException) {
+                            Toast.makeText(mContext, exception.message, Toast.LENGTH_LONG).show()
+                        }
                         withContext(Dispatchers.Main) {
                             //ToDo Catch DiagnosticCoroutineContextException!
                             when (response) {
@@ -111,8 +120,14 @@ fun SignUp(
                                     application.saveAuthRefreshToken(response.refresh_token)
 
                                     activity.makeToast(mContext, "Login succeeded!")
-                                    mContext.startActivity(Intent(mContext, MainActivity::class.java))
+                                    mContext.startActivity(
+                                        Intent(
+                                            mContext,
+                                            MainActivity::class.java
+                                        )
+                                    )
                                 }
+
                                 is ErrorData -> {
                                     activity.makeToast(mContext, "Login failed!")
                                 }

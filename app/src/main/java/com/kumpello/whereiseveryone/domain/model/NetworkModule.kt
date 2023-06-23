@@ -17,7 +17,7 @@ object NetworkModule {
     }
 
     @Provides
-    fun providesOrganizations(): PositionsService {
+    fun providesPositions(): PositionsService {
         return PositionsService()
     }
 }

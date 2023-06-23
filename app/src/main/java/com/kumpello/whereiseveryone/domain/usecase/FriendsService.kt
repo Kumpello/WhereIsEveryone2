@@ -9,13 +9,11 @@ import javax.inject.Inject
 @ServiceScoped
 class FriendsService @Inject constructor() {
 
-    fun addFriend(context : Context, nick : String) {
-        val application = context.applicationContext as WhereIsEveryoneApplication
+    fun addFriend(application : WhereIsEveryoneApplication, nick : String) {
         application.addFriend(nick)
     }
 
-    fun getFriends(context : Context) : List<Friend> {
-        val application = context.applicationContext as WhereIsEveryoneApplication
+    fun getFriends(application: WhereIsEveryoneApplication) : List<Friend> {
         return application.getFriends()
     }
 

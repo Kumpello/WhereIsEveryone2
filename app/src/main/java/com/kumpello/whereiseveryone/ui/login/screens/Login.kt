@@ -42,6 +42,7 @@ import com.kumpello.whereiseveryone.ui.login.LoginActivity
 import com.kumpello.whereiseveryone.ui.main.MainActivity
 import com.kumpello.whereiseveryone.ui.navigation.LoginRoutes
 import com.kumpello.whereiseveryone.ui.theme.WhereIsEveryoneTheme
+import dagger.hilt.android.internal.Contexts.getApplication
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

@@ -33,6 +33,7 @@ import com.kumpello.whereiseveryone.domain.events.UIEvent
 import com.kumpello.whereiseveryone.ui.main.MainActivityViewModel
 import com.kumpello.whereiseveryone.ui.navigation.MainRoutes
 import com.kumpello.whereiseveryone.ui.theme.WhereIsEveryoneTheme
+import dagger.hilt.android.internal.Contexts.getApplication
 
 @Composable
 fun Map(navController: NavHostController, viewModel: MainActivityViewModel) {
@@ -50,7 +51,7 @@ fun Map(navController: NavHostController, viewModel: MainActivityViewModel) {
         viewModel.event.collect { event ->
             when (event) {
                 is GetPositionsEvent.GetError -> Toast
-                    .makeText(mContext, event.error.errorBody.string(), Toast.LENGTH_SHORT)
+                    .makeText(mContext, event.error.message, Toast.LENGTH_SHORT)
                     .show()
 
                 is GetPositionsEvent.GetSuccess -> friends = event.organizationsData.positions

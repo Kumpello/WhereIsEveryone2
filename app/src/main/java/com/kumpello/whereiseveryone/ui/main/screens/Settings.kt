@@ -15,6 +15,7 @@ import androidx.navigation.compose.rememberNavController
 import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
 import com.kumpello.whereiseveryone.ui.main.MainActivityViewModel
 import com.kumpello.whereiseveryone.ui.theme.WhereIsEveryoneTheme
+import dagger.hilt.android.internal.Contexts.getApplication
 
 @Composable
 fun Settings(
