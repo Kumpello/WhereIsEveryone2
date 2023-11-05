@@ -1,0 +1,28 @@
+package com.kumpello.whereiseveryone.common.domain.ucecase
+
+import android.content.Context
+import android.content.SharedPreferences
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKeys
+import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
+
+class GetEncryptedPreferencesUseCase @Inject constructor(
+    @ApplicationContext val appContext: Context,
+) {
+
+    private val mainKey = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
+    private val sharedPreferences = EncryptedSharedPreferences.create(
+        WhereIsEveryoneApplication.preferencesName,
+        mainKey,
+        appContext,
+        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+    )
+
+    fun execute(): SharedPreferences {
+        return sharedPreferences
+    }
+
+}

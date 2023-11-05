@@ -30,20 +30,20 @@
             android:name="org.apache.http.legacy"
             android:required="false" />
         <service
-            android:name=".domain.usecase.LocationService"
+            android:name=".map.domain.repository.LocationService"
             android:foregroundServiceType="location"
             android:enabled="true"
             android:exported="false">
         </service>
         <activity
-            android:name=".ui.main.MainActivity"
+            android:name=".map.MainActivity"
             android:exported="false">
             <meta-data
                 android:name="com.google.android.geo.API_KEY"
                 android:value="${MAPS_API_KEY}" />
         </activity>
         <activity
-            android:name=".ui.login.LoginActivity"
+            android:name=".login.LoginActivity"
             android:exported="true"
             android:theme="@style/Theme.WhereIsEveryone">
             <intent-filter>
