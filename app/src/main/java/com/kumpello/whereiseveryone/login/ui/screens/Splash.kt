@@ -27,11 +27,16 @@ import androidx.navigation.compose.rememberNavController
 import com.kumpello.whereiseveryone.ui.navigation.LoginRoutes
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.annotation.RootNavGraph
+import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.delay
 
+@RootNavGraph(start = true)
 @Destination
 @Composable
-fun Splash(navController: NavHostController) {
+fun Splash(
+    navigator: DestinationsNavigator,
+) {
     val scale = remember {
         Animatable(0f)
     }
@@ -46,7 +51,7 @@ fun Splash(navController: NavHostController) {
                 })
         )
         delay(2000)
-        navController.navigate(LoginRoutes.Login.route)
+        //navigator
     }
 
     Surface(

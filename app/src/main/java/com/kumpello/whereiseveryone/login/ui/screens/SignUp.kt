@@ -47,6 +47,7 @@ import com.kumpello.whereiseveryone.map.MainActivity
 import com.kumpello.whereiseveryone.ui.navigation.LoginRoutes
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -55,9 +56,7 @@ import java.net.ConnectException
 @Destination
 @Composable
 fun SignUp(
-    navController: NavHostController,
-    authService: AuthenticationService,
-    activity: LoginActivity
+    navigator: DestinationsNavigator,
 ) {
     val mContext = LocalContext.current
     val coroutineScope = rememberCoroutineScope()

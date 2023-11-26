@@ -4,7 +4,6 @@ plugins {
     id(libs.plugins.kotlin.kapt.get().pluginId)
     id(libs.plugins.ksp.get().pluginId) version (libs.plugins.ksp.get().version.toString())
     id(libs.plugins.kotlin.parcelize.get().pluginId)
-    id(libs.plugins.hilt.get().pluginId)
     id(libs.plugins.maps.secret.get().pluginId)
 }
 
@@ -82,14 +81,11 @@ dependencies {
     implementation(libs.logging.interceptor)
     implementation(libs.timber)
     implementation(libs.compose.destinations.core)
-    implementation(libs.hilt.android)
+    implementation(libs.koin)
     implementation(libs.play.services.location)
     implementation(libs.play.services.maps)
     implementation(libs.maps.compose)
     implementation(libs.androidx.security.crypto)
-
-    kapt(libs.hilt.compiler)
-    annotationProcessor(libs.hilt.compiler)
 
     ksp(libs.moshi.kotlin.codegen)
     ksp(libs.compose.destinations.ksp)

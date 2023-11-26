@@ -16,11 +16,11 @@ espresso = "3.5.1"
 android-gradle = "8.1.1"
 kotlin-android = "1.8.22"
 ksp = "1.8.22-1.0.11"
-hilt = "2.48.1"
 maps-secret = "2.0.1"
 maps-compose = "2.11.4"
 play-services-location = "21.0.1"
 play-services-maps = "18.1.0"
+koin = "3.5.1"
 
 [libraries]
 androidx-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "ktx" }
@@ -41,8 +41,11 @@ compose-destinations-ksp = { group = "io.github.raamcosta.compose-destinations",
 test-junit = { group = "junit", name = "junit", version.ref = "test-junit" }
 android-test-junit = { group = "androidx.test.ext", name = "junit", version.ref = "android-test-junit" }
 espresso = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso" }
-hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
-hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
+koin = { group = "io.insert-koin", name = "koin-android", version.ref = "koin" }
+koin-compose = { group = "io.insert-koin", name = "koin-androidx-compose", version.ref = "koin" }
+koin-annotations = { group = "io.insert-koin", name = "koin-annotations", version.ref = "koin" }
+koin-ksp = { group = "io.insert-koin", name = "koin-ksp-compiler", version.ref = "koin" }
+
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "play-services-location" }
 play-services-maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "play-services-maps" }
 maps-compose = { group = "com.google.maps.android", name = "maps-compose", version.ref = "maps-compose" }
@@ -70,5 +73,4 @@ kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin-an
 kotlin-kapt = { id = "kotlin-kapt", version.ref = "kotlin-android" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 kotlin-parcelize = { id = "kotlin-parcelize", version.ref = "kotlin-android" }
-hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 maps-secret = { id = "com.google.android.libraries.mapsplatform.secrets-gradle-plugin", version.ref = "maps-secret" }

@@ -16,11 +16,12 @@ import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
 import com.kumpello.whereiseveryone.map.presentation.MainActivityViewModel
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
 @Destination
 @Composable
 fun Settings(
-    navController: NavHostController,
+    navigator: DestinationsNavigator,
     viewModel: MainActivityViewModel
 ) {
     val mContext = LocalContext.current

@@ -42,13 +42,16 @@ import com.kumpello.whereiseveryone.login.LoginActivity
 import com.kumpello.whereiseveryone.map.MainActivity
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Destination
 @Composable
-fun Login(navController: NavHostController, authService: AuthenticationService, activity: LoginActivity) {
+fun Login(
+    navigator: DestinationsNavigator,
+) {
     val mContext = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val application = mContext.applicationContext as WhereIsEveryoneApplication

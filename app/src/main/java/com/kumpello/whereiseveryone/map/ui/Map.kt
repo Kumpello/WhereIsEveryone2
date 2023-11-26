@@ -31,10 +31,14 @@ import com.kumpello.whereiseveryone.map.domain.events.GetPositionsEvent
 import com.kumpello.whereiseveryone.map.presentation.MainActivityViewModel
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
 @Destination
 @Composable
-fun Map(navController: NavHostController, viewModel: MainActivityViewModel) {
+fun Map(
+    navigator: DestinationsNavigator,
+    viewModel: MainActivityViewModel
+) {
     val mContext = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val application = mContext.applicationContext as WhereIsEveryoneApplication

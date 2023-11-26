@@ -43,53 +43,14 @@ class LoginActivity : ComponentActivity(), CoroutineScope by MainScope() {
         val viewModel: LoginActivityViewModel by viewModels()
         this.viewModel = viewModel
         activity = this
-
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 //Runs on every launch
             }
         }
-        //ToDo: automatic login
-/*      if (User is logged) {
-            //this.startActivity(Intent(this, ApplicationActivity::class.java))
-        }*/
         setContent {
             WhereIsEveryoneTheme() {
                 Navigation()
-            }
-        }
-    }
-
-    @Composable
-    fun NavigationGraph() {
-        val navController = rememberNavController()
-
-        NavHost(navController, LoginRoutes.Splash.route) {
-            composable(LoginRoutes.Splash.route) {
-                Splash(navController)
-            }
-
-            composable(LoginRoutes.Login.route) {
-                Login(navController, viewModel.authenticationService, activity)
-            }
-
-            composable(LoginRoutes.SignUp.route) {
-                SignUp(navController, viewModel.authenticationService, activity)
-            }
-        }
-    }
-
-    @Composable
-    fun Navigation() {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
-        ) {
-            Column(
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                NavigationGraph()
             }
         }
     }

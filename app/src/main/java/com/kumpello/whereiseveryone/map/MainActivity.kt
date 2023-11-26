@@ -187,38 +187,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    @Composable
-    fun NavigationGraph(navController: NavHostController) {
-        NavHost(navController, MainRoutes.Map.route) {
-            composable(MainRoutes.Map.route) {
-                Map(navController, viewModel)
-            }
-
-            composable(MainRoutes.Settings.route) {
-                Settings(navController, viewModel)
-            }
-
-            composable(MainRoutes.Friends.route) {
-                Friends(navController, viewModel)
-            }
-        }
-    }
-
-    @Composable
-    fun Navigation() {
-        val navController = rememberNavController()
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
-        ) {
-            Scaffold(
-                content = { padding ->
-                    Column(modifier = Modifier.padding(padding)) {
-                        NavigationGraph(navController)
-                    }
-                })
-        }
-    }
 }
 
 @Preview(showBackground = true)

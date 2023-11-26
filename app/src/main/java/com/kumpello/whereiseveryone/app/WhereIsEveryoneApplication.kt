@@ -1,14 +1,18 @@
 package com.kumpello.whereiseveryone.app
 
 import android.app.Application
-import dagger.hilt.android.HiltAndroidApp
 
-@HiltAndroidApp
+
 class WhereIsEveryoneApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
 
+        startKoin{
+            androidLogger()
+            androidContext(this@MainApplication)
+            modules(appModule)
+        }
     }
 
     companion object {
