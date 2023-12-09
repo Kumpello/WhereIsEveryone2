@@ -1,7 +1,11 @@
 package com.kumpello.whereiseveryone.app
 
 import android.app.Application
-
+import com.kumpello.whereiseveryone.common.di.appModule
+import com.kumpello.whereiseveryone.common.domain.model.networkModule
+import org.koin.android.ext.koin.androidContext
+import org.koin.android.ext.koin.androidLogger
+import org.koin.core.context.GlobalContext.startKoin
 
 class WhereIsEveryoneApplication : Application() {
 
@@ -10,8 +14,8 @@ class WhereIsEveryoneApplication : Application() {
 
         startKoin{
             androidLogger()
-            androidContext(this@MainApplication)
-            modules(appModule)
+            androidContext(this@WhereIsEveryoneApplication)
+            modules(listOf(appModule, networkModule))
         }
     }
 

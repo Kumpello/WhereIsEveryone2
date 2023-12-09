@@ -1,19 +1,13 @@
 package com.kumpello.whereiseveryone.common.domain.repository
 
-import android.util.Log
-import com.kumpello.whereiseveryone.common.data.model.ErrorData
-import com.kumpello.whereiseveryone.common.data.model.authorization.AuthData
 import com.kumpello.whereiseveryone.common.data.model.authorization.AuthResponse
 import com.kumpello.whereiseveryone.common.data.model.authorization.LogInRequest
 import com.kumpello.whereiseveryone.common.data.model.authorization.SignUpRequest
-import com.kumpello.whereiseveryone.common.domain.services.RetrofitClient
 import com.kumpello.whereiseveryone.common.domain.model.AuthApi
-import dagger.hilt.android.scopes.ViewModelScoped
-import retrofit2.Response
-import javax.inject.Inject
+import com.kumpello.whereiseveryone.common.domain.services.RetrofitClient
+import timber.log.Timber
 
-@ViewModelScoped
-class AuthenticationService @Inject constructor() {
+class AuthenticationService {
 
     private val retrofit = RetrofitClient.getClient()
     private val authApi = retrofit.create(AuthApi::class.java)
@@ -23,24 +17,20 @@ class AuthenticationService @Inject constructor() {
         return if (authResponse.isSuccessful) {
             authResponse.body()!!
         } else {
-            logError(authResponse)
-            ErrorData(authResponse.code(), authResponse.errorBody().toString(), authResponse.message())
+            Timber.e(authResponse.errorBody().toString())
+            AuthResponse.ErrorData(authResponse.code(), authResponse.errorBody().toString(), authResponse.message())
         }
     }
 
     fun logIn(username: String, password: String): AuthResponse {
         val authResponse = authApi.login(LogInRequest(username, password)).execute()
-        logError(authResponse)
+        Timber.d(authResponse.message())
         return if (authResponse.isSuccessful) {
             authResponse.body()!!
         } else {
-            logError(authResponse)
-            ErrorData(authResponse.code(), authResponse.errorBody().toString(), authResponse.message())
+            Timber.e(authResponse.errorBody().toString())
+            AuthResponse.ErrorData(authResponse.code(), authResponse.errorBody().toString(), authResponse.message())
         }
-    }
-
-    private fun logError(response: Response<AuthData>) {
-        Log.e("Authentication:", response.message())
     }
 
 }

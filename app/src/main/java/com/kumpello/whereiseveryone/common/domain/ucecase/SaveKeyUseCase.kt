@@ -1,12 +1,11 @@
 package com.kumpello.whereiseveryone.common.domain.ucecase
 
 import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
-import com.kumpello.whereiseveryone.friends.model.Friend
-import com.kumpello.whereiseveryone.friends.model.FriendList
+import com.kumpello.whereiseveryone.main.friends.model.Friend
+import com.kumpello.whereiseveryone.main.friends.model.FriendList
 import com.squareup.moshi.Moshi
-import javax.inject.Inject
 
-class SaveKeyUseCase @Inject constructor(
+class SaveKeyUseCase constructor(
     private val getEncryptedPreferencesUseCase: GetEncryptedPreferencesUseCase,
     private val getKeyUseCase: GetKeyUseCase,
 ) {

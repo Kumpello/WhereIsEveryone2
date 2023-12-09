@@ -1,23 +1,14 @@
 package com.kumpello.whereiseveryone.common.domain.model
 
 import com.kumpello.whereiseveryone.common.domain.repository.AuthenticationService
-import com.kumpello.whereiseveryone.map.domain.repository.PositionsService
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
+import com.kumpello.whereiseveryone.main.map.domain.repository.PositionsService
+import org.koin.dsl.bind
+import org.koin.dsl.module
 
-@Module
-@InstallIn(SingletonComponent::class)
-object NetworkModule {
+val networkModule = module {
 
-    @Provides
-    fun provideAuthentication(): AuthenticationService {
-        return AuthenticationService()
-    }
+    single { AuthenticationService() } bind AuthenticationService::class
+    single { PositionsService() } bind PositionsService::class
+    single { AuthenticationService() }
 
-    @Provides
-    fun providesPositions(): PositionsService {
-        return PositionsService()
-    }
 }

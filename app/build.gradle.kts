@@ -1,15 +1,13 @@
 plugins {
     id(libs.plugins.android.application.get().pluginId)
     id(libs.plugins.kotlin.android.get().pluginId)
-    id(libs.plugins.kotlin.kapt.get().pluginId)
     id(libs.plugins.ksp.get().pluginId) version (libs.plugins.ksp.get().version.toString())
     id(libs.plugins.kotlin.parcelize.get().pluginId)
-    id(libs.plugins.maps.secret.get().pluginId)
 }
 
 android {
     namespace = "com.kumpello.whereiseveryone"
-    compileSdk = 33
+    compileSdk = 34
 
     buildFeatures {
         buildConfig = true
@@ -18,7 +16,7 @@ android {
     defaultConfig {
         applicationId = "com.kumpello.whereiseveryone"
         minSdk = 28
-        targetSdk = 33
+        targetSdk = 34
         versionCode = 1
         versionName = "0.3"
 
@@ -51,17 +49,17 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_19
+        targetCompatibility = JavaVersion.VERSION_19
     }
     kotlinOptions {
-        jvmTarget = "17"
+        jvmTarget = "19"
     }
     buildFeatures {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.4.7"
+        kotlinCompilerExtensionVersion = "1.5.5"
     }
     packaging {
         resources.excludes.add("/META-INF/{AL2.0,LGPL2.1}")
@@ -81,10 +79,15 @@ dependencies {
     implementation(libs.logging.interceptor)
     implementation(libs.timber)
     implementation(libs.compose.destinations.core)
+    implementation(libs.retrofit2)
+    implementation(libs.retrofit2.converter.moshi)
+    implementation(libs.moshi)
+    implementation(libs.moshi.kotlin)
     implementation(libs.koin)
+    implementation(libs.koin.compose)
+    //implementation(libs.koin.annotations)
+    //implementation(libs.koin.ksp)
     implementation(libs.play.services.location)
-    implementation(libs.play.services.maps)
-    implementation(libs.maps.compose)
     implementation(libs.androidx.security.crypto)
 
     ksp(libs.moshi.kotlin.codegen)
@@ -99,8 +102,4 @@ dependencies {
 
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)
-}
-
-kapt {
-    correctErrorTypes = true
 }
