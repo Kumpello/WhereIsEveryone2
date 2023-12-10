@@ -1,8 +1,8 @@
 package com.kumpello.whereiseveryone.common.domain.model
 
-import com.kumpello.whereiseveryone.common.data.model.authorization.AuthResponse
-import com.kumpello.whereiseveryone.common.data.model.authorization.LogInRequest
-import com.kumpello.whereiseveryone.common.data.model.authorization.SignUpRequest
+import com.kumpello.whereiseveryone.common.model.AuthResponse
+import com.kumpello.whereiseveryone.authentication.login.model.LogInRequest
+import com.kumpello.whereiseveryone.authentication.signUp.model.SignUpRequest
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.HTTP

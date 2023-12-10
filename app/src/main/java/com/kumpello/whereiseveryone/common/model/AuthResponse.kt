@@ -1,4 +1,4 @@
-package com.kumpello.whereiseveryone.common.data.model.authorization
+package com.kumpello.whereiseveryone.common.model
 
 sealed interface AuthResponse {
     data class AuthData(val id: String, val refresh_token: String, val token: String) : AuthResponse

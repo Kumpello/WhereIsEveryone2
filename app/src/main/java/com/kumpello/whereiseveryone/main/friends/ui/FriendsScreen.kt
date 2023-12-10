@@ -22,7 +22,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
@@ -91,8 +90,6 @@ fun AddFriendButton(
     viewState: FriendsViewModel.ViewState,
     trigger: (FriendsViewModel.Command) -> Unit,
 ) {
-    val mContext = LocalContext.current
-
     Button(
         onClick = {
             //viewModel.onEvent(UIEvent.AddFriend(mContext.applicationContext as WhereIsEveryoneApplication, nick))

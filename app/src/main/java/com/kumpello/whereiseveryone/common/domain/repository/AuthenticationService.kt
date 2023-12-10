@@ -1,8 +1,8 @@
 package com.kumpello.whereiseveryone.common.domain.repository
 
-import com.kumpello.whereiseveryone.common.data.model.authorization.AuthResponse
-import com.kumpello.whereiseveryone.common.data.model.authorization.LogInRequest
-import com.kumpello.whereiseveryone.common.data.model.authorization.SignUpRequest
+import com.kumpello.whereiseveryone.common.model.AuthResponse
+import com.kumpello.whereiseveryone.authentication.login.model.LogInRequest
+import com.kumpello.whereiseveryone.authentication.signUp.model.SignUpRequest
 import com.kumpello.whereiseveryone.common.domain.model.AuthApi
 import com.kumpello.whereiseveryone.common.domain.services.RetrofitClient
 import timber.log.Timber
