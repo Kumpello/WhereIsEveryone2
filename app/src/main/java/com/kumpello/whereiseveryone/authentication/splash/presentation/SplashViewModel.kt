@@ -6,7 +6,7 @@ import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.tween
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.kumpello.whereiseveryone.authentication.login.presentation.LoginViewModel
+import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -17,7 +17,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class SplashViewModel : ViewModel() {
+class SplashViewModel(
+    val getKeyUseCase: GetKeyUseCase
+) : ViewModel() {
     private var _state = MutableStateFlow(State())
     val state: StateFlow<ViewState> = _state.map { state ->
         state.toViewState()
@@ -27,8 +29,8 @@ class SplashViewModel : ViewModel() {
         initialValue = _state.value.toViewState()
     )
 
-    private val _action = MutableSharedFlow<LoginViewModel.Action>()
-    val action: SharedFlow<LoginViewModel.Action> = _action.asSharedFlow()
+    private val _action = MutableSharedFlow<Action>()
+    val action: SharedFlow<Action> = _action.asSharedFlow()
 
     private fun animateLogo() {
         viewModelScope.launch {
@@ -43,9 +45,25 @@ class SplashViewModel : ViewModel() {
         }
     }
 
+    private fun isUserLogged() : Boolean {
+        //TODO: This needs to be done some other way, and check if token is valid is needed
+        return getKeyUseCase.getAuthToken().isNullOrEmpty().not()
+    }
+
+    private fun navigateToNextDestination() {
+        viewModelScope.launch {
+            if (isUserLogged()) {
+                _action.emit(Action.NavigateMain)
+            } else {
+                _action.emit(Action.NavigateSignUp)
+            }
+        }
+    }
+
     fun trigger(command: Command) {
         when (command) {
             Command.AnimateLogo -> animateLogo()
+            Command.NavigateToNextDestination -> navigateToNextDestination()
         }
     }
 
@@ -56,11 +74,14 @@ class SplashViewModel : ViewModel() {
     }
 
     sealed class Action {
+        data object NavigateSignUp: Action()
+        data object NavigateMain: Action()
 
     }
 
     sealed class Command {
         data object AnimateLogo : Command()
+        data object NavigateToNextDestination : Command()
     }
 
     data class State(

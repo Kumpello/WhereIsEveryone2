@@ -7,10 +7,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.tooling.preview.Preview
 import com.kumpello.whereiseveryone.common.entities.ScreenState
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
+import com.kumpello.whereiseveryone.main.MainNavGraph
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
+@MainNavGraph(start = true)
 @Destination
 @Composable
 fun MapScreen(

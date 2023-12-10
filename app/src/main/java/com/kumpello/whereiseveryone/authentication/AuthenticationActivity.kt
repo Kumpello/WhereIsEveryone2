@@ -8,13 +8,13 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.kumpello.whereiseveryone.NavGraphs
+import com.kumpello.whereiseveryone.authentication.login.presentation.LoginViewModel
+import com.kumpello.whereiseveryone.authentication.signUp.presentation.SignUpViewModel
+import com.kumpello.whereiseveryone.authentication.splash.presentation.SplashViewModel
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.destinations.LoginScreenDestination
 import com.kumpello.whereiseveryone.destinations.SignUpScreenDestination
 import com.kumpello.whereiseveryone.destinations.SplashScreenDestination
-import com.kumpello.whereiseveryone.authentication.login.presentation.LoginViewModel
-import com.kumpello.whereiseveryone.authentication.signUp.presentation.SignUpViewModel
-import com.kumpello.whereiseveryone.authentication.splash.presentation.SplashViewModel
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.navigation.dependency
 import kotlinx.coroutines.CoroutineScope
@@ -47,7 +47,7 @@ class AuthenticationActivity : ComponentActivity(), CoroutineScope by MainScope(
     private fun AuthenticationScreen() {
         WhereIsEveryoneTheme {
             DestinationsNavHost(
-                navGraph = NavGraphs.root,
+                navGraph = NavGraphs.authentication,
                 dependenciesContainerBuilder = {
                     dependency(LoginScreenDestination) { loginViewModel }
                     dependency(SignUpScreenDestination) { signUpViewModel }

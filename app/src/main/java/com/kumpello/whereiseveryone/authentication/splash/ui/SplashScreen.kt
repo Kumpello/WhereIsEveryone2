@@ -1,5 +1,6 @@
 package com.kumpello.whereiseveryone.authentication.splash.ui
 
+import android.content.Intent
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -16,34 +17,43 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
+import com.kumpello.whereiseveryone.authentication.AuthenticationNavGraph
 import com.kumpello.whereiseveryone.authentication.splash.presentation.SplashViewModel
+import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
+import com.kumpello.whereiseveryone.destinations.SignUpScreenDestination
+import com.kumpello.whereiseveryone.main.MainActivity
 import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.delay
 
-@RootNavGraph(start = true)
+@AuthenticationNavGraph(start = true)
 @Destination
 @Composable
 fun SplashScreen(
     navigator: DestinationsNavigator,
     viewModel: SplashViewModel
 ) {
+    val context = LocalContext.current
     val state by viewModel.state.collectAsState()
 
     LaunchedEffect(key1 = true) {
         viewModel.trigger(SplashViewModel.Command.AnimateLogo)
         delay(2000)
-        //navigator
+        viewModel.trigger(SplashViewModel.Command.NavigateToNextDestination)
+        viewModel.action.collect { action ->
+            when (action) {
+                SplashViewModel.Action.NavigateMain -> context.startActivity(Intent(context, MainActivity::class.java))
+                SplashViewModel.Action.NavigateSignUp -> navigator.navigate(SignUpScreenDestination)
+            }
+        }
     }
 
     SplashScreen(
@@ -94,7 +104,7 @@ fun AppLogo(modifier: Modifier = Modifier) {
 @Preview(showBackground = true)
 @Composable
 fun SplashScreenPreview() {
-    var scale by remember { mutableStateOf(Animatable(0f)) }
+    val scale by remember { mutableStateOf(Animatable(0f)) }
 
     WhereIsEveryoneTheme {
         SplashScreen(

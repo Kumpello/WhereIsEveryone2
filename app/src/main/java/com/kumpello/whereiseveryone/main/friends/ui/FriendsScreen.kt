@@ -26,10 +26,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
+import com.kumpello.whereiseveryone.main.MainNavGraph
 import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
+@MainNavGraph(start = false)
 @Destination
 @Composable
 fun FriendsScreen(

@@ -45,12 +45,10 @@ class LoginViewModel(
                 )
                 when (response) {
                     Response.Success -> onLoginSuccess()
-                    //mContext.startActivity(Intent(mContext, MainActivity::class.java))
-                    Response.Error -> onLoginError()
-                    //activity.makeToast(mContext, "Login failed!")
+                    Response.Error -> onLoginError(null)
                 }
-            }.onFailure {
-
+            }.onFailure { error ->
+                onLoginError(error)
             }
         }
     }
@@ -60,8 +58,9 @@ class LoginViewModel(
         _action.emit(Action.NavigateMain)
     }
 
-    private suspend fun onLoginError() {
+    private suspend fun onLoginError(throwable: Throwable?) {
         Timber.e("Login failed!")
+        throwable.let { Timber.e(throwable) }
         _action.emit(Action.MakeToast("Login failed!"))
     }
 

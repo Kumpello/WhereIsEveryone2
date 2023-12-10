@@ -172,7 +172,7 @@ class MainActivity : ComponentActivity() {
     private fun AuthenticationScreen() {
         WhereIsEveryoneTheme {
             DestinationsNavHost(
-                navGraph = NavGraphs.root,
+                navGraph = NavGraphs.main,
                 dependenciesContainerBuilder = {
                     dependency(MapScreenDestination) { mapViewModel }
                     dependency(SettingsScreenDestination) { settingsViewModel }

@@ -18,7 +18,7 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 
 //TODO: add validation to username and password!
-//ToDo: Password is saved in plaintext, some kind of encryption needs to be added!
+//TODO: Password is saved in plaintext, some kind of encryption needs to be added!
 class SignUpViewModel(
     private val signUpUseCase: SignUpUseCase
 ) : ViewModel() {
@@ -37,23 +37,31 @@ class SignUpViewModel(
 
     private fun signUp() {
         viewModelScope.launch(Dispatchers.IO) {
-            val response = signUpUseCase.execute(
-                username = _state.value.username,
-                password = _state.value.password
-            )
+            runCatching {
+                val response = signUpUseCase.execute(
+                    username = _state.value.username,
+                    password = _state.value.password
+                )
 
-            when (response) {
-                Response.Success -> {
-                    Timber.d("SignUp succeeded!")
-                    _action.emit(Action.NavigateMain)
-                    //mContext.startActivity(Intent(mContext, MainActivity::class.java))
+                when (response) {
+                    Response.Success -> onSignUpSuccess()
+                    Response.Error -> onSignUpError(null)
                 }
-                Response.Error -> {
-                    _action.emit(Action.MakeToast("SignUp failed!"))
-                    //activity.makeToast(mContext, "Login failed!")
-                }
+            }.onFailure { error ->
+                onSignUpError(error)
             }
         }
+    }
+
+    private suspend fun onSignUpSuccess() {
+        Timber.d("SignUp succeeded!")
+        _action.emit(Action.NavigateMain)
+    }
+
+    private suspend fun onSignUpError(throwable: Throwable?) {
+        Timber.e("SignUp failed!")
+        throwable.let { Timber.e(throwable) }
+        _action.emit(Action.MakeToast("SignUp failed!"))
     }
 
     private fun navigateLogin() {

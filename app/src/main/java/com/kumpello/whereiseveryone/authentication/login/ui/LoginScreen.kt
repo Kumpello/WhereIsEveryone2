@@ -1,5 +1,7 @@
 package com.kumpello.whereiseveryone.authentication.login.ui
 
+import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +22,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -29,26 +32,31 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kumpello.whereiseveryone.authentication.AuthenticationNavGraph
 import com.kumpello.whereiseveryone.common.entities.ScreenState
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.authentication.login.presentation.LoginViewModel
+import com.kumpello.whereiseveryone.destinations.SignUpScreenDestination
+import com.kumpello.whereiseveryone.main.MainActivity
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
+@AuthenticationNavGraph(start = false)
 @Destination
 @Composable
 fun LoginScreen(
     navigator: DestinationsNavigator,
     viewModel: LoginViewModel,
 ) {
+    val context = LocalContext.current
     val state by viewModel.state.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.action.collect { action ->
             when (action) {
-                is LoginViewModel.Action.MakeToast -> TODO()
-                LoginViewModel.Action.NavigateMain -> TODO()
-                LoginViewModel.Action.NavigateSignUp -> TODO()
+                is LoginViewModel.Action.MakeToast -> Toast.makeText(context, action.string, Toast.LENGTH_SHORT).show()
+                LoginViewModel.Action.NavigateMain -> context.startActivity(Intent(context, MainActivity::class.java))
+                LoginViewModel.Action.NavigateSignUp -> navigator.navigate(SignUpScreenDestination)
             }
         }
     }

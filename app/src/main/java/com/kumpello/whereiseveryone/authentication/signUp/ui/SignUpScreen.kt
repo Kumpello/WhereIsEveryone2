@@ -1,5 +1,7 @@
 package com.kumpello.whereiseveryone.authentication.signUp.ui
 
+import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,26 +32,31 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kumpello.whereiseveryone.authentication.AuthenticationNavGraph
+import com.kumpello.whereiseveryone.authentication.signUp.presentation.SignUpViewModel
 import com.kumpello.whereiseveryone.common.entities.ScreenState
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
-import com.kumpello.whereiseveryone.authentication.signUp.presentation.SignUpViewModel
+import com.kumpello.whereiseveryone.destinations.LoginScreenDestination
+import com.kumpello.whereiseveryone.main.MainActivity
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
+@AuthenticationNavGraph(start = false)
 @Destination
 @Composable
 fun SignUpScreen(
     navigator: DestinationsNavigator,
     viewModel: SignUpViewModel,
 ) {
+    val context = LocalContext.current
     val state by viewModel.state.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.action.collect { action ->
             when (action) {
-                is SignUpViewModel.Action.MakeToast -> TODO()
-                SignUpViewModel.Action.NavigateMain -> TODO()
-                SignUpViewModel.Action.NavigateLogin -> TODO()
+                is SignUpViewModel.Action.MakeToast -> Toast.makeText(context, action.string, Toast.LENGTH_SHORT).show()
+                SignUpViewModel.Action.NavigateMain -> context.startActivity(Intent(context, MainActivity::class.java))
+                SignUpViewModel.Action.NavigateLogin -> navigator.navigate(LoginScreenDestination)
             }
         }
     }
@@ -65,8 +72,6 @@ fun SignUpScreen(
     viewState: SignUpViewModel.ViewState,
     trigger: (SignUpViewModel.Command) -> Unit,
 ) {
-    val mContext = LocalContext.current
-
     Column(
         modifier = Modifier.padding(20.dp),
         verticalArrangement = Arrangement.Center,
