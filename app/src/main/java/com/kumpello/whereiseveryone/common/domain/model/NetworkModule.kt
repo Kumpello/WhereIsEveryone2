@@ -1,14 +1,14 @@
 package com.kumpello.whereiseveryone.common.domain.model
 
-import com.kumpello.whereiseveryone.common.domain.repository.AuthenticationService
-import com.kumpello.whereiseveryone.main.map.domain.repository.PositionsService
+import com.kumpello.whereiseveryone.common.domain.repository.AuthenticationRepository
+import com.kumpello.whereiseveryone.main.map.domain.repository.LocationRepository
 import org.koin.dsl.bind
 import org.koin.dsl.module
 
 val networkModule = module {
 
-    single { AuthenticationService() } bind AuthenticationService::class
-    single { PositionsService() } bind PositionsService::class
-    single { AuthenticationService() }
+    single { AuthenticationRepository() } bind AuthenticationRepository::class
+    single { LocationRepository() } bind LocationRepository::class
+    single { AuthenticationRepository() }
 
 }

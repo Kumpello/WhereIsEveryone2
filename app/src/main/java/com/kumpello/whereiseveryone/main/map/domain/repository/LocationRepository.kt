@@ -8,12 +8,12 @@ import com.kumpello.whereiseveryone.main.map.data.model.PositionsRequest
 import com.kumpello.whereiseveryone.main.map.data.model.PositionsResponse
 import timber.log.Timber
 
-class PositionsService {
+class LocationRepository {
 
     private val retrofit = RetrofitClient.getClient()
     private val locationApi = retrofit.create(LocationApi::class.java)
 
-    fun sendLocation(token: String, longitude: Double, latitude: Double): LocationResponse {
+    fun sendPosition(token: String, longitude: Double, latitude: Double): LocationResponse {
         val response = locationApi.sendLocation("Bearer: $token", LocationRequest(longitude, latitude)).execute()
         return LocationResponse(response.code()).also {
             if (response.isSuccessful.not()) {

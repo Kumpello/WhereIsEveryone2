@@ -1,13 +1,13 @@
 package com.kumpello.whereiseveryone.authentication.domain
 
 import com.kumpello.whereiseveryone.common.model.AuthResponse
-import com.kumpello.whereiseveryone.common.domain.repository.AuthenticationService
+import com.kumpello.whereiseveryone.common.domain.repository.AuthenticationRepository
 import com.kumpello.whereiseveryone.common.domain.ucecase.SaveKeyUseCase
 import com.kumpello.whereiseveryone.common.entities.AuthResponseWithParams
 import com.kumpello.whereiseveryone.common.entities.Response
 
 class SignUpUseCase(
-    private val authenticationService: AuthenticationService,
+    private val authenticationRepository: AuthenticationRepository,
     private val saveKeyUseCase: SaveKeyUseCase,
 ) {
 
@@ -30,7 +30,7 @@ class SignUpUseCase(
         return AuthResponseWithParams(
             username = username,
             password = password,
-            authResponse = authenticationService.signUp(
+            authResponse = authenticationRepository.signUp(
                 username,
                 password
             ))

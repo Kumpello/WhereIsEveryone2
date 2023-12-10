@@ -46,7 +46,7 @@ class LocationService : Service() {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var token: String
 
-    private lateinit var positionsService: PositionsService
+    private lateinit var locationRepository: LocationRepository
     private val getKeyUseCase: GetKeyUseCase by inject()
 
     private var updateInterval = UPDATE_LOCATION_INTERVAL_FOREGROUND
@@ -161,8 +161,8 @@ class LocationService : Service() {
 
     private fun sendLocation(location: Location?) {
         if (location != null) {
-            positionsService
-                .sendLocation(token, location.longitude, location.latitude)
+            locationRepository
+                .sendPosition(token, location.longitude, location.latitude)
                 .let { response ->
                     Timber.d("Sending location code $response")
                 }
@@ -173,7 +173,7 @@ class LocationService : Service() {
         val friends =
             getKeyUseCase.getFriends()
                 .map { Pair(it.nick, it.id) }.unzip()
-        return positionsService.getPositions(token, friends.first, friends.second)
+        return locationRepository.getPositions(token, friends.first, friends.second)
     }
 
     private fun getForegroundRequest(): CurrentLocationRequest {

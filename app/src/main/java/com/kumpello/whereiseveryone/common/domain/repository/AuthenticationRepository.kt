@@ -7,7 +7,7 @@ import com.kumpello.whereiseveryone.common.domain.model.AuthApi
 import com.kumpello.whereiseveryone.common.domain.services.RetrofitClient
 import timber.log.Timber
 
-class AuthenticationService {
+class AuthenticationRepository {
 
     private val retrofit = RetrofitClient.getClient()
     private val authApi = retrofit.create(AuthApi::class.java)
