@@ -2,7 +2,7 @@ package com.kumpello.whereiseveryone.authentication.signUp.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.kumpello.whereiseveryone.authentication.domain.SignUpUseCase
+import com.kumpello.whereiseveryone.authentication.signUp.domain.usecase.SignUpUseCase
 import com.kumpello.whereiseveryone.common.entities.Response
 import com.kumpello.whereiseveryone.common.entities.ScreenState
 import kotlinx.coroutines.Dispatchers

@@ -1,6 +1,6 @@
 package com.kumpello.whereiseveryone.common.di
 
-import com.kumpello.whereiseveryone.authentication.domain.LoginUseCase
+import com.kumpello.whereiseveryone.authentication.login.domain.usecase.LoginUseCase
 import com.kumpello.whereiseveryone.common.domain.ucecase.GetEncryptedPreferencesUseCase
 import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
 import com.kumpello.whereiseveryone.common.domain.ucecase.SaveKeyUseCase

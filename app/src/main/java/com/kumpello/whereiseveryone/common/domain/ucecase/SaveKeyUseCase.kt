@@ -5,8 +5,8 @@ import com.kumpello.whereiseveryone.main.friends.model.Friend
 import com.kumpello.whereiseveryone.main.friends.model.FriendList
 import com.squareup.moshi.Moshi
 
-class SaveKeyUseCase constructor(
-    private val getEncryptedPreferencesUseCase: GetEncryptedPreferencesUseCase,
+class SaveKeyUseCase(
+    getEncryptedPreferencesUseCase: GetEncryptedPreferencesUseCase,
     private val getKeyUseCase: GetKeyUseCase,
 ) {
 

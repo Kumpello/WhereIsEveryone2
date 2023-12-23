@@ -44,7 +44,7 @@ fun SplashScreen(
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
 
-    LaunchedEffect(key1 = true) {
+    LaunchedEffect(Unit) {
         viewModel.trigger(SplashViewModel.Command.AnimateLogo)
         delay(2000)
         viewModel.trigger(SplashViewModel.Command.NavigateToNextDestination)
