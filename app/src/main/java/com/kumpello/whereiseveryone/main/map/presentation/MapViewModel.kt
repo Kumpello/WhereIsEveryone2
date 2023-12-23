@@ -6,7 +6,7 @@ import com.kumpello.whereiseveryone.common.entities.ScreenState
 import com.kumpello.whereiseveryone.authentication.login.presentation.LoginViewModel
 import com.kumpello.whereiseveryone.main.map.data.model.PositionsResponse
 import com.kumpello.whereiseveryone.main.map.data.model.UserPosition
-import com.kumpello.whereiseveryone.main.map.domain.repository.LocationService
+import com.kumpello.whereiseveryone.main.LocationService
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow

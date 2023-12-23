@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class SplashViewModel(
-    val getKeyUseCase: GetKeyUseCase
+    private val getKeyUseCase: GetKeyUseCase
 ) : ViewModel() {
     private var _state = MutableStateFlow(State())
     val state: StateFlow<ViewState> = _state.map { state ->
