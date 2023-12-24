@@ -6,7 +6,7 @@ import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.tween
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
+import com.kumpello.whereiseveryone.common.domain.ucecase.GetCurrentAuthKeyUseCase
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class SplashViewModel(
-    private val getKeyUseCase: GetKeyUseCase
+    private val getCurrentAuthKeyUseCase: GetCurrentAuthKeyUseCase
 ) : ViewModel() {
     private var _state = MutableStateFlow(State())
     val state: StateFlow<ViewState> = _state.map { state ->
@@ -46,8 +46,8 @@ class SplashViewModel(
     }
 
     private fun isUserLogged() : Boolean {
-        //TODO: This needs to be done some other way, and check if token is valid is needed
-        return getKeyUseCase.getAuthToken().isNullOrEmpty().not()
+        //TODO: This needs to be done some other way
+        return getCurrentAuthKeyUseCase.execute().isEmpty().not()
     }
 
     private fun navigateToNextDestination() {

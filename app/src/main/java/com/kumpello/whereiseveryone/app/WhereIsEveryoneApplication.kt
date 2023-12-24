@@ -15,6 +15,7 @@ class WhereIsEveryoneApplication : Application() {
         startKoin{
             androidLogger()
             androidContext(this@WhereIsEveryoneApplication)
+            //androidFileProperties()
             modules(listOf(appModule, networkModule))
         }
     }

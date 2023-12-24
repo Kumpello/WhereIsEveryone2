@@ -104,7 +104,7 @@ fun AppLogo(modifier: Modifier = Modifier) {
 @Preview(showBackground = true)
 @Composable
 fun SplashScreenPreview() {
-    val scale by remember { mutableStateOf(Animatable(0f)) }
+    val scale by remember { mutableStateOf(Animatable(0.7f)) }
 
     WhereIsEveryoneTheme {
         SplashScreen(
