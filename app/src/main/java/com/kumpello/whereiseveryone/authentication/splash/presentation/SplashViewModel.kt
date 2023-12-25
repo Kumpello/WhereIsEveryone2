@@ -1,9 +1,7 @@
 package com.kumpello.whereiseveryone.authentication.splash.presentation
 
-import android.view.animation.OvershootInterpolator
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
-import androidx.compose.animation.core.tween
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kumpello.whereiseveryone.common.domain.ucecase.GetCurrentAuthKeyUseCase
@@ -32,22 +30,9 @@ class SplashViewModel(
     private val _action = MutableSharedFlow<Action>()
     val action: SharedFlow<Action> = _action.asSharedFlow()
 
-    private fun animateLogo() {
-        viewModelScope.launch {
-            _state.value.scale.animateTo(
-                targetValue = 0.9f,
-                animationSpec = tween(
-                    durationMillis = 800,
-                    easing = {
-                        OvershootInterpolator(2f).getInterpolation(it)
-                    })
-            )
-        }
-    }
-
     private fun isUserLogged() : Boolean {
         //TODO: This needs to be done some other way
-        return getCurrentAuthKeyUseCase.execute().isEmpty().not()
+        return getCurrentAuthKeyUseCase.execute().isNullOrEmpty().not()
     }
 
     private fun navigateToNextDestination() {
@@ -62,7 +47,6 @@ class SplashViewModel(
 
     fun trigger(command: Command) {
         when (command) {
-            Command.AnimateLogo -> animateLogo()
             Command.NavigateToNextDestination -> navigateToNextDestination()
         }
     }
@@ -80,7 +64,6 @@ class SplashViewModel(
     }
 
     sealed class Command {
-        data object AnimateLogo : Command()
         data object NavigateToNextDestination : Command()
     }
 

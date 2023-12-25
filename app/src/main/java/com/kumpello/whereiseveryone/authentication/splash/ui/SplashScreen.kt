@@ -1,10 +1,14 @@
 package com.kumpello.whereiseveryone.authentication.splash.ui
 
 import android.content.Intent
+import android.view.animation.OvershootInterpolator
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -22,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -45,9 +50,12 @@ fun SplashScreen(
     val state by viewModel.state.collectAsState()
 
     LaunchedEffect(Unit) {
-        viewModel.trigger(SplashViewModel.Command.AnimateLogo)
+        animateLogo(state)
         delay(2000)
         viewModel.trigger(SplashViewModel.Command.NavigateToNextDestination)
+    }
+
+    LaunchedEffect(viewModel.action) {
         viewModel.action.collect { action ->
             when (action) {
                 SplashViewModel.Action.NavigateMain -> context.startActivity(Intent(context, MainActivity::class.java))
@@ -57,35 +65,39 @@ fun SplashScreen(
     }
 
     SplashScreen(
-        viewState = state,
-        trigger = viewModel::trigger
+        viewState = state
     )
 }
 
 @Composable
 fun SplashScreen(
     viewState: SplashViewModel.ViewState,
-    trigger: (SplashViewModel.Command) -> Unit,
 ) {
-    Surface(
-        modifier = Modifier
-            .padding(15.dp)
-            .size(330.dp)
-            .scale(viewState.scale.value),
-        shape = CircleShape,
-        border = BorderStroke(width = 2.dp, color = Color.LightGray)
+    Column(
+        modifier = Modifier.padding(vertical = 100.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Column(
-            modifier = Modifier.padding(1.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+        Surface(
+            modifier = Modifier
+                .padding(15.dp)
+                .size(330.dp)
+                .scale(viewState.scale.value),
+            shape = CircleShape,
+            border = BorderStroke(width = 2.dp, color = Color.LightGray)
         ) {
-            AppLogo()
-            Text(
-                text = "Find your friends!",
-                style = MaterialTheme.typography.headlineLarge,
-                color = Color.LightGray
-            )
+            Column(
+                modifier = Modifier.padding(10.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                AppLogo()
+                Text(
+                    text = "Find your friends!",
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = Color.LightGray
+                )
+            }
         }
     }
 }
@@ -97,7 +109,20 @@ fun AppLogo(modifier: Modifier = Modifier) {
         modifier.padding(bottom = 16.dp),
         style = MaterialTheme.typography.headlineMedium,
         color = Color.Red.copy(0.5f),
+        textAlign = TextAlign.Center,
         fontSize = 40.sp
+    )
+}
+
+private suspend fun animateLogo(state: SplashViewModel.ViewState) {
+    //TODO: This needs to be changed, maybe scale should be moved here?
+    state.scale.animateTo(
+        targetValue = 0.9f,
+        animationSpec = tween(
+            durationMillis = 1200,
+            easing = {
+                OvershootInterpolator(2f).getInterpolation(it)
+            })
     )
 }
 
@@ -107,10 +132,36 @@ fun SplashScreenPreview() {
     val scale by remember { mutableStateOf(Animatable(0.7f)) }
 
     WhereIsEveryoneTheme {
-        SplashScreen(
-            viewState = SplashViewModel.ViewState(
-                scale = scale
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+            SplashScreen(
+                viewState = SplashViewModel.ViewState(
+                    scale = scale
+                )
             )
-        ) {}
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SplashScreenPreviewDark() {
+    val scale by remember { mutableStateOf(Animatable(0.7f)) }
+
+    WhereIsEveryoneTheme(true) {
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+            SplashScreen(
+                viewState = SplashViewModel.ViewState(
+                    scale = scale
+                )
+            )
+        }
     }
 }

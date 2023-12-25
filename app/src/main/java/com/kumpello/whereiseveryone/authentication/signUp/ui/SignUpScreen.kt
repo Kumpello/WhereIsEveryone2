@@ -2,10 +2,12 @@ package com.kumpello.whereiseveryone.authentication.signUp.ui
 
 import android.content.Intent
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -14,6 +16,7 @@ import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -51,7 +54,7 @@ fun SignUpScreen(
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(viewModel.action) {
         viewModel.action.collect { action ->
             when (action) {
                 is SignUpViewModel.Action.MakeToast -> Toast.makeText(context, action.string, Toast.LENGTH_SHORT).show()
@@ -137,12 +140,38 @@ fun SignUpScreen(
 @Composable
 fun SignUpPreview() {
     WhereIsEveryoneTheme {
-        SignUpScreen(
-            SignUpViewModel.ViewState(
-                screenState = ScreenState.Success,
-                username = "Janusz",
-                password = "dupadupadupa"
-            )
-        ) {}
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+            SignUpScreen(
+                SignUpViewModel.ViewState(
+                    screenState = ScreenState.Success,
+                    username = "Janusz",
+                    password = "dupadupadupa"
+                )
+            ) {}
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SignUpPreviewDark() {
+    WhereIsEveryoneTheme(true) {
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+            SignUpScreen(
+                SignUpViewModel.ViewState(
+                    screenState = ScreenState.Success,
+                    username = "Janusz",
+                    password = "dupadupadupa"
+                )
+            ) {}
+        }
     }
 }

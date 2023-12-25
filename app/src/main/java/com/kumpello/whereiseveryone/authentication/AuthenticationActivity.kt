@@ -3,7 +3,12 @@ package com.kumpello.whereiseveryone.authentication
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -46,14 +51,20 @@ class AuthenticationActivity : ComponentActivity(), CoroutineScope by MainScope(
     @Composable
     private fun AuthenticationScreen() {
         WhereIsEveryoneTheme {
-            DestinationsNavHost(
-                navGraph = NavGraphs.authentication,
-                dependenciesContainerBuilder = {
-                    dependency(LoginScreenDestination) { loginViewModel }
-                    dependency(SignUpScreenDestination) { signUpViewModel }
-                    dependency(SplashScreenDestination) { splashViewModel }
-                }
-            )
+            Surface(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
+            ) {
+                DestinationsNavHost(
+                    navGraph = NavGraphs.authentication,
+                    dependenciesContainerBuilder = {
+                        dependency(LoginScreenDestination) { loginViewModel }
+                        dependency(SignUpScreenDestination) { signUpViewModel }
+                        dependency(SplashScreenDestination) { splashViewModel }
+                    }
+                )
+            }
         }
     }
 }

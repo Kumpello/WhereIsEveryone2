@@ -14,7 +14,7 @@ class GetFriendsPositionsUseCase(
         val friends = getKeyUseCase.getFriends()
             .map { Pair(it.nick, it.id) }.unzip()
         return locationRepository.getPositions(
-            token = getCurrentAuthKeyUseCase.execute(),
+            token = getCurrentAuthKeyUseCase.execute().toString(),
             users = friends.first,
             uuids = friends.second
         )

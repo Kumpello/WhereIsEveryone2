@@ -10,7 +10,7 @@ class SendPositionUseCase(
 ) {
     fun execute(longitude: Double, latitude: Double): LocationResponse {
         return locationRepository.sendPosition(
-            token = getCurrentAuthKeyUseCase.execute(),
+            token = getCurrentAuthKeyUseCase.execute().toString(),
             longitude = longitude,
             latitude = latitude
         )

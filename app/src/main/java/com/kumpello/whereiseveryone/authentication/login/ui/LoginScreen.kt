@@ -2,10 +2,12 @@ package com.kumpello.whereiseveryone.authentication.login.ui
 
 import android.content.Intent
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -14,6 +16,7 @@ import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -33,9 +36,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kumpello.whereiseveryone.authentication.AuthenticationNavGraph
+import com.kumpello.whereiseveryone.authentication.login.presentation.LoginViewModel
 import com.kumpello.whereiseveryone.common.entities.ScreenState
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
-import com.kumpello.whereiseveryone.authentication.login.presentation.LoginViewModel
 import com.kumpello.whereiseveryone.destinations.SignUpScreenDestination
 import com.kumpello.whereiseveryone.main.MainActivity
 import com.ramcosta.composedestinations.annotation.Destination
@@ -51,7 +54,7 @@ fun LoginScreen(
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(viewModel.action) {
         viewModel.action.collect { action ->
             when (action) {
                 is LoginViewModel.Action.MakeToast -> Toast.makeText(context, action.string, Toast.LENGTH_SHORT).show()
@@ -78,7 +81,10 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
 
-        Text(text = "Login", style = TextStyle(fontSize = 40.sp, fontFamily = FontFamily.Default))
+        Text(
+            text = "Login",
+            style = TextStyle(fontSize = 40.sp, fontFamily = FontFamily.Default)
+        )
 
         Spacer(modifier = Modifier.height(20.dp))
         TextField(
@@ -135,12 +141,38 @@ fun LoginScreen(
 @Composable
 fun LoginPreview() {
     WhereIsEveryoneTheme {
-        LoginScreen(
-            LoginViewModel.ViewState(
-                screenState = ScreenState.Success,
-                username = "Janusz",
-                password = "dupadupadupa"
-            )
-        ) {}
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+            LoginScreen(
+                LoginViewModel.ViewState(
+                    screenState = ScreenState.Success,
+                    username = "Janusz",
+                    password = "dupadupadupa"
+                )
+            ) {}
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun LoginPreviewDark() {
+    WhereIsEveryoneTheme(true) {
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+            LoginScreen(
+                LoginViewModel.ViewState(
+                    screenState = ScreenState.Success,
+                    username = "Janusz",
+                    password = "dupadupadupa"
+                )
+            ) {}
+        }
     }
 }
