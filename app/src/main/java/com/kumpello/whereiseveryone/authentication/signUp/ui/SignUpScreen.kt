@@ -11,14 +11,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -29,15 +25,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kumpello.whereiseveryone.authentication.AuthenticationNavGraph
+import com.kumpello.whereiseveryone.authentication.common.ui.entity.TextField
 import com.kumpello.whereiseveryone.authentication.signUp.presentation.SignUpViewModel
 import com.kumpello.whereiseveryone.common.entities.ScreenState
+import com.kumpello.whereiseveryone.common.ui.entities.Logo
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.destinations.LoginScreenDestination
 import com.kumpello.whereiseveryone.main.MainActivity
@@ -57,8 +53,16 @@ fun SignUpScreen(
     LaunchedEffect(viewModel.action) {
         viewModel.action.collect { action ->
             when (action) {
-                is SignUpViewModel.Action.MakeToast -> Toast.makeText(context, action.string, Toast.LENGTH_SHORT).show()
-                SignUpViewModel.Action.NavigateMain -> context.startActivity(Intent(context, MainActivity::class.java))
+                is SignUpViewModel.Action.MakeToast -> Toast.makeText(context, action.string, Toast.LENGTH_SHORT)
+                    .show()
+
+                SignUpViewModel.Action.NavigateMain -> context.startActivity(
+                    Intent(
+                        context,
+                        MainActivity::class.java
+                    )
+                )
+
                 SignUpViewModel.Action.NavigateLogin -> navigator.navigate(LoginScreenDestination)
             }
         }
@@ -75,63 +79,77 @@ fun SignUpScreen(
     viewState: SignUpViewModel.ViewState,
     trigger: (SignUpViewModel.Command) -> Unit,
 ) {
-    Column(
-        modifier = Modifier.padding(20.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
+    Box(
+        modifier = Modifier
+            .fillMaxSize(),
     ) {
+        Logo.Text(
+            modifier = Modifier
+                .padding(top = 30.dp)
+                .align(Alignment.TopCenter),
+            size = 35
+        )
+        Column(
+            modifier = Modifier
+                .padding(20.dp)
+                .align(Alignment.Center),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
 
-        Text(text = "Sign up", style = TextStyle(fontSize = 40.sp, fontFamily = FontFamily.Default))
+            Text(text = "Sign up", style = TextStyle(fontSize = 40.sp, fontFamily = FontFamily.Default))
 
-        Spacer(modifier = Modifier.height(20.dp))
-        TextField(
-            label = { Text(text = "Username") },
-            value = viewState.username,
-            onValueChange = { username ->
-                trigger(SignUpViewModel.Command.SetUsername(username))
-            })
+            Spacer(modifier = Modifier.height(20.dp))
 
-        Spacer(modifier = Modifier.height(20.dp))
-        TextField(
-            label = { Text(text = "Password") },
-            value = viewState.password,
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            onValueChange = { password ->
-                trigger(SignUpViewModel.Command.SetPassword(password))
-            })
-
-        Spacer(modifier = Modifier.height(20.dp))
-        Box(modifier = Modifier.padding(40.dp, 0.dp, 40.dp, 0.dp)) {
-            Button(
-                onClick = {
-                    trigger(SignUpViewModel.Command.SignUp)
-                },
-                shape = RoundedCornerShape(50.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
-            ) {
-                Text(text = "Sign up")
-            }
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Box(modifier = Modifier.align(Alignment.CenterHorizontally)) {
-            ClickableText(
-                text = AnnotatedString("Login here"),
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(20.dp),
-                onClick = { trigger(SignUpViewModel.Command.NavigateLogin) },
-                style = TextStyle(
-                    fontSize = 14.sp,
-                    fontFamily = FontFamily.Default,
-                    textDecoration = TextDecoration.Underline,
-                    color = MaterialTheme.colorScheme.primary
-                )
+            TextField.Regular(
+                label = "Username",
+                value = viewState.username,
+                onValueChange = { value ->
+                    trigger(SignUpViewModel.Command.SetUsername(value))
+                }
             )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            TextField.Password(
+                label = "Password",
+                value = viewState.password,
+                onValueChange = { password ->
+                    trigger(SignUpViewModel.Command.SetPassword(password))
+                }
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Box(
+                modifier = Modifier
+                    .height(50.dp)
+                    .fillMaxWidth()
+                    .padding(40.dp, 0.dp, 40.dp, 0.dp)
+            ) {
+                com.kumpello.whereiseveryone.common.ui.entities.Button.Animated(
+                    text = "Sign up",
+                    onClick = { trigger(SignUpViewModel.Command.SignUp) }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Box(modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                ClickableText(
+                    text = AnnotatedString("Login here"),
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(20.dp),
+                    onClick = { trigger(SignUpViewModel.Command.NavigateLogin) },
+                    style = TextStyle(
+                        fontSize = 14.sp,
+                        fontFamily = FontFamily.Default,
+                        textDecoration = TextDecoration.Underline,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                )
+            }
         }
     }
 }

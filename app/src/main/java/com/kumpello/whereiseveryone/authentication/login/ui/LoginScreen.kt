@@ -11,14 +11,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -29,15 +25,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kumpello.whereiseveryone.authentication.AuthenticationNavGraph
+import com.kumpello.whereiseveryone.authentication.common.ui.entity.TextField
 import com.kumpello.whereiseveryone.authentication.login.presentation.LoginViewModel
 import com.kumpello.whereiseveryone.common.entities.ScreenState
+import com.kumpello.whereiseveryone.common.ui.entities.Button
+import com.kumpello.whereiseveryone.common.ui.entities.Logo
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.destinations.SignUpScreenDestination
 import com.kumpello.whereiseveryone.main.MainActivity
@@ -57,7 +54,9 @@ fun LoginScreen(
     LaunchedEffect(viewModel.action) {
         viewModel.action.collect { action ->
             when (action) {
-                is LoginViewModel.Action.MakeToast -> Toast.makeText(context, action.string, Toast.LENGTH_SHORT).show()
+                is LoginViewModel.Action.MakeToast -> Toast.makeText(context, action.string, Toast.LENGTH_SHORT)
+                    .show()
+
                 LoginViewModel.Action.NavigateMain -> context.startActivity(Intent(context, MainActivity::class.java))
                 LoginViewModel.Action.NavigateSignUp -> navigator.navigate(SignUpScreenDestination)
             }
@@ -75,64 +74,83 @@ fun LoginScreen(
     viewState: LoginViewModel.ViewState,
     trigger: (LoginViewModel.Command) -> Unit,
 ) {
-    Column(
-        modifier = Modifier.padding(20.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
+    Box(
+        modifier = Modifier
+            .fillMaxSize(),
     ) {
-
-        Text(
-            text = "Login",
-            style = TextStyle(fontSize = 40.sp, fontFamily = FontFamily.Default)
+        Logo.Text(
+            modifier = Modifier
+                .padding(top = 30.dp)
+                .align(Alignment.TopCenter),
+            size = 35
         )
+        Column(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .padding(15.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
 
-        Spacer(modifier = Modifier.height(20.dp))
-        TextField(
-            label = { Text(text = "Username") },
-            value = viewState.username,
-            onValueChange = { username ->
-                trigger(LoginViewModel.Command.SetUsername(username))
-            })
-
-        Spacer(modifier = Modifier.height(20.dp))
-        TextField(
-            label = { Text(text = "Password") },
-            value = viewState.password,
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            onValueChange = { password ->
-                trigger(LoginViewModel.Command.SetPassword(password))
-            })
-
-        Spacer(modifier = Modifier.height(20.dp))
-        Box(modifier = Modifier.padding(40.dp, 0.dp, 40.dp, 0.dp)) {
-            Button(
-                onClick = { trigger(LoginViewModel.Command.Login) },
-                shape = RoundedCornerShape(50.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
-            ) {
-                Text(text = "Login")
-            }
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Box(modifier = Modifier.align(Alignment.CenterHorizontally)) {
-            ClickableText(
-                text = AnnotatedString("Sign up here"),
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(20.dp),
-                onClick = { trigger(LoginViewModel.Command.NavigateSignUp) },
+            Text(
+                text = "Login",
                 style = TextStyle(
-                    fontSize = 14.sp,
-                    fontFamily = FontFamily.Default,
-                    textDecoration = TextDecoration.Underline,
-                    color = MaterialTheme.colorScheme.primary
+                    fontSize = 40.sp,
+                    fontFamily = FontFamily.Default
                 )
             )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            TextField.Regular(
+                label = "Username",
+                value = viewState.username,
+                onValueChange = { value ->
+                    trigger(LoginViewModel.Command.SetUsername(value))
+                }
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            TextField.Password(
+                label = "Password",
+                value = viewState.password,
+                onValueChange = { value ->
+                    trigger(LoginViewModel.Command.SetPassword(value))
+                }
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Box(
+                modifier = Modifier
+                    .height(50.dp)
+                    .fillMaxWidth()
+                    .padding(40.dp, 0.dp, 40.dp, 0.dp)
+            ) {
+                Button.Animated(
+                    text = "Login",
+                    onClick = { trigger(LoginViewModel.Command.Login) }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Box(modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                ClickableText(
+                    text = AnnotatedString("Sign up here"),
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(20.dp),
+                    onClick = { trigger(LoginViewModel.Command.NavigateSignUp) },
+                    style = TextStyle(
+                        fontSize = 14.sp,
+                        fontFamily = FontFamily.Default,
+                        textDecoration = TextDecoration.Underline,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                )
+            }
         }
     }
 }
