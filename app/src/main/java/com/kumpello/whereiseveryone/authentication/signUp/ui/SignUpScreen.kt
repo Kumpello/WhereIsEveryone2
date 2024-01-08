@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.ClickableText
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -22,10 +22,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -33,6 +31,7 @@ import com.kumpello.whereiseveryone.authentication.AuthenticationNavGraph
 import com.kumpello.whereiseveryone.authentication.common.ui.entity.TextField
 import com.kumpello.whereiseveryone.authentication.signUp.presentation.SignUpViewModel
 import com.kumpello.whereiseveryone.common.entities.ScreenState
+import com.kumpello.whereiseveryone.common.ui.entities.Button
 import com.kumpello.whereiseveryone.common.ui.entities.Logo
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.destinations.LoginScreenDestination
@@ -127,7 +126,7 @@ fun SignUpScreen(
                     .fillMaxWidth()
                     .padding(40.dp, 0.dp, 40.dp, 0.dp)
             ) {
-                com.kumpello.whereiseveryone.common.ui.entities.Button.Animated(
+                Button.Animated(
                     text = "Sign up",
                     onClick = { trigger(SignUpViewModel.Command.SignUp) }
                 )
@@ -135,20 +134,18 @@ fun SignUpScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            Box(modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                ClickableText(
-                    text = AnnotatedString("Login here"),
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(20.dp),
-                    onClick = { trigger(SignUpViewModel.Command.NavigateLogin) },
-                    style = TextStyle(
-                        fontSize = 14.sp,
-                        fontFamily = FontFamily.Default,
-                        textDecoration = TextDecoration.Underline,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                )
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .height(40.dp)
+                    .width(150.dp)
+            ) {
+                Button.Animated(
+                    text = "Login here",
+                    fontSize = 15
+                ) {
+                    trigger(SignUpViewModel.Command.NavigateLogin)
+                }
             }
         }
     }

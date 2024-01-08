@@ -21,6 +21,7 @@ object Button {
     fun Animated(
         modifier: Modifier = Modifier,
         text: String,
+        fontSize: Int = 25,
         onClick: () -> Unit
     ) {
         val interactionSource = remember { MutableInteractionSource() }
@@ -34,14 +35,13 @@ object Button {
                         else -> 1f
                     }
                 )
-                //.height(50.dp)
                 .animateContentSize(),
             onClick = onClick,
             interactionSource = interactionSource,
             shape = RoundedCornerShape(15.dp),
         ) {
             Text(
-                fontSize = 25.sp,
+                fontSize = fontSize.sp,
                 text = text
             )
         }
