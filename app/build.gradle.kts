@@ -89,6 +89,8 @@ dependencies {
     //implementation(libs.koin.ksp)
     implementation(libs.play.services.location)
     implementation(libs.androidx.security.crypto)
+    implementation(libs.mapbox)
+    implementation(libs.mapbox.compose)
 
     ksp(libs.moshi.kotlin.codegen)
     ksp(libs.compose.destinations.ksp)

@@ -13,11 +13,12 @@ compose-destinations = "1.9.54"
 test-junit = "4.13.2"
 android-test-junit = "1.1.5"
 espresso = "3.5.1"
-android-gradle = "8.2.0"
+android-gradle = "8.2.1"
 kotlin-android = "1.9.20"
 ksp = "1.9.20-1.0.14"
 play-services-location = "21.0.1"
 koin = "3.5.0"
+mapbox = "11.0.0"
 
 [libraries]
 androidx-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "ktx" }
@@ -42,6 +43,8 @@ koin = { group = "io.insert-koin", name = "koin-android", version.ref = "koin" }
 koin-compose = { group = "io.insert-koin", name = "koin-androidx-compose", version.ref = "koin" }
 koin-annotations = { group = "io.insert-koin", name = "koin-annotations", version.ref = "koin" }
 koin-ksp = { group = "io.insert-koin", name = "koin-ksp-compiler", version.ref = "koin" }
+mapbox = { group = "com.mapbox.maps", name = "android", version.ref = "mapbox" }
+mapbox-compose = { group = "com.mapbox.extension", name = "maps-compose", version.ref = "mapbox" }
 
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "play-services-location" }
 androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version = "1.0.0" }
