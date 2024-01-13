@@ -1,5 +1,6 @@
 package com.kumpello.whereiseveryone.main.map.ui
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -36,13 +37,14 @@ fun MapScreen(
     viewState: MapViewModel.ViewState,
     trigger: (MapViewModel.Command) -> Unit,
 ) {
-
-
+    Box {
+        Map()
+    }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun MapPreview() {
+fun MapScreenPreview() {
     WhereIsEveryoneTheme {
         MapScreen(
             MapViewModel.ViewState(
