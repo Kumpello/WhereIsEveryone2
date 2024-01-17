@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -22,17 +21,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.kumpello.whereiseveryone.authentication.AuthenticationNavGraph
 import com.kumpello.whereiseveryone.authentication.common.ui.entity.TextField
 import com.kumpello.whereiseveryone.authentication.signUp.presentation.SignUpViewModel
 import com.kumpello.whereiseveryone.common.entities.ScreenState
-import com.kumpello.whereiseveryone.common.ui.entities.Button
-import com.kumpello.whereiseveryone.common.ui.entities.Logo
+import com.kumpello.whereiseveryone.common.ui.entity.Button
+import com.kumpello.whereiseveryone.common.ui.entity.Logo
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.destinations.LoginScreenDestination
 import com.kumpello.whereiseveryone.main.MainActivity
@@ -52,7 +48,11 @@ fun SignUpScreen(
     LaunchedEffect(viewModel.action) {
         viewModel.action.collect { action ->
             when (action) {
-                is SignUpViewModel.Action.MakeToast -> Toast.makeText(context, action.string, Toast.LENGTH_SHORT)
+                is SignUpViewModel.Action.MakeToast -> Toast.makeText(
+                    context,
+                    action.string,
+                    Toast.LENGTH_SHORT
+                )
                     .show()
 
                 SignUpViewModel.Action.NavigateMain -> context.startActivity(
@@ -96,7 +96,10 @@ fun SignUpScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
 
-            Text(text = "Sign up", style = TextStyle(fontSize = 40.sp, fontFamily = FontFamily.Default))
+            Text(
+                text = "Sign up",
+                style = MaterialTheme.typography.headlineLarge
+            )
 
             Spacer(modifier = Modifier.height(20.dp))
 
@@ -134,7 +137,6 @@ fun SignUpScreen(
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally),
                 text = "Login here",
-                fontSize = 15,
             ) { trigger(SignUpViewModel.Command.NavigateLogin) }
         }
     }
