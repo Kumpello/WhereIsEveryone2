@@ -1,4 +1,4 @@
-package com.kumpello.whereiseveryone.common.entities
+package com.kumpello.whereiseveryone.common.entity
 
 sealed class ScreenState {
     data object Loading : ScreenState()

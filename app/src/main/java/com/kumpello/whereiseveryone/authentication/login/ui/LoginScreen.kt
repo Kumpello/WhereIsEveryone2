@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.dp
 import com.kumpello.whereiseveryone.authentication.AuthenticationNavGraph
 import com.kumpello.whereiseveryone.authentication.common.ui.entity.TextField
 import com.kumpello.whereiseveryone.authentication.login.presentation.LoginViewModel
-import com.kumpello.whereiseveryone.common.entities.ScreenState
+import com.kumpello.whereiseveryone.common.entity.ScreenState
 import com.kumpello.whereiseveryone.common.ui.entity.Button
 import com.kumpello.whereiseveryone.common.ui.entity.Logo
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
@@ -118,6 +118,7 @@ fun LoginScreen(
                     .fillMaxWidth()
                     .padding(40.dp, 0.dp, 40.dp, 0.dp),
                 text = "Login",
+                textSize = 26,
                 height = 50,
             ) { trigger(LoginViewModel.Command.Login) }
 
@@ -126,7 +127,7 @@ fun LoginScreen(
             Button.Animated(
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally),
-                text = "Login here",
+                text = "Sign up here",
             ) { trigger(LoginViewModel.Command.NavigateSignUp) }
         }
     }

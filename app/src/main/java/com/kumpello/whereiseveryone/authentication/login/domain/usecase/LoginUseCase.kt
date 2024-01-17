@@ -2,8 +2,8 @@ package com.kumpello.whereiseveryone.authentication.login.domain.usecase
 
 import com.kumpello.whereiseveryone.common.domain.repository.AuthenticationRepository
 import com.kumpello.whereiseveryone.common.domain.ucecase.SaveKeyUseCase
-import com.kumpello.whereiseveryone.common.entities.AuthResponseWithParams
-import com.kumpello.whereiseveryone.common.entities.Response
+import com.kumpello.whereiseveryone.common.entity.AuthResponseWithParams
+import com.kumpello.whereiseveryone.common.entity.Response
 import com.kumpello.whereiseveryone.common.model.AuthResponse
 
 class LoginUseCase(

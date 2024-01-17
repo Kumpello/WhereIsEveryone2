@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.dp
 import com.kumpello.whereiseveryone.authentication.AuthenticationNavGraph
 import com.kumpello.whereiseveryone.authentication.common.ui.entity.TextField
 import com.kumpello.whereiseveryone.authentication.signUp.presentation.SignUpViewModel
-import com.kumpello.whereiseveryone.common.entities.ScreenState
+import com.kumpello.whereiseveryone.common.entity.ScreenState
 import com.kumpello.whereiseveryone.common.ui.entity.Button
 import com.kumpello.whereiseveryone.common.ui.entity.Logo
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
@@ -128,6 +128,7 @@ fun SignUpScreen(
                     .fillMaxWidth()
                     .padding(40.dp, 0.dp, 40.dp, 0.dp),
                 text = "Sign up",
+                textSize = 26,
                 height = 50,
             ) { trigger(SignUpViewModel.Command.SignUp) }
 

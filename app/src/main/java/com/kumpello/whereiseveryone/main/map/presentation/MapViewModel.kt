@@ -2,7 +2,7 @@ package com.kumpello.whereiseveryone.main.map.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.kumpello.whereiseveryone.common.entities.ScreenState
+import com.kumpello.whereiseveryone.common.entity.ScreenState
 import com.kumpello.whereiseveryone.authentication.login.presentation.LoginViewModel
 import com.kumpello.whereiseveryone.main.map.data.model.PositionsResponse
 import com.kumpello.whereiseveryone.main.map.data.model.UserPosition

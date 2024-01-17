@@ -2,7 +2,7 @@ package com.kumpello.whereiseveryone.main.settings.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.kumpello.whereiseveryone.common.entities.ScreenState
+import com.kumpello.whereiseveryone.common.entity.ScreenState
 import com.kumpello.whereiseveryone.authentication.login.presentation.LoginViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow

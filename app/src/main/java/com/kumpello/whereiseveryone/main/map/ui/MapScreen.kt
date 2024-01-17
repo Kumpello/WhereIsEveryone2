@@ -6,7 +6,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.tooling.preview.Preview
-import com.kumpello.whereiseveryone.common.entities.ScreenState
+import com.kumpello.whereiseveryone.common.entity.ScreenState
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.MainNavGraph
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel

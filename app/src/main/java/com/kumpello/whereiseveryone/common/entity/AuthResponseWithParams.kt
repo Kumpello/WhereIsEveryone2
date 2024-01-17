@@ -1,4 +1,4 @@
-package com.kumpello.whereiseveryone.common.entities
+package com.kumpello.whereiseveryone.common.entity
 
 import com.kumpello.whereiseveryone.common.model.AuthResponse
 
