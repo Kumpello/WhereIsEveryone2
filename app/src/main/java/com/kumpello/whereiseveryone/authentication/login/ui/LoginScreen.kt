@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.sp
 import com.kumpello.whereiseveryone.authentication.AuthenticationNavGraph
 import com.kumpello.whereiseveryone.authentication.common.ui.entity.TextField
 import com.kumpello.whereiseveryone.authentication.login.presentation.LoginViewModel
+import com.kumpello.whereiseveryone.authentication.signUp.presentation.SignUpViewModel
 import com.kumpello.whereiseveryone.common.entities.ScreenState
 import com.kumpello.whereiseveryone.common.ui.entities.Button
 import com.kumpello.whereiseveryone.common.ui.entities.Logo
@@ -120,33 +121,22 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            Box(
+            Button.Animated(
                 modifier = Modifier
-                    .height(50.dp)
                     .fillMaxWidth()
-                    .padding(40.dp, 0.dp, 40.dp, 0.dp)
-            ) {
-                Button.Animated(
-                    text = "Login",
-                    onClick = { trigger(LoginViewModel.Command.Login) }
-                )
-            }
+                    .padding(40.dp, 0.dp, 40.dp, 0.dp),
+                text = "Login",
+                height = 50,
+            ) { trigger(LoginViewModel.Command.Login) }
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            Box(
+            Button.Animated(
                 modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .height(40.dp)
-                    .width(150.dp)
-            ) {
-                Button.Animated(
-                    text = "Sign up here",
-                    fontSize = 15
-                ) {
-                    trigger(LoginViewModel.Command.NavigateSignUp)
-                }
-            }
+                    .align(Alignment.CenterHorizontally),
+                text = "Sign up here",
+                fontSize = 15,
+            ) { trigger(LoginViewModel.Command.NavigateSignUp) }
         }
     }
 }

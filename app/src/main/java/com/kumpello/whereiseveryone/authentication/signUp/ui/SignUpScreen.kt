@@ -120,33 +120,22 @@ fun SignUpScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            Box(
+            Button.Animated(
                 modifier = Modifier
-                    .height(50.dp)
                     .fillMaxWidth()
-                    .padding(40.dp, 0.dp, 40.dp, 0.dp)
-            ) {
-                Button.Animated(
-                    text = "Sign up",
-                    onClick = { trigger(SignUpViewModel.Command.SignUp) }
-                )
-            }
+                    .padding(40.dp, 0.dp, 40.dp, 0.dp),
+                text = "Sign up",
+                height = 50,
+            ) { trigger(SignUpViewModel.Command.SignUp) }
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            Box(
+            Button.Animated(
                 modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .height(40.dp)
-                    .width(150.dp)
-            ) {
-                Button.Animated(
-                    text = "Login here",
-                    fontSize = 15
-                ) {
-                    trigger(SignUpViewModel.Command.NavigateLogin)
-                }
-            }
+                    .align(Alignment.CenterHorizontally),
+                text = "Login here",
+                fontSize = 15,
+            ) { trigger(SignUpViewModel.Command.NavigateLogin) }
         }
     }
 }
