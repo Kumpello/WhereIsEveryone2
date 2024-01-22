@@ -1,6 +1,5 @@
 package com.kumpello.whereiseveryone.authentication.signUp.presentation
 
-import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kumpello.whereiseveryone.authentication.signUp.domain.model.PasswordValidationState
@@ -9,7 +8,6 @@ import com.kumpello.whereiseveryone.authentication.signUp.domain.usecase.Validat
 import com.kumpello.whereiseveryone.common.entity.Response
 import com.kumpello.whereiseveryone.common.entity.ScreenState
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -17,12 +15,10 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
-//TODO: add validation to username and password!
 //TODO: Password is saved in plaintext, some kind of encryption needs to be added!
 class SignUpViewModel(
     private val signUpUseCase: SignUpUseCase,
@@ -41,7 +37,7 @@ class SignUpViewModel(
     private val _action = MutableSharedFlow<Action>()
     val action: SharedFlow<Action> = _action.asSharedFlow()
 
-    private fun signUp() {
+    private fun onSignUpClick() {
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
                 val response = signUpUseCase.execute(
@@ -90,7 +86,7 @@ class SignUpViewModel(
 
     fun trigger(command: Command) {
         when (command) {
-            Command.OnSignUpClick -> signUp()
+            Command.OnSignUpClick -> onSignUpClick()
             Command.NavigateLogin -> navigateLogin()
             is Command.SetUsername -> setUsername(command.username)
             is Command.SetPassword -> setPassword(command.password)
@@ -102,7 +98,7 @@ class SignUpViewModel(
             screenState = screenState,
             username = username,
             password = password,
-            passwordError = validatePasswordUseCase(passwordValidationState)
+            passwordState = validatePasswordUseCase.execute(password)
         )
     }
 
@@ -130,6 +126,6 @@ class SignUpViewModel(
         val screenState: ScreenState,
         val username: String,
         val password: String,
-        val passwordError: String?,
+        val passwordState: PasswordValidationState,
     )
 }

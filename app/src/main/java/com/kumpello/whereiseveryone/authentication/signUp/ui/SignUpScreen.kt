@@ -25,6 +25,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kumpello.whereiseveryone.authentication.AuthenticationNavGraph
 import com.kumpello.whereiseveryone.authentication.common.ui.entity.TextField
+import com.kumpello.whereiseveryone.authentication.signUp.domain.model.PasswordValidationState
 import com.kumpello.whereiseveryone.authentication.signUp.presentation.SignUpViewModel
 import com.kumpello.whereiseveryone.common.entity.ScreenState
 import com.kumpello.whereiseveryone.common.ui.entity.Button
@@ -121,12 +122,36 @@ fun SignUpScreen(
                 }
             )
 
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Column(
+                verticalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
+                ConditionRow(
+                    condition = "Minimum 6 characters",
+                    checked = viewState.passwordState.hasMinimum
+                )
+                ConditionRow(
+                    condition = "Minimum 1 special character",
+                    checked = viewState.passwordState.hasSpecialCharacter
+                )
+                ConditionRow(
+                    condition = "Minimum 1 capitalized letter",
+                    checked = viewState.passwordState.hasCapitalizedLetter
+                )
+                ConditionRow(
+                    condition = "No whitespaces",
+                    checked = viewState.passwordState.noWhitespaces
+                )
+            }
+
             Spacer(modifier = Modifier.height(20.dp))
 
             Button.Animated(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(40.dp, 0.dp, 40.dp, 0.dp),
+                enabled = viewState.passwordState.successful,
                 text = "Sign up",
                 textSize = 26,
                 height = 50,
@@ -156,7 +181,8 @@ fun SignUpPreview() {
                 SignUpViewModel.ViewState(
                     screenState = ScreenState.Success,
                     username = "Janusz",
-                    password = "dupadupadupa"
+                    password = "dupadupadupa",
+                    passwordState = PasswordValidationState()
                 )
             ) {}
         }
@@ -176,7 +202,8 @@ fun SignUpPreviewDark() {
                 SignUpViewModel.ViewState(
                     screenState = ScreenState.Success,
                     username = "Janusz",
-                    password = "dupadupadupa"
+                    password = "dupadupadupa",
+                    passwordState = PasswordValidationState()
                 )
             ) {}
         }

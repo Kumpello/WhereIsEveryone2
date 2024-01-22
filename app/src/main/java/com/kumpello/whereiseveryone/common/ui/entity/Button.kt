@@ -21,6 +21,7 @@ object Button {
     @Composable
     fun Animated(
         modifier: Modifier = Modifier,
+        enabled: Boolean = true,
         text: String,
         textSize: Int = 16,
         height: Int = 40,
@@ -37,6 +38,7 @@ object Button {
                 modifier = Modifier
                     .fillMaxSize()
                     .bounceClick(),
+                enabled = enabled,
                 onClick = onClick,
                 shape = RoundedCornerShape(15.dp),
             ) {

@@ -63,7 +63,8 @@ compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
 compose-bom = ["compose-ui", "compose-ui-graphics", "compose-ui-tooling-preview", "compose-material3"]
 viewmodel = ["lifecycle-viewmodel-compose", "lifecycle-viewmodel-ktx"]
 runtime = ["lifecycle-runtime-ktx", "lifecycle-runtime-compose"]
-koin = ["koin", "koin-compose", "koin-annotations", "koin-ksp"]
+koin = ["koin", "koin-compose"]
+koin-plugins = ["koin-annotations", "koin-ksp"]
 retrofit = ["retrofit2", "retrofit2-converter-moshi"]
 moshi = ["moshi", "moshi-kotlin"]
 

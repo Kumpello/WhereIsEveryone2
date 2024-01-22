@@ -9,34 +9,41 @@ class ValidatePasswordUseCase {
         val hasSpecialCharacter = validateSpecialCharacter(password)
         val hasCapitalizedLetter = validateCapitalizedLetter(password)
         val hasMinimum = validateMinimum(password)
-        val notTooLong = validateMaximum(password)
+        val noWhitespaces = validateWhitespaces(password)
 
         val hasError = listOf(
             hasSpecialCharacter,
             hasCapitalizedLetter,
             hasMinimum,
-            notTooLong
+            noWhitespaces
         ).all { it }
 
         return PasswordValidationState(
             hasSpecialCharacter = hasSpecialCharacter,
             hasCapitalizedLetter = hasCapitalizedLetter,
             hasMinimum = hasMinimum,
-            notTooLong = notTooLong,
+            noWhitespaces = noWhitespaces,
             successful = hasError
         )
     }
+
     private fun validateSpecialCharacter(password: String): Boolean =
-        password.matches(Regex("[!@#\$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]"))
+        password.any { character ->
+            character.isLetterOrDigit().not() && character.isWhitespace().not()
+        }
+
+    private fun validateWhitespaces(password: String): Boolean =
+        password.any { character ->
+            character.isWhitespace().not()
+        }
 
     private fun validateCapitalizedLetter(password: String): Boolean =
-        password.matches(Regex(".*[A-Z].*"))
+        password.any { character ->
+            character.isUpperCase()
+        }
 
     private fun validateMinimum(password: String): Boolean =
-        password.matches(Regex(".{$minPasswordLength,}"))
-
-    private fun validateMaximum(password: String): Boolean =
-        password.matches(Regex(".{,$maxPasswordLength}"))
+        password.length > minPasswordLength
 
     companion object {
         private const val minPasswordLength = 8

@@ -4,6 +4,6 @@ data class PasswordValidationState(
     val hasMinimum: Boolean = false,
     val hasCapitalizedLetter: Boolean = false,
     val hasSpecialCharacter: Boolean = false,
-    val notTooLong: Boolean = false,
+    val noWhitespaces: Boolean = false,
     val successful: Boolean = false
 )
