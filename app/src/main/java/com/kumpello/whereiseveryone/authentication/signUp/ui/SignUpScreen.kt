@@ -130,7 +130,7 @@ fun SignUpScreen(
                 text = "Sign up",
                 textSize = 26,
                 height = 50,
-            ) { trigger(SignUpViewModel.Command.SignUp) }
+            ) { trigger(SignUpViewModel.Command.OnSignUpClick) }
 
             Spacer(modifier = Modifier.height(20.dp))
 

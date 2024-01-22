@@ -1,5 +1,6 @@
 package com.kumpello.whereiseveryone.common.di
 
+import com.kumpello.whereiseveryone.authentication.signUp.domain.usecase.ValidatePasswordUseCase
 import com.kumpello.whereiseveryone.authentication.login.domain.usecase.LoginUseCase
 import com.kumpello.whereiseveryone.common.domain.ucecase.GetEncryptedPreferencesUseCase
 import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
@@ -17,10 +18,12 @@ import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
+//TODO Split into modules based on activity
 val appModule = module {
     single { SplashViewModel( get()) }
     single { LoginViewModel( get()) }
-    single { SignUpViewModel( get()) }
+    single { SignUpViewModel( get(), get()) }
+    single { ValidatePasswordUseCase() }
     single { MapViewModel( get() ) }
     single { SettingsViewModel() }
     single { FriendsViewModel() }

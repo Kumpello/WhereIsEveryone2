@@ -2,6 +2,7 @@ package com.kumpello.whereiseveryone.authentication.login.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kumpello.whereiseveryone.authentication.common.domain.usecase.TextValidator
 import com.kumpello.whereiseveryone.authentication.login.domain.usecase.LoginUseCase
 import com.kumpello.whereiseveryone.common.entity.Response
 import com.kumpello.whereiseveryone.common.entity.ScreenState
@@ -35,6 +36,14 @@ class LoginViewModel(
 
     private val _action = MutableSharedFlow<Action>()
     val action: SharedFlow<Action> = _action.asSharedFlow()
+
+    private fun onLoginClick() {
+        if (TextValidator.validateUsername(_state.value.username)) {
+            login()
+        } else {
+            _action.emit(Action.MakeToast(""))
+        }
+    }
 
     private fun login() {
         viewModelScope.launch(Dispatchers.IO) {
@@ -84,7 +93,7 @@ class LoginViewModel(
 
     fun trigger(command: Command) {
         when (command) {
-            Command.Login -> login()
+            Command.OnLoginClick -> onLoginClick()
             Command.NavigateSignUp -> navigateSignUp()
             is Command.SetUsername -> setUsername(command.username)
             is Command.SetPassword -> setPassword(command.password)
@@ -106,7 +115,7 @@ class LoginViewModel(
     }
 
     sealed class Command {
-        data object Login : Command()
+        data object OnLoginClick : Command()
         data class SetUsername(val username: String) : Command()
         data class SetPassword(val password: String) : Command()
         data object NavigateSignUp : Command()

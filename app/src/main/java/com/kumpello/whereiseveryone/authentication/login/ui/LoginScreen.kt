@@ -120,7 +120,7 @@ fun LoginScreen(
                 text = "Login",
                 textSize = 26,
                 height = 50,
-            ) { trigger(LoginViewModel.Command.Login) }
+            ) { trigger(LoginViewModel.Command.OnLoginClick) }
 
             Spacer(modifier = Modifier.height(20.dp))
 

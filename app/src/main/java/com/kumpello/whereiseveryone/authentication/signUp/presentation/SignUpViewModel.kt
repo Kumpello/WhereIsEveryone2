@@ -1,11 +1,15 @@
 package com.kumpello.whereiseveryone.authentication.signUp.presentation
 
+import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kumpello.whereiseveryone.authentication.signUp.domain.model.PasswordValidationState
 import com.kumpello.whereiseveryone.authentication.signUp.domain.usecase.SignUpUseCase
+import com.kumpello.whereiseveryone.authentication.signUp.domain.usecase.ValidatePasswordUseCase
 import com.kumpello.whereiseveryone.common.entity.Response
 import com.kumpello.whereiseveryone.common.entity.ScreenState
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -13,6 +17,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -20,7 +25,8 @@ import timber.log.Timber
 //TODO: add validation to username and password!
 //TODO: Password is saved in plaintext, some kind of encryption needs to be added!
 class SignUpViewModel(
-    private val signUpUseCase: SignUpUseCase
+    private val signUpUseCase: SignUpUseCase,
+    private val validatePasswordUseCase: ValidatePasswordUseCase
 ) : ViewModel() {
 
     private var _state = MutableStateFlow(State())
@@ -84,7 +90,7 @@ class SignUpViewModel(
 
     fun trigger(command: Command) {
         when (command) {
-            Command.SignUp -> signUp()
+            Command.OnSignUpClick -> signUp()
             Command.NavigateLogin -> navigateLogin()
             is Command.SetUsername -> setUsername(command.username)
             is Command.SetPassword -> setPassword(command.password)
@@ -95,7 +101,8 @@ class SignUpViewModel(
         return ViewState(
             screenState = screenState,
             username = username,
-            password = password
+            password = password,
+            passwordError = validatePasswordUseCase(passwordValidationState)
         )
     }
 
@@ -106,7 +113,7 @@ class SignUpViewModel(
     }
 
     sealed class Command {
-        data object SignUp : Command()
+        data object OnSignUpClick : Command()
         data class SetUsername(val username: String) : Command()
         data class SetPassword(val password: String) : Command()
         data object NavigateLogin : Command()
@@ -115,12 +122,14 @@ class SignUpViewModel(
     data class State(
         val screenState: ScreenState = ScreenState.Success,
         val username: String = "",
-        val password: String = ""
+        val password: String = "",
+        val passwordValidationState: PasswordValidationState = PasswordValidationState()
     )
 
     data class ViewState(
         val screenState: ScreenState,
         val username: String,
-        val password: String
+        val password: String,
+        val passwordError: String?,
     )
 }

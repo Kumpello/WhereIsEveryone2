@@ -49,7 +49,6 @@ object Button {
             }
         }
     }
-
 }
 
 @Preview(heightDp = 50)
