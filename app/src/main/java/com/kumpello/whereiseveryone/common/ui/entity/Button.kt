@@ -37,7 +37,12 @@ object Button {
             Button(
                 modifier = Modifier
                     .fillMaxSize()
-                    .bounceClick(),
+                    .bounceClick(
+                        when {
+                            enabled -> 0.7f
+                            else -> 0.9f
+                        }
+                    ),
                 enabled = enabled,
                 onClick = onClick,
                 shape = RoundedCornerShape(15.dp),
