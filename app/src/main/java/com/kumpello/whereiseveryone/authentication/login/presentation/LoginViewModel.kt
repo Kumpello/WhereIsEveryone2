@@ -2,6 +2,7 @@ package com.kumpello.whereiseveryone.authentication.login.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kumpello.whereiseveryone.authentication.common.domain.usecase.ValidateLoginInputUseCase
 import com.kumpello.whereiseveryone.authentication.login.domain.usecase.LoginUseCase
 import com.kumpello.whereiseveryone.common.entity.Response
 import com.kumpello.whereiseveryone.common.entity.ScreenState
@@ -17,9 +18,9 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
-//TODO: add validation to username and password!
 class LoginViewModel(
     private val loginUseCase: LoginUseCase,
+    private val validateLoginInputUseCase: ValidateLoginInputUseCase
 ) : ViewModel() {
 
     private var _state = MutableStateFlow(State())
@@ -76,7 +77,7 @@ class LoginViewModel(
 
     private fun setUsername(username: String) {
         _state.value = _state.value.copy(
-            username = username
+            username = validateLoginInputUseCase.execute(username)
         )
     }
 

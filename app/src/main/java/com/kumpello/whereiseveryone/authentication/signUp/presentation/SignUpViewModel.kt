@@ -2,6 +2,7 @@ package com.kumpello.whereiseveryone.authentication.signUp.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kumpello.whereiseveryone.authentication.common.domain.usecase.ValidateLoginInputUseCase
 import com.kumpello.whereiseveryone.authentication.signUp.domain.model.PasswordValidationState
 import com.kumpello.whereiseveryone.authentication.signUp.domain.usecase.SignUpUseCase
 import com.kumpello.whereiseveryone.authentication.signUp.domain.usecase.ValidatePasswordUseCase
@@ -22,7 +23,8 @@ import timber.log.Timber
 //TODO: Password is saved in plaintext, some kind of encryption needs to be added!
 class SignUpViewModel(
     private val signUpUseCase: SignUpUseCase,
-    private val validatePasswordUseCase: ValidatePasswordUseCase
+    private val validatePasswordUseCase: ValidatePasswordUseCase,
+    private val validateLoginInputUseCase: ValidateLoginInputUseCase
 ) : ViewModel() {
 
     private var _state = MutableStateFlow(State())
@@ -74,7 +76,7 @@ class SignUpViewModel(
 
     private fun setUsername(username: String) {
         _state.value = _state.value.copy(
-            username = username
+            username = validateLoginInputUseCase.execute(username)
         )
     }
 

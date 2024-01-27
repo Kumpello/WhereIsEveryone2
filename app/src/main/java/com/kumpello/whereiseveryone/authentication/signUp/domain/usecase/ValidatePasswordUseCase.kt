@@ -33,8 +33,8 @@ class ValidatePasswordUseCase {
         }
 
     private fun validateWhitespaces(password: String): Boolean =
-        password.any { character ->
-            character.isWhitespace().not()
+        password.none { character ->
+            character.isWhitespace()
         }
 
     private fun validateCapitalizedLetter(password: String): Boolean =
