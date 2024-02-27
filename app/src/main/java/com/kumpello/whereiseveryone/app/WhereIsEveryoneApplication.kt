@@ -1,16 +1,24 @@
 package com.kumpello.whereiseveryone.app
 
 import android.app.Application
+import com.kumpello.whereiseveryone.BuildConfig
 import com.kumpello.whereiseveryone.common.di.appModule
 import com.kumpello.whereiseveryone.common.domain.model.networkModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.GlobalContext.startKoin
+import timber.log.Timber
+import timber.log.Timber.Forest.plant
+
 
 class WhereIsEveryoneApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+
+        if (BuildConfig.DEBUG) {
+            plant(Timber.DebugTree())
+        }
 
         startKoin{
             androidLogger()
