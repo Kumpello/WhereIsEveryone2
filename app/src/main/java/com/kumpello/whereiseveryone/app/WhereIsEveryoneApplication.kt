@@ -4,6 +4,7 @@ import android.app.Application
 import com.kumpello.whereiseveryone.common.di.appModule
 import com.kumpello.whereiseveryone.common.domain.model.networkModule
 import org.koin.android.ext.koin.androidContext
+import org.koin.android.ext.koin.androidFileProperties
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.GlobalContext.startKoin
 
@@ -15,7 +16,6 @@ class WhereIsEveryoneApplication : Application() {
         startKoin{
             androidLogger()
             androidContext(this@WhereIsEveryoneApplication)
-            //androidFileProperties()
             modules(listOf(appModule, networkModule))
         }
     }

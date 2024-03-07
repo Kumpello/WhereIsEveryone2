@@ -33,7 +33,8 @@ class SignUpUseCase(
             authResponse = authenticationRepository.signUp(
                 username,
                 password
-            ))
+            )
+        )
     }
 
     private fun saveUserData(response: AuthResponseWithParams) : Response {

@@ -6,8 +6,8 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
 import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
 
-class GetEncryptedPreferencesUseCase constructor(
-    private val appContext: Context,
+class GetEncryptedPreferencesUseCase(
+    appContext: Context,
 ) {
 
     private val mainKey = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
