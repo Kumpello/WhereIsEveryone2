@@ -36,14 +36,9 @@ class MainActivity : ComponentActivity() {
     private val friendsViewModel: FriendsViewModel by inject()
     private val settingsViewModel: SettingsViewModel by inject()
 
-    private var isBackGroundPermissionGranted =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            checkPermission(ACCESS_BACKGROUND_LOCATION)
-        } else {
-            true
-        }
-    private var isFineLocationPermissionGranted = checkPermission(ACCESS_FINE_LOCATION)
-    private var isCoarseLocationPermissionGranted = checkPermission(ACCESS_COARSE_LOCATION)
+    private var isBackGroundPermissionGranted = false
+    private var isFineLocationPermissionGranted = false
+    private var isCoarseLocationPermissionGranted = false
     private var locationService: LocationService? = null
     private var isLocationServiceBound: Boolean = false
     private var positionsService: PositionsService? = null
@@ -52,13 +47,14 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        checkInitialPermissions()
         requestPermissions(getPermissionsLauncher())
         startLocationService()
         bindLocationService()
 
         setContent {
             WhereIsEveryoneTheme {
-                AuthenticationScreen()
+                MainScreen()
             }
         }
     }
@@ -178,6 +174,17 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun checkInitialPermissions() {
+        isBackGroundPermissionGranted =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                checkPermission(ACCESS_BACKGROUND_LOCATION)
+            } else {
+                true
+            }
+        isFineLocationPermissionGranted = checkPermission(ACCESS_FINE_LOCATION)
+        isCoarseLocationPermissionGranted = checkPermission(ACCESS_COARSE_LOCATION)
+    }
+
     private fun checkPermission(permission: String): Boolean {
         return ContextCompat.checkSelfPermission(
             this,
@@ -186,7 +193,7 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    private fun AuthenticationScreen() {
+    private fun MainScreen() {
         WhereIsEveryoneTheme {
             DestinationsNavHost(
                 navGraph = NavGraphs.main,

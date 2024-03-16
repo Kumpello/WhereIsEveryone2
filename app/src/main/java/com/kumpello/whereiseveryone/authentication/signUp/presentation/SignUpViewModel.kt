@@ -86,7 +86,7 @@ class SignUpViewModel(
         )
     }
 
-    fun trigger(command: Command) {
+    fun trigger(command: Command) { //TODO: Throttable commands? Or blocking of clicks when waiting for server reply
         when (command) {
             Command.OnSignUpClick -> onSignUpClick()
             Command.NavigateLogin -> navigateLogin()

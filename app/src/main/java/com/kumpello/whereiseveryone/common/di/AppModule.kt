@@ -11,6 +11,8 @@ import com.kumpello.whereiseveryone.authentication.signUp.domain.usecase.SignUpU
 import com.kumpello.whereiseveryone.authentication.signUp.presentation.SignUpViewModel
 import com.kumpello.whereiseveryone.authentication.splash.presentation.SplashViewModel
 import com.kumpello.whereiseveryone.common.domain.ucecase.GetCurrentAuthKeyUseCase
+import com.kumpello.whereiseveryone.main.LocationService
+import com.kumpello.whereiseveryone.main.PositionsService
 import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
 import com.kumpello.whereiseveryone.main.map.domain.usecase.GetFriendsPositionsUseCase
 import com.kumpello.whereiseveryone.main.map.domain.usecase.SendPositionUseCase
@@ -37,4 +39,6 @@ val appModule = module {
     single { SendPositionUseCase(get(), get()) }
     single { GetFriendsPositionsUseCase(get(), get(), get()) }
     single { GetEncryptedPreferencesUseCase(androidContext()) }
+    single { LocationService() }
+    single { PositionsService() }
 }
