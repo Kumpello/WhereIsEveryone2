@@ -118,7 +118,7 @@ class SignUpViewModel(
     }
 
     data class State(
-        val screenState: ScreenState = ScreenState.Success,
+        val screenState: ScreenState = ScreenState.Map,
         val username: String = "",
         val password: String = "",
         val passwordValidationState: PasswordValidationState = PasswordValidationState()

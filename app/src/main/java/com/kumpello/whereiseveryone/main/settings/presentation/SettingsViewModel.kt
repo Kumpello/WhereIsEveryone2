@@ -37,7 +37,8 @@ class SettingsViewModel(
 
     private fun State.toViewState(): ViewState {
         return ViewState(
-            screenState = screenState,
+            //screenState = screenState,
+            mock = mock
         )
     }
 
@@ -49,10 +50,12 @@ class SettingsViewModel(
     }
 
     data class State(
-        val screenState: ScreenState = ScreenState.Success,
+        //val screenState: ScreenState = ScreenState.Map,
+        val mock: Any = "Dupa"
     )
 
     data class ViewState(
-        val screenState: ScreenState
+        //val screenState: ScreenState
+        val mock: Any
     )
 }

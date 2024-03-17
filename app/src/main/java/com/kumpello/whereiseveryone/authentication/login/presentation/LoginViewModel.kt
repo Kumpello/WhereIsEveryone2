@@ -118,7 +118,7 @@ class LoginViewModel(
     }
 
     data class State(
-        val screenState: ScreenState = ScreenState.Success,
+        val screenState: ScreenState = ScreenState.Map,
         val username: String = "",
         val password: String = "",
     )

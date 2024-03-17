@@ -11,18 +11,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
-import com.kumpello.whereiseveryone.main.MainNavGraph
+import com.kumpello.whereiseveryone.main.map.ui.FloatingCard
 import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel
-import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
-@MainNavGraph(start = false)
-@Destination
 @Composable
-fun SettingsScreen(
+fun SettingsFloatingCard(
+    modifier: Modifier = Modifier,
     navigator: DestinationsNavigator,
-    viewModel: SettingsViewModel
+    viewModel: SettingsViewModel = viewModel()
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -30,23 +29,28 @@ fun SettingsScreen(
 
     }
 
-    SettingsScreen(
+    SettingsFloatingCard(
         viewState = state,
         trigger = viewModel::trigger
     )
 }
 
 @Composable
-fun SettingsScreen(
+private fun SettingsFloatingCard(
+    modifier: Modifier = Modifier,
     viewState: SettingsViewModel.ViewState,
     trigger: (SettingsViewModel.Command) -> Unit,
 ) {
-    Column(
-        modifier = Modifier.padding(20.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
+    FloatingCard(
+        modifier = modifier
     ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
 
+        }
     }
 }
 
@@ -54,6 +58,10 @@ fun SettingsScreen(
 @Composable
 fun SettingsPreview() {
     WhereIsEveryoneTheme {
-        //Settings(rememberNavController(), MainActivityViewModel())
+        SettingsFloatingCard(
+            viewState = SettingsViewModel.ViewState(
+                mock = "Dupa"
+            )
+        ) {}
     }
 }

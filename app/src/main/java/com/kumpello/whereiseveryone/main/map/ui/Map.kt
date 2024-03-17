@@ -11,9 +11,11 @@ import com.mapbox.maps.extension.compose.animation.viewport.MapViewportState
 
 @OptIn(MapboxExperimental::class)
 @Composable
-fun Map() {
+fun Map(
+    modifier: Modifier = Modifier
+) {
     MapboxMap(
-        Modifier.fillMaxSize(),
+        modifier.fillMaxSize(),
         mapViewportState = MapViewportState().apply {
             setCameraOptions {
                 zoom(2.0)

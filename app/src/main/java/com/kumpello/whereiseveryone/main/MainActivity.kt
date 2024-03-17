@@ -19,12 +19,9 @@ import androidx.compose.runtime.Composable
 import androidx.core.content.ContextCompat
 import com.kumpello.whereiseveryone.NavGraphs
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
-import com.kumpello.whereiseveryone.destinations.FriendsScreenDestination
 import com.kumpello.whereiseveryone.destinations.MapScreenDestination
-import com.kumpello.whereiseveryone.destinations.SettingsScreenDestination
-import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
+import com.kumpello.whereiseveryone.destinations.SignUpScreenDestination
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
-import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.navigation.dependency
 import org.koin.android.ext.android.inject
@@ -33,8 +30,8 @@ import timber.log.Timber
 class MainActivity : ComponentActivity() {
 
     private val mapViewModel: MapViewModel by inject()
-    private val friendsViewModel: FriendsViewModel by inject()
-    private val settingsViewModel: SettingsViewModel by inject()
+    //private val friendsViewModel: FriendsViewModel by inject()
+    //private val settingsViewModel: SettingsViewModel by inject()
 
     private var isBackGroundPermissionGranted = false
     private var isFineLocationPermissionGranted = false
@@ -199,8 +196,6 @@ class MainActivity : ComponentActivity() {
                 navGraph = NavGraphs.main,
                 dependenciesContainerBuilder = {
                     dependency(MapScreenDestination) { mapViewModel }
-                    dependency(SettingsScreenDestination) { settingsViewModel }
-                    dependency(FriendsScreenDestination) { friendsViewModel }
                 }
             )
         }

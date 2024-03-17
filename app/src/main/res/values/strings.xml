@@ -4,4 +4,7 @@
     <string name="notification_message">Your location your now shared by WhereIsEveryone</string>
     <string name="ticker_text">dupa</string>
     <string name="user_marker">That\'s you!</string>
+    <string name="add_friend">Add Friend</string>
+    <string name="confirm">Confirm</string>
+    <string name="dismiss">Dismiss</string>
 </resources>

@@ -2,6 +2,7 @@ package com.kumpello.whereiseveryone.main.friends.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -9,87 +10,42 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.kumpello.whereiseveryone.common.ui.theme.Shapes
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
+import com.kumpello.whereiseveryone.main.friends.model.Friend
+import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
 
 @Composable
 fun Friend(
-    nick: String
+    modifier: Modifier = Modifier,
+    friend: Friend,
+    trigger: (FriendsViewModel.Command) -> Unit,
 ) {
-    var dialogOpen by remember {
-        mutableStateOf(false)
-    }
-    if (dialogOpen) {
-        AlertDialog(
-            onDismissRequest = {
-                // Dismiss the dialog when the user clicks outside the dialog or on the back button.
-                // If you want to disable that functionality, simply leave this block empty.
-                dialogOpen = false
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        // perform the confirm action and
-                        // close the dialog
-                        dialogOpen = false
-                    }
-                ) {
-                    Text(text = "Confirm")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        // close the dialog
-                        dialogOpen = false
-                    }
-                ) {
-                    Text(text = "Dismiss")
-                }
-            },
-            title = {
-                Text(text = "Confirmation")
-            },
-            text = {
-                Text(text = "Are you sure you want to delete $nick from your friends?")
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(32.dp),
-            shape = RoundedCornerShape(5.dp)
-        )
-    }
-
     Card(
-        modifier = Modifier
-            .padding(16.dp)
+        modifier = modifier
             .fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp)
+        shape = Shapes.small
     ) {
         Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(4.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceEvenly
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(nick)
+            Text(friend.nick)
             IconButton(
-                onClick = {
-                    dialogOpen = true
-                },
+                onClick = { trigger(FriendsViewModel.Command.DeleteFriend(friend.id)) },
                 modifier = Modifier
                     .height(50.dp)
             ) {
@@ -104,10 +60,18 @@ fun Friend(
     }
 }
 
-@Preview(showBackground = true)
+@Preview(
+    showBackground = true,
+    heightDp = 50
+)
 @Composable
 fun FriendPreview() {
-    WhereIsEveryoneTheme() {
-        Friend("JanuszAndrzejNowak")
+    WhereIsEveryoneTheme {
+        Friend(
+            friend = Friend(
+                nick = "JanuszAndrzejNowak",
+                id = "2137"
+            )
+        ) {}
     }
 }

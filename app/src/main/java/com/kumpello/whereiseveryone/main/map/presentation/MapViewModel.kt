@@ -36,10 +36,19 @@ class MapViewModel(
     private fun collectPositions() {
 
     }
+
+    private fun navigateSettings() {
+
+    }
+
+    private fun navigateFriends() {
+
+    }
+
     fun trigger(command: Command) {
         when (command) {
-
-            else -> {}
+            Command.NavigateFriends -> navigateFriends()
+            Command.NavigateSettings -> navigateSettings()
         }
     }
 
@@ -54,11 +63,12 @@ class MapViewModel(
     }
 
     sealed class Command {
-
+        data object NavigateSettings: Command()
+        data object NavigateFriends: Command()
     }
 
     data class State(
-        val screenState: ScreenState = ScreenState.Success,
+        val screenState: ScreenState = ScreenState.Map,
         val friends: List<UserPosition> = listOf()
     )
 

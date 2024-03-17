@@ -179,7 +179,7 @@ fun SignUpPreview() {
         ) {
             SignUpScreen(
                 SignUpViewModel.ViewState(
-                    screenState = ScreenState.Success,
+                    screenState = ScreenState.Map,
                     username = "Janusz",
                     password = "dupadupadupa",
                     passwordState = PasswordValidationState()
@@ -200,7 +200,7 @@ fun SignUpPreviewDark() {
         ) {
             SignUpScreen(
                 SignUpViewModel.ViewState(
-                    screenState = ScreenState.Success,
+                    screenState = ScreenState.Map,
                     username = "Janusz",
                     password = "dupadupadupa",
                     passwordState = PasswordValidationState()

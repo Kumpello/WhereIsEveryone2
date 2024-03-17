@@ -144,7 +144,7 @@ fun LoginPreview() {
         ) {
             LoginScreen(
                 LoginViewModel.ViewState(
-                    screenState = ScreenState.Success,
+                    screenState = ScreenState.Map,
                     username = "Janusz",
                     password = "dupadupadupa"
                 )
@@ -164,7 +164,7 @@ fun LoginPreviewDark() {
         ) {
             LoginScreen(
                 LoginViewModel.ViewState(
-                    screenState = ScreenState.Success,
+                    screenState = ScreenState.Map,
                     username = "Janusz",
                     password = "dupadupadupa"
                 )
