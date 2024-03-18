@@ -3,13 +3,13 @@ package com.kumpello.whereiseveryone.main.friends.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Card
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.common.ui.entity.Button
+import com.kumpello.whereiseveryone.common.ui.theme.Shapes
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.friends.model.Friend
 import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
@@ -70,25 +71,34 @@ private fun FriendsFloatingCard(
     }
     FloatingCard(modifier = modifier) {
         Column(
-            modifier = Modifier.padding(10.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                shape = Shapes.large,
             ) {
-                TextField(
-                    label = { Text(text = "Your friends nick") },
-                    value = viewState.addFriendNick,
-                    onValueChange = { nick ->
-                        trigger(FriendsViewModel.Command.SetAddFriendNick(nick))
-                    })
-                Spacer(Modifier.size(20.dp))
-                Button.Animated(
-                    text = stringResource(R.string.add_friend)
+                Column(
+                    modifier = Modifier
+                        .padding(10.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    trigger(FriendsViewModel.Command.AddFriend)
+                    TextField( //TODO: Make it more funky, maybe other composable? To consider in all Textfields
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text(text = "Your friends nick") },
+                        value = viewState.addFriendNick,
+                        onValueChange = { nick ->
+                            trigger(FriendsViewModel.Command.SetAddFriendNick(nick))
+                        })
+                    Spacer(Modifier.size(20.dp))
+                    Button.Animated(
+                        text = stringResource(R.string.add_friend),
+                        width = 250
+                    ) {
+                        trigger(FriendsViewModel.Command.AddFriend)
+                    }
                 }
             }
             LazyColumn(
@@ -109,18 +119,19 @@ private fun FriendsFloatingCard(
 
 @Preview(showBackground = true)
 @Composable
-fun FriendsPreview() {
+fun FriendsPreview() { //TODO: Get this preview unfucked
     WhereIsEveryoneTheme {
         FriendsFloatingCard(
             viewState = FriendsViewModel.ViewState(
                 friends = listOf(
-                  Friend(
-                      nick = "Buddy",
-                      id = "2137"
-                  )
+                    Friend(
+                        nick = "Buddy",
+                        id = "2137"
+                    )
                 ),
                 addFriendNick = "Papator2000",
-                deleteFriendDialogValue = null
+                deleteFriendDialogValue = null,
+                deleteFriendDialogOpen = false
             )
         ) {}
     }

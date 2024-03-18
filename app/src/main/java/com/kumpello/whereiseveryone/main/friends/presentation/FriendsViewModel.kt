@@ -63,7 +63,8 @@ class FriendsViewModel : ViewModel() {
             //screenState = screenState,
             friends = friends,
             addFriendNick = addFriendNick,
-            deleteFriendDialogOpen = deleteFriendDialogOpen
+            deleteFriendDialogOpen = deleteFriendDialogOpen,
+            deleteFriendDialogValue = deleteFriendDialogValue
         )
     }
 
