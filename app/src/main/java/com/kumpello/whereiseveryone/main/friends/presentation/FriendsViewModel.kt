@@ -3,6 +3,8 @@ package com.kumpello.whereiseveryone.main.friends.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kumpello.whereiseveryone.common.entity.ScreenState
+import com.kumpello.whereiseveryone.main.common.domain.usecase.AddFriendUseCase
+import com.kumpello.whereiseveryone.main.common.domain.usecase.RemoveFriendUseCase
 import com.kumpello.whereiseveryone.main.friends.model.Friend
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,7 +15,10 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
-class FriendsViewModel : ViewModel() {
+class FriendsViewModel(
+    private val addFriendUseCase: AddFriendUseCase,
+    private val removeFriendUseCase: RemoveFriendUseCase
+) : ViewModel() {
     private var _state = MutableStateFlow(State())
     val state: StateFlow<ViewState> = _state.map { state ->
         state.toViewState()
@@ -37,19 +42,27 @@ class FriendsViewModel : ViewModel() {
     }
 
     private fun addFriend() {
-
+        viewModelScope.runCatching {
+            addFriendUseCase.execute(_state.value.addFriendNick)
+        }
     }
 
     private fun deleteFriend(id: String) {
-
+        viewModelScope.runCatching {
+            removeFriendUseCase.execute(id)
+        }
     }
 
     private fun openDeleteFriendDialog(friend: Friend) {
-
+        _state.value = _state.value.copy(
+            deleteFriendDialogState = DeleteFriendDialogState.Open(friend)
+        )
     }
 
     private fun closeDeleteFriendDialog() {
-
+        _state.value = _state.value.copy(
+            deleteFriendDialogState = DeleteFriendDialogState.Closed
+        )
     }
 
     private fun setAddFriendNick(nick : String) {
@@ -63,8 +76,7 @@ class FriendsViewModel : ViewModel() {
             //screenState = screenState,
             friends = friends,
             addFriendNick = addFriendNick,
-            deleteFriendDialogOpen = deleteFriendDialogOpen,
-            deleteFriendDialogValue = deleteFriendDialogValue
+            deleteFriendDialogState = deleteFriendDialogState
         )
     }
 
@@ -87,15 +99,18 @@ class FriendsViewModel : ViewModel() {
         val screenState: ScreenState = ScreenState.Map,
         val friends: List<Friend> = emptyList(),
         val addFriendNick: String = "",
-        val deleteFriendDialogOpen: Boolean = false,
-        val deleteFriendDialogValue: Friend? = null
+        val deleteFriendDialogState: DeleteFriendDialogState = DeleteFriendDialogState.Closed
     )
 
     data class ViewState(
         //val screenState: ScreenState, //TODO: Delete?
         val friends: List<Friend>, //TODO: To be changed (?)
         val addFriendNick: String,
-        val deleteFriendDialogOpen: Boolean,
-        val deleteFriendDialogValue: Friend?
+        val deleteFriendDialogState: DeleteFriendDialogState
     )
+
+    sealed class DeleteFriendDialogState {
+        data class Open(val friend: Friend): DeleteFriendDialogState()
+        data object Closed: DeleteFriendDialogState()
+    }
 }

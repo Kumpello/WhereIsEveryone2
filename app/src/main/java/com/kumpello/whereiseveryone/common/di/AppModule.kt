@@ -23,14 +23,14 @@ import org.koin.dsl.module
 
 //TODO Split into modules based on activity
 val appModule = module {
-    single { SplashViewModel( get()) }
-    single { LoginViewModel( get(), get()) }
-    single { SignUpViewModel( get(), get(), get()) }
+    single { SplashViewModel(get()) }
+    single { LoginViewModel(get(), get()) }
+    single { SignUpViewModel(get(), get(), get()) }
     single { ValidateLoginInputUseCase() }
     single { ValidatePasswordUseCase() }
-    single { MapViewModel( get() ) }
+    single { MapViewModel(get()) }
     single { SettingsViewModel() }
-    single { FriendsViewModel() }
+    single { FriendsViewModel(get(), get()) }
     single { GetCurrentAuthKeyUseCase(get(), get()) }
     single { SaveKeyUseCase(get(), get()) }
     single { GetKeyUseCase(get()) }

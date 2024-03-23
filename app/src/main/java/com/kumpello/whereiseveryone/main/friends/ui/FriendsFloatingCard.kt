@@ -28,6 +28,7 @@ import com.kumpello.whereiseveryone.common.ui.theme.Shapes
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.friends.model.Friend
 import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
+import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel.DeleteFriendDialogState
 import com.kumpello.whereiseveryone.main.map.ui.FloatingCard
 
 @Composable
@@ -61,13 +62,11 @@ private fun FriendsFloatingCard(
     viewState: FriendsViewModel.ViewState,
     trigger: (FriendsViewModel.Command) -> Unit,
 ) {
-    if (viewState.deleteFriendDialogOpen) {
-        viewState.deleteFriendDialogValue?.let {
-            DeleteFriendDialog(
-                friend = it,
-                trigger = trigger
-            )
-        }
+    if (viewState.deleteFriendDialogState is DeleteFriendDialogState.Open) {
+        DeleteFriendDialog(
+            friend = viewState.deleteFriendDialogState.friend,
+            trigger = trigger
+        )
     }
     FloatingCard(modifier = modifier) {
         Column(
@@ -130,8 +129,7 @@ fun FriendsPreview() { //TODO: Get this preview unfucked
                     )
                 ),
                 addFriendNick = "Papator2000",
-                deleteFriendDialogValue = null,
-                deleteFriendDialogOpen = false
+                deleteFriendDialogState = DeleteFriendDialogState.Closed
             )
         ) {}
     }
