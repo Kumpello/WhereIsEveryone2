@@ -7,4 +7,8 @@
     <string name="add_friend">Add Friend</string>
     <string name="confirm">Confirm</string>
     <string name="dismiss">Dismiss</string>
+    <string name="friend_added_successfully">Friend added successfully</string>
+    <string name="error_adding_friend">Error adding friend</string>
+    <string name="friend_deleted_successfully">Friend deleted successfully</string>
+    <string name="error_deleting_friend">Error deleting friend</string>
 </resources>

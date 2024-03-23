@@ -43,13 +43,13 @@ class FriendsViewModel(
 
     private fun addFriend() {
         viewModelScope.runCatching {
-            addFriendUseCase.execute(_state.value.addFriendNick)
+            addFriendUseCase.execute(_state.value.addFriendNick) //TODO: Get result, emit action
         }
     }
 
     private fun deleteFriend(id: String) {
         viewModelScope.runCatching {
-            removeFriendUseCase.execute(id)
+            removeFriendUseCase.execute(id) //TODO: Get result, emit action
         }
     }
 
@@ -81,8 +81,6 @@ class FriendsViewModel(
     }
 
     sealed class Action {
-        data class OpenDeleteFriendDialog(val friend: Friend) : Action()
-        data object CloseDeleteFriendDialog : Action()
         data class AddFriendResult(val success: Boolean) : Action()
         data class DeleteFriendResult(val success: Boolean) : Action()
     }

@@ -1,5 +1,6 @@
 package com.kumpello.whereiseveryone.main.map.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.Icons
@@ -34,6 +35,10 @@ fun MapScreen(
 
     LaunchedEffect(Unit) {
 
+    }
+
+    BackHandler(true) {
+        viewModel.trigger(MapViewModel.Command.BackToMap)
     }
 
     MapScreen(

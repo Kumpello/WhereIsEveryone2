@@ -2,6 +2,7 @@ package com.kumpello.whereiseveryone.authentication.login.ui
 
 import android.content.Intent
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -42,8 +43,12 @@ fun LoginScreen(
     navigator: DestinationsNavigator,
     viewModel: LoginViewModel,
 ) {
-    val context = LocalContext.current
+    val context = LocalContext.current //TODO: CHeck if it's right use
     val state by viewModel.state.collectAsState()
+
+    BackHandler(true) {
+        //TODO: Close keyboard?
+    }
 
     LaunchedEffect(viewModel.action) {
         viewModel.action.collect { action ->
