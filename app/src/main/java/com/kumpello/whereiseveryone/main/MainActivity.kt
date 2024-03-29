@@ -20,7 +20,6 @@ import androidx.core.content.ContextCompat
 import com.kumpello.whereiseveryone.NavGraphs
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.destinations.MapScreenDestination
-import com.kumpello.whereiseveryone.destinations.SignUpScreenDestination
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.navigation.dependency

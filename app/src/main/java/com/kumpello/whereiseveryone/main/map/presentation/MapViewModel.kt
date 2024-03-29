@@ -7,6 +7,7 @@ import com.kumpello.whereiseveryone.authentication.login.presentation.LoginViewM
 import com.kumpello.whereiseveryone.main.map.data.model.PositionsResponse
 import com.kumpello.whereiseveryone.main.map.data.model.UserPosition
 import com.kumpello.whereiseveryone.main.LocationService
+import com.kumpello.whereiseveryone.main.map.entity.MapSettings
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -69,6 +70,7 @@ class MapViewModel(
 
     data class State(
         val screenState: ScreenState = ScreenState.Map,
+        val mapSettings: MapSettings,
         val friends: List<UserPosition> = listOf()
     )
 

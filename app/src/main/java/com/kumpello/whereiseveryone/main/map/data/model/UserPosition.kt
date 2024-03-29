@@ -1,6 +1,6 @@
 package com.kumpello.whereiseveryone.main.map.data.model
 
-import android.location.Location
+import com.kumpello.whereiseveryone.main.friends.model.Friend
+import com.kumpello.whereiseveryone.main.friends.model.Location
 
-//TODO: Change location to LatLng or Location type, and maybe change uuid and nick to Friend type?
-data class UserPosition(val uuid: String, val nick: String, val location: Location)
+data class UserPosition(val friend: Friend, val location: Location)
