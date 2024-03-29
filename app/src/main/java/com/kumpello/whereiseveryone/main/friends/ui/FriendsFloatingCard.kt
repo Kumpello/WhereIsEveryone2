@@ -1,5 +1,6 @@
 package com.kumpello.whereiseveryone.main.friends.ui
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -18,16 +19,19 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kumpello.whereiseveryone.R
+import com.kumpello.whereiseveryone.common.ui.shortToast
 import com.kumpello.whereiseveryone.common.ui.entity.Button
 import com.kumpello.whereiseveryone.common.ui.theme.Shapes
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.friends.model.Friend
 import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
+import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel.DeleteFriendDialogState
 import com.kumpello.whereiseveryone.main.map.ui.FloatingCard
 
 @Composable
@@ -35,15 +39,27 @@ fun FriendsFloatingCard(
     modifier: Modifier = Modifier,
     viewModel: FriendsViewModel = viewModel()
 ) {
+    val context = LocalContext.current
     val state by viewModel.state.collectAsState()
 
     LaunchedEffect(viewModel.action) {
         viewModel.action.collect { action ->
             when (action) {
-                is FriendsViewModel.Action.AddFriendResult -> TODO()
-                FriendsViewModel.Action.CloseDeleteFriendDialog -> TODO()
-                is FriendsViewModel.Action.DeleteFriendResult -> TODO()
-                is FriendsViewModel.Action.OpenDeleteFriendDialog -> TODO()
+                is FriendsViewModel.Action.AddFriendResult -> Toast.makeText(
+                    context,
+                    when(action.success) {
+                        true -> context.getString(R.string.friend_added_successfully)
+                        false -> context.getString(R.string.error_adding_friend)
+                    },
+                    Toast.LENGTH_SHORT
+                ).show()
+                is FriendsViewModel.Action.DeleteFriendResult -> shortToast(
+                    context,
+                    when(action.success) {
+                        true -> context.getString(R.string.friend_deleted_successfully)
+                        false -> context.getString(R.string.error_deleting_friend)
+                    }
+                )
             }
         }
     }
@@ -61,13 +77,11 @@ private fun FriendsFloatingCard(
     viewState: FriendsViewModel.ViewState,
     trigger: (FriendsViewModel.Command) -> Unit,
 ) {
-    if (viewState.deleteFriendDialogOpen) {
-        viewState.deleteFriendDialogValue?.let {
-            DeleteFriendDialog(
-                friend = it,
-                trigger = trigger
-            )
-        }
+    if (viewState.deleteFriendDialogState is DeleteFriendDialogState.Open) {
+        DeleteFriendDialog(
+            friend = viewState.deleteFriendDialogState.friend,
+            trigger = trigger
+        )
     }
     FloatingCard(modifier = modifier) {
         Column(
@@ -130,8 +144,7 @@ fun FriendsPreview() { //TODO: Get this preview unfucked
                     )
                 ),
                 addFriendNick = "Papator2000",
-                deleteFriendDialogValue = null,
-                deleteFriendDialogOpen = false
+                deleteFriendDialogState = DeleteFriendDialogState.Closed
             )
         ) {}
     }

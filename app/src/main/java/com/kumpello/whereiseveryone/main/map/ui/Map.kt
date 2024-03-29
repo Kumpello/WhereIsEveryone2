@@ -32,5 +32,7 @@ fun Map(
 @Preview
 @Composable
 fun MapPreview() {
-    Map()
+    Map(
+        state = MapSettings()
+    )
 }

@@ -1,5 +1,6 @@
 package com.kumpello.whereiseveryone.main.map.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.Icons
@@ -36,6 +37,10 @@ fun MapScreen(
 
     }
 
+    BackHandler(true) {
+        viewModel.trigger(MapViewModel.Command.BackToMap)
+    }
+
     MapScreen(
         navigator =navigator,
         viewState = state,
@@ -65,7 +70,8 @@ fun MapScreen(
             }
         }
         Map(
-            modifier = Modifier.align(Alignment.Center)
+            modifier = Modifier.align(Alignment.Center),
+            state = viewState.mapSettings
         )
         when(viewState.screenState) { //TODO: Clear with back action!!!
             ScreenState.Friends -> FriendsFloatingCard()

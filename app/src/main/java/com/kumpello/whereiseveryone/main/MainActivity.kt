@@ -28,7 +28,7 @@ import timber.log.Timber
 
 class MainActivity : ComponentActivity() {
 
-    private val mapViewModel: MapViewModel by inject()
+    private val mapViewModel: MapViewModel by inject() //TODO: Add services as parameters?
     //private val friendsViewModel: FriendsViewModel by inject()
     //private val settingsViewModel: SettingsViewModel by inject()
 
@@ -39,6 +39,7 @@ class MainActivity : ComponentActivity() {
     private var isLocationServiceBound: Boolean = false
     private var positionsService: PositionsService? = null
     private var isPositionsServiceBound: Boolean = false
+    //TODO: Init somehow better, avoid vars
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,7 +59,7 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         if (isLocationServiceBound) {
-            locationService!!.setUpdateInterval(locationService!!.UPDATE_LOCATION_INTERVAL_FOREGROUND)
+            locationService!!.setUpdateInterval(LocationService.UpdateInterval.Foreground)
         }
     }
 
@@ -77,7 +78,7 @@ class MainActivity : ComponentActivity() {
     override fun onStop() {
         super.onStop()
         if (isLocationServiceBound) {
-            locationService!!.setUpdateInterval(locationService!!.UPDATE_LOCATION_INTERVAL_BACKGROUND)
+            locationService!!.setUpdateInterval(LocationService.UpdateInterval.Background)
         }
     }
 
@@ -86,47 +87,47 @@ class MainActivity : ComponentActivity() {
         unbindLocationService()
     }
 
-    fun startLocationService() {
-        val serviceIntent = Intent(this, LocationService::class.java)
+    private fun startLocationService() {
+        val serviceIntent = Intent(this, LocationServiceImpl::class.java)
         //TODO: Add value to extra
-        serviceIntent.putExtra(statusParam, "test value")
+        serviceIntent.putExtra(STATUS_PARAM, "test value")
         applicationContext.startForegroundService(intent)
     }
 
-    fun startPositionsService() {
-        applicationContext.startService(Intent(this, PositionsService::class.java))
+    private fun startPositionsService() {
+        applicationContext.startService(Intent(this, PositionsServiceImpl::class.java))
     }
 
-    fun stopLocationService() {
-        val serviceIntent = Intent(this, LocationService::class.java)
+    private fun stopLocationService() {
+        val serviceIntent = Intent(this, LocationServiceImpl::class.java)
         stopService(serviceIntent)
     }
 
-    fun stopPositionsService() {
-        val serviceIntent = Intent(this, PositionsService::class.java)
+    private fun stopPositionsService() {
+        val serviceIntent = Intent(this, PositionsServiceImpl::class.java)
         stopService(serviceIntent)
     }
 
     private fun bindLocationService() {
-        Intent(this, LocationService::class.java).also { intent ->
+        Intent(this, LocationServiceImpl::class.java).also { intent ->
             bindService(intent, locationServiceConnection, Context.BIND_AUTO_CREATE)
         }
     }
 
     private fun bindPositionsService() {
-        Intent(this, PositionsService::class.java).also { intent ->
+        Intent(this, PositionsServiceImpl::class.java).also { intent ->
             bindService(intent, positionsServiceConnection, Context.BIND_AUTO_CREATE)
         }
     }
 
     private fun unbindLocationService() {
-        Intent(this, LocationService::class.java).also {
+        Intent(this, LocationServiceImpl::class.java).also {
             unbindService(locationServiceConnection)
         }
     }
 
     private fun unbindPositionsService() {
-        Intent(this, PositionsService::class.java).also {
+        Intent(this, PositionsServiceImpl::class.java).also {
             unbindService(locationServiceConnection)
         }
     }
@@ -203,7 +204,7 @@ class MainActivity : ComponentActivity() {
     private val locationServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(className: ComponentName, iBinder: IBinder) {
             Timber.d("LocationServiceConnection: connected to service.")
-            val binder = iBinder as LocationService.LocationBinder
+            val binder = iBinder as LocationServiceImpl.LocationBinder
             locationService = binder.service
             isLocationServiceBound = true
             // Do stuff
@@ -218,7 +219,7 @@ class MainActivity : ComponentActivity() {
     private val positionsServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(className: ComponentName, iBinder: IBinder) {
             Timber.d("PositionsServiceConnection: connected to service.")
-            val binder = iBinder as PositionsService.PositionsBinder
+            val binder = iBinder as PositionsServiceImpl.PositionsBinder
             positionsService = binder.service
             isPositionsServiceBound = true
             // Do stuff
@@ -232,6 +233,6 @@ class MainActivity : ComponentActivity() {
 
     companion object {
 
-        const val statusParam = "STATUS"
+        const val STATUS_PARAM = "STATUS"
     }
 }
