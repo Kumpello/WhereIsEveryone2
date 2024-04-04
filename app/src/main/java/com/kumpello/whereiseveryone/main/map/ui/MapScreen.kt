@@ -31,7 +31,7 @@ fun MapScreen(
     navigator: DestinationsNavigator,
     viewModel: MapViewModel
 ) {
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.viewState.collectAsState()
 
     LaunchedEffect(Unit) {
 

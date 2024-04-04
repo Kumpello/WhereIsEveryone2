@@ -1,4 +1,4 @@
-package com.kumpello.whereiseveryone.main
+package com.kumpello.whereiseveryone.main.map.presentation
 
 import com.kumpello.whereiseveryone.main.map.data.model.PositionsResponse
 import kotlinx.coroutines.flow.SharedFlow

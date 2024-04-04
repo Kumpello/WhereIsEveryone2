@@ -20,17 +20,20 @@ import androidx.core.content.ContextCompat
 import com.kumpello.whereiseveryone.NavGraphs
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.destinations.MapScreenDestination
+import com.kumpello.whereiseveryone.main.map.presentation.LocationService
+import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceImpl
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
+import com.kumpello.whereiseveryone.main.map.presentation.PositionsService
+import com.kumpello.whereiseveryone.main.map.presentation.PositionsServiceImpl
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.navigation.dependency
 import org.koin.android.ext.android.inject
+import org.koin.core.parameter.parametersOf
 import timber.log.Timber
 
 class MainActivity : ComponentActivity() {
 
-    private val mapViewModel: MapViewModel by inject() //TODO: Add services as parameters?
-    //private val friendsViewModel: FriendsViewModel by inject()
-    //private val settingsViewModel: SettingsViewModel by inject()
+    private val mapViewModel: MapViewModel by inject{ parametersOf(this) } //TODO: Add services as parameters?
 
     private var isBackGroundPermissionGranted = false
     private var isFineLocationPermissionGranted = false

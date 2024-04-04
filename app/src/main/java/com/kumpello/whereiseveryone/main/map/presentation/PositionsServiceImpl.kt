@@ -1,4 +1,4 @@
-package com.kumpello.whereiseveryone.main
+package com.kumpello.whereiseveryone.main.map.presentation
 
 import android.app.Service
 import android.content.Intent

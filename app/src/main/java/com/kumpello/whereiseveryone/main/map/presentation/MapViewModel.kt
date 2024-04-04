@@ -4,10 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kumpello.whereiseveryone.authentication.login.presentation.LoginViewModel
 import com.kumpello.whereiseveryone.common.entity.ScreenState
-import com.kumpello.whereiseveryone.main.LocationService
-import com.kumpello.whereiseveryone.main.PositionsService
 import com.kumpello.whereiseveryone.main.map.data.model.PositionsResponse
-import com.kumpello.whereiseveryone.main.map.data.model.UserPosition
+import com.kumpello.whereiseveryone.main.map.data.model.FriendPosition
 import com.kumpello.whereiseveryone.main.map.entity.MapSettings
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,18 +17,19 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 class MapViewModel(
-    val locationService: LocationService,
-    val positionsService: PositionsService
+    private val locationService: LocationService,
+    private val positionsService: PositionsService
 ) : ViewModel() {
 
-    private var _state = MutableStateFlow(State())
-    val state: StateFlow<ViewState> = _state.map { state ->
+    private val state = MutableStateFlow(State())
+    val viewState: StateFlow<ViewState> = state.map { state ->
         state.toViewState()
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.Eagerly,
-        initialValue = _state.value.toViewState()
+        initialValue = state.value.toViewState()
     )
+
     lateinit var positions: MutableSharedFlow<PositionsResponse>
 
     private val _action = MutableSharedFlow<LoginViewModel.Action>()
@@ -45,19 +44,19 @@ class MapViewModel(
     }
 
     private fun navigateSettings() {
-        _state.value = _state.value.copy(
+        state.value = state.value.copy(
             screenState = ScreenState.Settings
         )
     }
 
     private fun navigateFriends() {
-        _state.value = _state.value.copy(
+        state.value = state.value.copy(
             screenState = ScreenState.Friends
         )
     }
 
     private fun backToMap() {
-        _state.value = _state.value.copy(
+        state.value = state.value.copy(
             screenState = ScreenState.Map
         )
     }
@@ -90,7 +89,7 @@ class MapViewModel(
     data class State(
         val screenState: ScreenState = ScreenState.Map,
         val mapSettings: MapSettings = MapSettings(),
-        val friends: List<UserPosition> = listOf()
+        val friends: List<FriendPosition> = listOf()
     )
 
     data class ViewState(
