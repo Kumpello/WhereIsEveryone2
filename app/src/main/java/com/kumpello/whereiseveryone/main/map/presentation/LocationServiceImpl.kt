@@ -11,6 +11,7 @@ import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.location.Location
+import android.location.LocationRequest
 import android.os.Binder
 import android.os.Build
 import android.os.HandlerThread
@@ -113,29 +114,20 @@ class LocationServiceImpl(
 
     private fun startLocationUpdates() {
         while (state.value.updateLocation) { //TODO: It doesn't look right, change the way it works
-            val jobInfo = JobInfo.Builder(
-                jobID,
-                ComponentName(this, LocationJobService::class.java)
-
-            )
-                .setRequiresBatteryNotLow(state.value.requiresBatteryNotLow)
-                .setPeriodic((state.value.updateInterval).toLong())
-                .build()
-            val jobScheduler = getSystemService(JOB_SCHEDULER_SERVICE) as JobScheduler
-            jobScheduler.schedule(jobInfo)
-            /////////
             try {
                 Timber.d("Trying to send location")
-                fusedLocationClient.getCurrentLocation(getForegroundRequest(), cancellationSource.token)
-                    .addOnSuccessListener { location: Location? ->
+                fusedLocationClient.requestLocationUpdates(
+                    getForegroundRequest(),
+                    //cancellationSource.token
+                    // )
+/*                    .addOnSuccessListener { location: Location? ->
                         Timber.d("Sending location")
                         sendLocation(location)
-                    }
+                    }*/
             } catch (exception: SecurityException) {
                 SystemClock.sleep(15000)
                 Timber.e(exception.toString())
             }
-            SystemClock.sleep(updateInterval.toLong()) //TODO: Do this in non shitty way via Job Scheduler
         }
     }
 
@@ -154,11 +146,13 @@ class LocationServiceImpl(
         }
     }
 
-    private fun getForegroundRequest() = CurrentLocationRequest.Builder()
+    private fun getForegroundRequest() = com.google.android.gms.location.LocationRequest.Builder()
         .setGranularity(GRANULARITY_FINE)
         .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
         .setMaxUpdateAgeMillis(state.value.maxUpdateAge)
         .build()
+
+    private fun getBackgroundRequest()
 
     override fun changeForegroundUpdateInterval(interval: Int) {
         state.value = state.value.copy(
