@@ -44,7 +44,7 @@ fun LoginScreen(
     viewModel: LoginViewModel,
 ) {
     val context = LocalContext.current //TODO: CHeck if it's right use
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.viewState.collectAsState()
 
     BackHandler(true) {
         //TODO: Close keyboard?

@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -75,15 +76,19 @@ class SignUpViewModel(
     }
 
     private fun setUsername(username: String) {
-        _state.value = _state.value.copy(
-            username = validateLoginInputUseCase.execute(username)
-        )
+        _state.update {
+            it.copy(
+                username = validateLoginInputUseCase.execute(username)
+            )
+        }
     }
 
     private fun setPassword(password: String) {
-        _state.value = _state.value.copy(
-            password = password
-        )
+        _state.update {
+            it.copy(
+                password = password
+            )
+        }
     }
 
     fun trigger(command: Command) { //TODO: Throttable commands? Or blocking of clicks when waiting for server reply

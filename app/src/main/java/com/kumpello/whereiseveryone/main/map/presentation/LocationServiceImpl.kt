@@ -5,23 +5,22 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
-import android.app.job.JobInfo
-import android.app.job.JobScheduler
-import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.location.Location
-import android.location.LocationRequest
 import android.os.Binder
 import android.os.Build
 import android.os.HandlerThread
 import android.os.IBinder
+import android.os.Looper
 import android.os.Process
 import android.os.SystemClock
 import androidx.core.app.NotificationCompat
-import com.google.android.gms.location.CurrentLocationRequest
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.Granularity.GRANULARITY_FINE
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.kumpello.whereiseveryone.main.MainActivity
@@ -30,7 +29,11 @@ import com.kumpello.whereiseveryone.main.map.domain.usecase.SendPositionUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import org.koin.android.ext.android.inject
+import org.koin.android.scope.serviceScope
 import timber.log.Timber
 
 
@@ -39,15 +42,13 @@ class LocationServiceImpl(
 ) : Service(), LocationService {
 
     private val state = MutableStateFlow(State())
+    val exposedState = state.asStateFlow() //TODO: Change "exposed" to something else
     private val locationFlow = MutableSharedFlow<Location>()
+    val exposedLocationFlow = locationFlow.asSharedFlow()
 
     private val binder: IBinder = LocationBinder()
     private val channelID = "WhereIsEveryone"
-    private val cancellationSource = CancellationTokenSource()
     private val sendPositionUseCase: SendPositionUseCase by inject()
-
-    private val jobID = 420
-
 
     override fun onCreate() {
         super.onCreate()
@@ -81,7 +82,7 @@ class LocationServiceImpl(
 
         HandlerThread("ServiceStartArguments", Process.THREAD_PRIORITY_BACKGROUND).apply {
             start()
-            startLocationUpdates()
+            startLocationUpdates(updateType = exposedState.value.updateType)
         }
 
         // If we get killed, after returning from here, restart
@@ -112,18 +113,29 @@ class LocationServiceImpl(
         manager.createNotificationChannel(serviceChannel)
     }
 
-    private fun startLocationUpdates() {
-        while (state.value.updateLocation) { //TODO: It doesn't look right, change the way it works
+    private val locationCallback = object : LocationCallback() {
+        override fun onLocationResult(locationResult: LocationResult) {
+            for (location in locationResult.locations){
+                serviceScope().run { //TODO: find better method? Need to check coroutine method types
+                    locationFlow.emit(location)
+                    sendLocation(location)
+                }
+            }
+        }
+    }
+
+    private fun startLocationUpdates(updateType: LocationService.UpdateType) {
+        if (state.value.updateLocation) {
             try {
                 Timber.d("Trying to send location")
                 fusedLocationClient.requestLocationUpdates(
-                    getForegroundRequest(),
-                    //cancellationSource.token
-                    // )
-/*                    .addOnSuccessListener { location: Location? ->
-                        Timber.d("Sending location")
-                        sendLocation(location)
-                    }*/
+                    when(updateType) {
+                        LocationService.UpdateType.Background -> getBackgroundRequest()
+                        LocationService.UpdateType.Foreground -> getForegroundRequest()
+                    },
+                    locationCallback,
+                    Looper.getMainLooper()
+                )
             } catch (exception: SecurityException) {
                 SystemClock.sleep(15000)
                 Timber.e(exception.toString())
@@ -132,47 +144,69 @@ class LocationServiceImpl(
     }
 
     fun stopUpdates() {
-        state.value = state.value.copy(
-            updateLocation = false
-        )
-    }
-
-    private fun sendLocation(location: Location?) {
-        location?.let {
-            sendPositionUseCase.execute(location.longitude, location.latitude)
-                .let { response ->
-                    Timber.d("Sending location code $response")
-                }
+        fusedLocationClient.removeLocationUpdates(locationCallback)
+        state.update {
+            it.copy(
+                updateLocation = false
+            )
         }
     }
 
-    private fun getForegroundRequest() = com.google.android.gms.location.LocationRequest.Builder()
+    private fun sendLocation(location: Location) {
+        sendPositionUseCase.execute(location.longitude, location.latitude)
+            .let { response ->
+                Timber.d("Sending location code $response")
+            }
+    }
+
+    private fun getForegroundRequest() = LocationRequest //TODO: Get settings directly LocationRequestSettings as extension, or soome other better way
+        .Builder(state.value.foregroundSettings.interval)
         .setGranularity(GRANULARITY_FINE)
         .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
-        .setMaxUpdateAgeMillis(state.value.maxUpdateAge)
-        .build()
-
-    private fun getBackgroundRequest()
-
-    override fun changeForegroundUpdateInterval(interval: Int) {
-        state.value = state.value.copy(
-            updateLocationIntervalForeground = interval
-        )
-    }
-
-    override fun changeBackgroundUpdateInterval(interval: Int) {
-        state.value = state.value.copy(
-            updateLocationIntervalBackground = interval
-        )
-    }
-
-    override fun setUpdateInterval(type: LocationService.UpdateInterval) {
-        state.value = state.value.copy(
-            updateInterval = when (type) {
-                LocationService.UpdateInterval.Background -> state.value.updateLocationIntervalBackground
-                LocationService.UpdateInterval.Foreground -> state.value.updateLocationIntervalForeground
+        .setWaitForAccurateLocation(true)
+        .setMaxUpdateAgeMillis(state.value.foregroundSettings.maxAge)
+        .setMinUpdateIntervalMillis(state.value.foregroundSettings.minInterval)
+        .build().also {
+            state.update {
+                it.copy(
+                    updateType = LocationService.UpdateType.Foreground
+                )
             }
-        )
+        }
+
+    private fun getBackgroundRequest() = LocationRequest
+        .Builder(state.value.backgroundSettings.interval)
+        .setGranularity(GRANULARITY_FINE)
+        .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
+        .setWaitForAccurateLocation(true)
+        .setMaxUpdateAgeMillis(state.value.backgroundSettings.maxAge)
+        .setMinUpdateIntervalMillis(state.value.backgroundSettings.minInterval)
+        .build().also {
+            state.update {
+                it.copy(
+                    updateType = LocationService.UpdateType.Background
+                )
+            }
+        }
+
+    override fun changeForegroundUpdateInterval(interval: Long) {
+        state.update {
+            it.copy(
+                foregroundSettings = state.value.foregroundSettings.copy(
+                    interval = interval
+                )
+            )
+        }
+    }
+
+    override fun changeBackgroundUpdateInterval(interval: Long) {
+        state.update {
+            it.copy(
+                foregroundSettings = state.value.foregroundSettings.copy(
+                    interval = interval
+                )
+            )
+        }
     }
 
     override fun getLocation(): Flow<Location> {
@@ -180,11 +214,26 @@ class LocationServiceImpl(
     }
 
     data class State(
-        val maxUpdateAge: Long = 300000L, //5min
-        val updateLocationIntervalForeground: Int = 1000, // 1 min
-        val updateLocationIntervalBackground: Int = 900000, // 15 min
-        val updateInterval: Int = updateLocationIntervalForeground,
-        val requiresBatteryNotLow: Boolean = false,
-        val updateLocation: Boolean = true
-    )
+        val foregroundSettings: LocationRequestSettings = LocationRequestSettings(
+            interval = 5_000L, // 5s
+            minInterval = 1_000L, // 1s
+            maxDelay = 30_000L, //30s
+            maxAge = 5_000L, // 5s
+        ),
+        val backgroundSettings: LocationRequestSettings = LocationRequestSettings(
+            interval = 900_000L, // 15min
+            minInterval = 300_000L, // 5min
+            maxDelay = 1_800_000L, // 30min
+            maxAge = 300_000L // 5min
+        ),
+        val updateLocation: Boolean = true,
+        val updateType: LocationService.UpdateType = LocationService.UpdateType.Foreground
+    ) {
+        data class LocationRequestSettings(
+            val minInterval: Long,
+            val maxAge: Long,
+            val maxDelay: Long,
+            val interval: Long,
+        )
+    }
 }

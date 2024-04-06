@@ -40,7 +40,7 @@ fun FriendsFloatingCard(
     viewModel: FriendsViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.viewState.collectAsState()
 
     LaunchedEffect(viewModel.action) {
         viewModel.action.collect { action ->

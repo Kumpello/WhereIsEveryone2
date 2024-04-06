@@ -62,7 +62,7 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         if (isLocationServiceBound) {
-            locationService!!.setUpdateInterval(LocationService.UpdateInterval.Foreground)
+            locationService!!.setUpdateInterval(LocationService.UpdateType.Foreground)
         }
     }
 
@@ -81,7 +81,7 @@ class MainActivity : ComponentActivity() {
     override fun onStop() {
         super.onStop()
         if (isLocationServiceBound) {
-            locationService!!.setUpdateInterval(LocationService.UpdateInterval.Background)
+            locationService!!.setUpdateInterval(LocationService.UpdateType.Background)
         }
     }
 

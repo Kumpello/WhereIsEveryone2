@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -23,15 +24,15 @@ class LoginViewModel(
     private val validateLoginInputUseCase: ValidateLoginInputUseCase
 ) : ViewModel() {
 
-    private var _state = MutableStateFlow(State())
-    val state: StateFlow<ViewState> =
-        _state
+    private var state = MutableStateFlow(State())
+    val viewState: StateFlow<ViewState> =
+        state
             .map { state ->
                 state.toViewState()
             }.stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.Eagerly,
-                initialValue = _state.value.toViewState()
+                initialValue = state.value.toViewState()
             )
 
     private val _action = MutableSharedFlow<Action>()
@@ -45,8 +46,8 @@ class LoginViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
                 val response = loginUseCase.execute(
-                    username = _state.value.username,
-                    password = _state.value.password
+                    username = state.value.username,
+                    password = state.value.password
                 )
                 when (response) {
                     Response.Success -> onLoginSuccess()
@@ -76,15 +77,19 @@ class LoginViewModel(
     }
 
     private fun setUsername(username: String) {
-        _state.value = _state.value.copy(
-            username = validateLoginInputUseCase.execute(username)
-        )
+        state.update {
+            it.copy(
+                username = validateLoginInputUseCase.execute(username)
+            )
+        }
     }
 
     private fun setPassword(password: String) {
-        _state.value = _state.value.copy(
-            password = password
-        )
+        state.update {
+            it.copy(
+                password = password
+            )
+        }
     }
 
     fun trigger(command: Command) {

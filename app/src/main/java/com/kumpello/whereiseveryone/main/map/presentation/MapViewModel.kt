@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 
 class MapViewModel(
     private val locationService: LocationService,
@@ -44,21 +45,27 @@ class MapViewModel(
     }
 
     private fun navigateSettings() {
-        state.value = state.value.copy(
-            screenState = ScreenState.Settings
-        )
+        state.update {
+            it.copy(
+                screenState = ScreenState.Settings
+            )
+        }
     }
 
     private fun navigateFriends() {
-        state.value = state.value.copy(
-            screenState = ScreenState.Friends
-        )
+        state.update {
+            it.copy(
+                screenState = ScreenState.Friends
+            )
+        }
     }
 
     private fun backToMap() {
-        state.value = state.value.copy(
-            screenState = ScreenState.Map
-        )
+        state.update {
+            it.copy(
+                screenState = ScreenState.Map
+            )
+        }
     }
 
     fun trigger(command: Command) {

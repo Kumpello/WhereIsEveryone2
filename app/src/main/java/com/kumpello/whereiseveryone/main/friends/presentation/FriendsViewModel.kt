@@ -14,18 +14,19 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 
 class FriendsViewModel(
     private val addFriendUseCase: AddFriendUseCase,
     private val removeFriendUseCase: RemoveFriendUseCase
 ) : ViewModel() {
-    private var _state = MutableStateFlow(State())
-    val state: StateFlow<ViewState> = _state.map { state ->
+    private var state = MutableStateFlow(State())
+    val viewState: StateFlow<ViewState> = state.map { state ->
         state.toViewState()
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.Eagerly,
-        initialValue = _state.value.toViewState()
+        initialValue = state.value.toViewState()
     )
 
     private val _action = MutableSharedFlow<Action>()
@@ -43,7 +44,7 @@ class FriendsViewModel(
 
     private fun addFriend() {
         viewModelScope.runCatching {
-            addFriendUseCase.execute(_state.value.addFriendNick) //TODO: Get result, emit action
+            addFriendUseCase.execute(state.value.addFriendNick) //TODO: Get result, emit action
         }
     }
 
@@ -54,21 +55,27 @@ class FriendsViewModel(
     }
 
     private fun openDeleteFriendDialog(friend: Friend) {
-        _state.value = _state.value.copy(
-            deleteFriendDialogState = DeleteFriendDialogState.Open(friend)
-        )
+        state.update {
+            it.copy(
+                deleteFriendDialogState = DeleteFriendDialogState.Open(friend)
+            )
+        }
     }
 
     private fun closeDeleteFriendDialog() {
-        _state.value = _state.value.copy(
-            deleteFriendDialogState = DeleteFriendDialogState.Closed
-        )
+        state.update {
+            it.copy(
+                deleteFriendDialogState = DeleteFriendDialogState.Closed
+            )
+        }
     }
 
     private fun setAddFriendNick(nick : String) {
-        _state.value = _state.value.copy(
-            addFriendNick = nick
-        )
+        state.update {
+            it.copy(
+                addFriendNick = nick
+            )
+        }
     }
 
     private fun State.toViewState(): ViewState {

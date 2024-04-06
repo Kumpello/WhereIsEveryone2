@@ -8,7 +8,7 @@ class SendPositionUseCase(
     private val locationRepository: LocationRepository,
     private val getCurrentAuthKeyUseCase: GetCurrentAuthKeyUseCase
 ) {
-    fun execute(longitude: Double, latitude: Double): LocationResponse {
+    fun execute(longitude: Double, latitude: Double): LocationResponse { //Add azimuth and altitude
         return locationRepository.sendPosition(
             token = getCurrentAuthKeyUseCase.execute().toString(),
             longitude = longitude,
