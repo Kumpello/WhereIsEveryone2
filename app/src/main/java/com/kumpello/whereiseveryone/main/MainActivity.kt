@@ -50,7 +50,6 @@ class MainActivity : ComponentActivity() {
         checkInitialPermissions()
         requestPermissions(getPermissionsLauncher())
         startLocationService()
-        bindLocationService()
 
         setContent {
             WhereIsEveryoneTheme {
@@ -62,7 +61,8 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         if (isLocationServiceBound) {
-            locationService!!.setUpdateInterval(LocationService.UpdateType.Foreground)
+            bindLocationService()
+            setLocationService(LocationService.UpdateType.Foreground)
         }
     }
 
@@ -81,7 +81,7 @@ class MainActivity : ComponentActivity() {
     override fun onStop() {
         super.onStop()
         if (isLocationServiceBound) {
-            locationService!!.setUpdateInterval(LocationService.UpdateType.Background)
+            setLocationService(LocationService.UpdateType.Background)
         }
     }
 
@@ -95,6 +95,13 @@ class MainActivity : ComponentActivity() {
         //TODO: Add value to extra
         serviceIntent.putExtra(STATUS_PARAM, "test value")
         applicationContext.startForegroundService(intent)
+    }
+
+    private fun setLocationService(type: LocationService.UpdateType) {
+        when(type) {
+            LocationService.UpdateType.Background -> locationService?.changeUpdateType(type)
+            LocationService.UpdateType.Foreground -> locationService?.changeUpdateType(type)
+        }
     }
 
     private fun startPositionsService() {

@@ -71,7 +71,8 @@ fun MapScreen(
         }
         Map(
             modifier = Modifier.align(Alignment.Center),
-            state = viewState.mapSettings
+            state = viewState.mapSettings,
+            userLocation = viewState.user
         )
         when(viewState.screenState) { //TODO: Clear with back action!!!
             ScreenState.Friends -> FriendsFloatingCard()

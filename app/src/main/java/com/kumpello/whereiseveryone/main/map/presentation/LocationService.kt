@@ -9,6 +9,8 @@ interface LocationService {
 
     fun getLocation() : Flow<Location>
 
+    fun changeUpdateType(updateType: UpdateType)
+
     sealed interface UpdateType {
         data object Foreground : UpdateType
         data object Background : UpdateType

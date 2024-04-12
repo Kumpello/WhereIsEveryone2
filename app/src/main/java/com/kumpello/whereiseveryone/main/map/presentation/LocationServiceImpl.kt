@@ -22,36 +22,41 @@ import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.Priority
-import com.google.android.gms.tasks.CancellationTokenSource
 import com.kumpello.whereiseveryone.main.MainActivity
 import com.kumpello.whereiseveryone.main.MainActivity.Companion.STATUS_PARAM
 import com.kumpello.whereiseveryone.main.map.domain.usecase.SendPositionUseCase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
-import org.koin.android.scope.serviceScope
 import timber.log.Timber
 
 
 class LocationServiceImpl(
-    private val fusedLocationClient: FusedLocationProviderClient
+    private val fusedLocationClient: FusedLocationProviderClient,
+    //private val fusedOrientationClient: FusedOrientationProviderClient
 ) : Service(), LocationService {
-
     private val state = MutableStateFlow(State())
-    val exposedState = state.asStateFlow() //TODO: Change "exposed" to something else
+    private val exposedState = state.asStateFlow() //TODO: Change "exposed" to something else
     private val locationFlow = MutableSharedFlow<Location>()
-    val exposedLocationFlow = locationFlow.asSharedFlow()
+    private val exposedLocationFlow = locationFlow.asSharedFlow()
 
     private val binder: IBinder = LocationBinder()
     private val channelID = "WhereIsEveryone"
+    private val job = SupervisorJob()
+    private val scope = CoroutineScope(Dispatchers.IO + job)
     private val sendPositionUseCase: SendPositionUseCase by inject()
 
     override fun onCreate() {
         super.onCreate()
+
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
@@ -115,11 +120,24 @@ class LocationServiceImpl(
 
     private val locationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
-            for (location in locationResult.locations){
-                serviceScope().run { //TODO: find better method? Need to check coroutine method types
+            for (location in locationResult.locations) {
+                scope.launch {
                     locationFlow.emit(location)
                     sendLocation(location)
                 }
+            }
+        }
+    }
+
+    override fun changeUpdateType(updateType: LocationService.UpdateType) {
+        when(updateType) {
+            LocationService.UpdateType.Background -> {
+                stopUpdates()
+                startLocationUpdates(updateType)
+            }
+            LocationService.UpdateType.Foreground -> {
+                stopUpdates()
+                startLocationUpdates(updateType)
             }
         }
     }
@@ -143,7 +161,7 @@ class LocationServiceImpl(
         }
     }
 
-    fun stopUpdates() {
+    private fun stopUpdates() {
         fusedLocationClient.removeLocationUpdates(locationCallback)
         state.update {
             it.copy(
@@ -210,7 +228,7 @@ class LocationServiceImpl(
     }
 
     override fun getLocation(): Flow<Location> {
-        return locationFlow
+        return exposedLocationFlow
     }
 
     data class State(
