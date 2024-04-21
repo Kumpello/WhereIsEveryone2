@@ -26,10 +26,6 @@ class PositionsServiceImpl : Service(), PositionsService {
 
     private var updateFriends = true
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        return super.onStartCommand(intent, flags, startId)
-    }
-
     override fun onDestroy() {
         Timber.d("PositionsService stopping")
         super.onDestroy()
@@ -47,11 +43,15 @@ class PositionsServiceImpl : Service(), PositionsService {
     override fun startFriendsUpdates() {
         CoroutineScope(Dispatchers.IO).launch {
             while (updateFriends) {
-                Timber.d("Trying to get location")
-                val positions = getFriendsPositionsUseCase.execute()
-                Timber.d("Emiting friends location")
-                this@PositionsServiceImpl._positions.emit(positions)
-                delay(updateFriendsInterval.toLong())
+                runCatching {
+                    Timber.d("Trying to get location")
+                    val positions = getFriendsPositionsUseCase.execute()
+                    Timber.d("Emiting friends location")
+                    this@PositionsServiceImpl._positions.emit(positions)
+                    delay(updateFriendsInterval.toLong())
+                }.onFailure { error ->
+                    Timber.d(error)
+                }
             }
         }
     }

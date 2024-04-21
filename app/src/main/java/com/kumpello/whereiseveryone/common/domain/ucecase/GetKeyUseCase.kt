@@ -2,8 +2,9 @@ package com.kumpello.whereiseveryone.common.domain.ucecase
 
 import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
 import com.kumpello.whereiseveryone.main.friends.model.Friend
-import com.kumpello.whereiseveryone.main.friends.model.FriendList
+import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
+import com.squareup.moshi.Types
 
 class GetKeyUseCase(
     private val getEncryptedPreferencesUseCase: GetEncryptedPreferencesUseCase,
@@ -46,14 +47,16 @@ class GetKeyUseCase(
 
     fun getFriends(): List<Friend> {
         val defaultList = listOf<Friend>()
-        val adapter = moshi.adapter(FriendList::class.java)
+        val friendsList = Types.newParameterizedType(List::class.java, Friend::class.java)
+        val adapter: JsonAdapter<List<Friend>> = moshi.adapter(friendsList)
         val jsonText = getEncryptedPreferencesUseCase
             .execute()
             .getString(
                 WhereIsEveryoneApplication.friendsKey,
                 defaultList.toString()
             )
-        return adapter.fromJson(jsonText)?.list ?: defaultList
+
+        return jsonText?.let { adapter.fromJson(it) } ?: defaultList
     }
 
 }

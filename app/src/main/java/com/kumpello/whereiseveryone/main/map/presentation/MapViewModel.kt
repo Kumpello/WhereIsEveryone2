@@ -50,6 +50,7 @@ class MapViewModel(
     private suspend fun collectLocation() {
         locationService.getLocation().mapLatest { location ->
             //TODO: Add location.accuracy ?
+
             Location(
                 lat = location.latitude,
                 lon = location.longitude,

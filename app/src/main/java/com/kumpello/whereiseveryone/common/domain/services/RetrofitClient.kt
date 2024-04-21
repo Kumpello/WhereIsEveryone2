@@ -5,7 +5,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 
 object RetrofitClient {
-    private const val tempBaseUrl = "http://192.168.0.216:8080/api/"
+    private const val tempBaseUrl = "http://192.168.0.146:8080/api/"
 
     private val okHttpClient = OkHttpClient()
         .newBuilder()

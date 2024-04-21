@@ -123,6 +123,7 @@ class LocationServiceImpl(
             for (location in locationResult.locations) {
                 scope.launch {
                     locationFlow.emit(location)
+                    Timber.d("Emiting location")
                     sendLocation(location)
                 }
             }

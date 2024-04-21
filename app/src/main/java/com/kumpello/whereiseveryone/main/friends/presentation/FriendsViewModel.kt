@@ -6,6 +6,7 @@ import com.kumpello.whereiseveryone.common.entity.ScreenState
 import com.kumpello.whereiseveryone.main.common.domain.usecase.AddFriendUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.RemoveFriendUseCase
 import com.kumpello.whereiseveryone.main.friends.model.Friend
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 class FriendsViewModel(
     private val addFriendUseCase: AddFriendUseCase,
@@ -43,14 +45,18 @@ class FriendsViewModel(
     }
 
     private fun addFriend() {
-        viewModelScope.runCatching {
-            addFriendUseCase.execute(state.value.addFriendNick) //TODO: Get result, emit action
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching {
+                addFriendUseCase.execute(state.value.addFriendNick) //TODO: Get result, emit action
+            }
         }
     }
 
     private fun deleteFriend(id: String) {
-        viewModelScope.runCatching {
-            removeFriendUseCase.execute(id) //TODO: Get result, emit action
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching {
+                removeFriendUseCase.execute(id) //TODO: Get result, emit action
+            }
         }
     }
 

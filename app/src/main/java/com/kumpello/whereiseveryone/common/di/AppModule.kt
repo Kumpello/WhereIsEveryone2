@@ -18,7 +18,9 @@ import com.kumpello.whereiseveryone.main.map.presentation.PositionsServiceImpl
 import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
 import com.kumpello.whereiseveryone.main.map.domain.usecase.GetFriendsPositionsUseCase
 import com.kumpello.whereiseveryone.main.map.domain.usecase.SendPositionUseCase
+import com.kumpello.whereiseveryone.main.map.presentation.LocationService
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
+import com.kumpello.whereiseveryone.main.map.presentation.PositionsService
 import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
@@ -36,7 +38,14 @@ val appModule = module {
             get()
         )
     }
-    single { MapViewModel(get(), get()) } //TODO: Do something with services
+    factory<LocationService> { (activityContext: Context) ->
+        LocationServiceImpl(LocationServices.getFusedLocationProviderClient(activityContext))
+    }
+    factory<PositionsService> {
+        PositionsServiceImpl()
+    }
+    single { PositionsServiceImpl() }
+    //single { MapViewModel(get(), get()) } //TODO: Do something with services
     single { SettingsViewModel() }
     single { FriendsViewModel(get(), get()) }
     single { GetCurrentAuthKeyUseCase(get(), get()) }
@@ -47,8 +56,4 @@ val appModule = module {
     single { SendPositionUseCase(get(), get()) }
     single { GetFriendsPositionsUseCase(get(), get(), get()) }
     single { GetEncryptedPreferencesUseCase(androidContext()) }
-    factory { (activityContext: Context) ->
-        LocationServiceImpl(LocationServices.getFusedLocationProviderClient(activityContext))
-    }
-    single { PositionsServiceImpl() }
 }

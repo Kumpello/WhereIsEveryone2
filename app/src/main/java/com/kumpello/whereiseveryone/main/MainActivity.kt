@@ -48,8 +48,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         checkInitialPermissions()
-        requestPermissions(getPermissionsLauncher())
-        startLocationService()
+        requestPermissionsOrStartLocationService(getPermissionsLauncher())
 
         setContent {
             WhereIsEveryoneTheme {
@@ -60,28 +59,22 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
-        if (isLocationServiceBound) {
+        if (!isLocationServiceBound) {
             bindLocationService()
             setLocationService(LocationService.UpdateType.Foreground)
         }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        startPositionsService()
-        bindPositionsService()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        stopPositionsService()
-        unbindPositionsService()
+        if (!isPositionsServiceBound) {
+            bindPositionsService()
+        }
     }
 
     override fun onStop() {
         super.onStop()
         if (isLocationServiceBound) {
             setLocationService(LocationService.UpdateType.Background)
+        }
+        if (isPositionsServiceBound) {
+            unbindPositionsService()
         }
     }
 
@@ -104,17 +97,8 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun startPositionsService() {
-        applicationContext.startService(Intent(this, PositionsServiceImpl::class.java))
-    }
-
     private fun stopLocationService() {
         val serviceIntent = Intent(this, LocationServiceImpl::class.java)
-        stopService(serviceIntent)
-    }
-
-    private fun stopPositionsService() {
-        val serviceIntent = Intent(this, PositionsServiceImpl::class.java)
         stopService(serviceIntent)
     }
 
@@ -138,7 +122,7 @@ class MainActivity : ComponentActivity() {
 
     private fun unbindPositionsService() {
         Intent(this, PositionsServiceImpl::class.java).also {
-            unbindService(locationServiceConnection)
+            unbindService(positionsServiceConnection)
         }
     }
 
@@ -160,11 +144,13 @@ class MainActivity : ComponentActivity() {
                 !isFineLocationPermissionGranted
             ) {
                 //TODO: Action when user deny permissions
+            } else {
+                startLocationService()
             }
         }
     }
 
-    private fun requestPermissions(permissionLauncher: ActivityResultLauncher<Array<String>>) {
+    private fun requestPermissionsOrStartLocationService(permissionLauncher: ActivityResultLauncher<Array<String>>) {
         val permissionRequestList = ArrayList<String>()
 
         when {
@@ -178,6 +164,8 @@ class MainActivity : ComponentActivity() {
 
         if (permissionRequestList.isNotEmpty()) {
             permissionLauncher.launch(permissionRequestList.toTypedArray())
+        } else {
+            startLocationService()
         }
     }
 
