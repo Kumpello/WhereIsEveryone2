@@ -105,7 +105,10 @@ fun Map(
         },
         logo = {
             Logo(
-                modifier = Modifier.padding(start = 16.dp)
+                modifier = Modifier.padding(
+                    start = 6.dp,
+                    bottom = 2.dp
+                )
             )
         }
     )
