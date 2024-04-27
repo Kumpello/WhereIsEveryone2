@@ -11,17 +11,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.map.ui.FloatingCard
 import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import org.koin.androidx.compose.getViewModel
 
 @Composable
 fun SettingsFloatingCard(
     modifier: Modifier = Modifier,
     navigator: DestinationsNavigator,
-    viewModel: SettingsViewModel = viewModel()
+    viewModel: SettingsViewModel = getViewModel()
 ) {
     val state by viewModel.state.collectAsState()
 

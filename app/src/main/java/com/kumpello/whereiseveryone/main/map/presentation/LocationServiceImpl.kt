@@ -38,11 +38,12 @@ import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import timber.log.Timber
 
-
 class LocationServiceImpl(
-    private val fusedLocationClient: FusedLocationProviderClient,
+    //private val fusedLocationClient: FusedLocationProviderClient,
     //private val fusedOrientationClient: FusedOrientationProviderClient
 ) : Service(), LocationService {
+    private val fusedLocationClient: FusedLocationProviderClient by inject()
+
     private val state = MutableStateFlow(State())
     private val exposedState = state.asStateFlow() //TODO: Change "exposed" to something else
     private val locationFlow = MutableSharedFlow<Location>()
@@ -56,7 +57,6 @@ class LocationServiceImpl(
 
     override fun onCreate() {
         super.onCreate()
-
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {

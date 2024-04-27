@@ -2,7 +2,6 @@ package com.kumpello.whereiseveryone.main.map.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.kumpello.whereiseveryone.authentication.login.presentation.LoginViewModel
 import com.kumpello.whereiseveryone.common.entity.ScreenState
 import com.kumpello.whereiseveryone.main.friends.model.Location
 import com.kumpello.whereiseveryone.main.map.data.model.FriendPosition
@@ -36,8 +35,8 @@ class MapViewModel(
         initialValue = state.value.toViewState()
     )
 
-    private val _action = MutableSharedFlow<LoginViewModel.Action>()
-    val action: SharedFlow<LoginViewModel.Action> = _action.asSharedFlow()
+    private val _action = MutableSharedFlow<Action>()
+    val action: SharedFlow<Action> = _action.asSharedFlow()
 
     init {
         positionsService.startFriendsUpdates()
@@ -94,11 +93,18 @@ class MapViewModel(
         }
     }
 
+    private fun centerMap() {
+        viewModelScope.launch {
+            _action.emit(Action.CenterMap)
+        }
+    }
+
     fun trigger(command: Command) {
         when (command) {
             Command.NavigateFriends -> navigateFriends()
             Command.NavigateSettings -> navigateSettings()
             Command.BackToMap -> backToMap()
+            Command.CenterMap -> centerMap()
         }
     }
 
@@ -111,12 +117,14 @@ class MapViewModel(
     }
 
     sealed class Action {
-
+        data object CenterMap: Action()
     }
 
     sealed class Command {
         data object NavigateSettings: Command()
         data object NavigateFriends: Command()
+        data object CenterMap: Command()
+        //data object LockMap: Command() //TODO: Add?
         data object BackToMap: Command()
     }
 

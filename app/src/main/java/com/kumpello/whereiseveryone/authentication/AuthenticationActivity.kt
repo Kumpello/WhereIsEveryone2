@@ -25,13 +25,13 @@ import com.ramcosta.composedestinations.navigation.dependency
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
-import org.koin.android.ext.android.inject
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class AuthenticationActivity : ComponentActivity(), CoroutineScope by MainScope() {
 
-    private val loginViewModel : LoginViewModel by inject()
-    private val signUpViewModel : SignUpViewModel by inject()
-    private val splashViewModel : SplashViewModel by inject()
+    private val loginViewModel : LoginViewModel by viewModel()
+    private val signUpViewModel : SignUpViewModel by viewModel()
+    private val splashViewModel : SplashViewModel by viewModel()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

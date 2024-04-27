@@ -13,6 +13,7 @@ import android.os.Bundle
 import android.os.IBinder
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -27,13 +28,12 @@ import com.kumpello.whereiseveryone.main.map.presentation.PositionsService
 import com.kumpello.whereiseveryone.main.map.presentation.PositionsServiceImpl
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.navigation.dependency
-import org.koin.android.ext.android.inject
-import org.koin.core.parameter.parametersOf
+import org.koin.androidx.viewmodel.ext.android.viewModel
 import timber.log.Timber
 
 class MainActivity : ComponentActivity() {
 
-    private val mapViewModel: MapViewModel by inject{ parametersOf(this) } //TODO: Add services as parameters?
+    private val mapViewModel: MapViewModel by viewModel()//TODO: Add services as parameters?
 
     private var isBackGroundPermissionGranted = false
     private var isFineLocationPermissionGranted = false
@@ -46,6 +46,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        enableEdgeToEdge()
 
         checkInitialPermissions()
         requestPermissionsOrStartLocationService(getPermissionsLauncher())

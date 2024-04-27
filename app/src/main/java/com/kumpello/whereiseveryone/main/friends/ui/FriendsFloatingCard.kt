@@ -23,7 +23,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.common.ui.shortToast
 import com.kumpello.whereiseveryone.common.ui.entity.Button
@@ -33,11 +32,12 @@ import com.kumpello.whereiseveryone.main.friends.model.Friend
 import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
 import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel.DeleteFriendDialogState
 import com.kumpello.whereiseveryone.main.map.ui.FloatingCard
+import org.koin.androidx.compose.getViewModel
 
 @Composable
 fun FriendsFloatingCard(
     modifier: Modifier = Modifier,
-    viewModel: FriendsViewModel = viewModel()
+    viewModel: FriendsViewModel = getViewModel()
 ) {
     val context = LocalContext.current
     val state by viewModel.viewState.collectAsState()

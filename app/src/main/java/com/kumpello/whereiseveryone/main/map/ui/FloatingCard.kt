@@ -18,7 +18,12 @@ fun FloatingCard(
     Card(
         modifier = modifier
             .fillMaxSize()
-            .padding(50.dp),
+            .padding(
+                start = 40.dp,
+                end = 40.dp,
+                top = 120.dp,
+                bottom = 50.dp
+            ),
         colors = CardDefaults.cardColors().copy(
             containerColor = MaterialTheme.colorScheme.background
         ),
