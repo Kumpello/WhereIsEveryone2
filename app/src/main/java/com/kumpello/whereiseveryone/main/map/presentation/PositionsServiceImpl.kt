@@ -45,7 +45,7 @@ class PositionsServiceImpl : Service(), PositionsService {
         return binder
     }
 
-    override fun startFriendsUpdates() {
+    override fun startFriendsUpdates() { //TODO: Something's fucky about way it is done, refactor
         scope.launch {
             while (updateFriends) {
                 runCatching {

@@ -3,6 +3,7 @@ package com.kumpello.whereiseveryone.main
 import android.Manifest.permission.ACCESS_BACKGROUND_LOCATION
 import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
+import android.Manifest.permission.POST_NOTIFICATIONS
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -38,6 +39,7 @@ class MainActivity : ComponentActivity() {
     private var isBackGroundPermissionGranted = false //TODO: There is too much variables, Enum list, map?
     private var isFineLocationPermissionGranted = false
     private var isCoarseLocationPermissionGranted = false
+    private var isPostNotificationsPermissionGranted = false
     private var locationService: LocationService? = null //TODO: Create abstraction for service + bound status
     private var isLocationServiceBound: Boolean = false
     private var positionsService: PositionsService? = null
@@ -129,26 +131,35 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun getPermissionsLauncher(): ActivityResultLauncher<Array<String>> {
+    private fun getPermissionsLauncher(): ActivityResultLauncher<Array<String>> { //TODO: It's done horrible, refactor
         return registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                isBackGroundPermissionGranted =
-                    permissions[ACCESS_BACKGROUND_LOCATION]
-                        ?: isBackGroundPermissionGranted
+            isBackGroundPermissionGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                permissions[ACCESS_BACKGROUND_LOCATION]
+                    ?: isBackGroundPermissionGranted
+            } else {
+                true
             }
+            isPostNotificationsPermissionGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                permissions[POST_NOTIFICATIONS]
+                    ?: isPostNotificationsPermissionGranted
+            } else {
+                true
+            }
+
             isFineLocationPermissionGranted =
                 permissions[ACCESS_FINE_LOCATION]
                     ?: isFineLocationPermissionGranted
             isCoarseLocationPermissionGranted =
                 permissions[ACCESS_COARSE_LOCATION]
                     ?: isCoarseLocationPermissionGranted
-            if (!isBackGroundPermissionGranted ||
-                !isCoarseLocationPermissionGranted ||
-                !isFineLocationPermissionGranted
+            if (isBackGroundPermissionGranted &&
+                isCoarseLocationPermissionGranted &&
+                isFineLocationPermissionGranted &&
+                isPostNotificationsPermissionGranted
             ) {
-                //TODO: Action when user deny permissions
-            } else {
                 startLocationService()
+            } else {
+                //TODO: Action when user deny permissions
             }
         }
     }
@@ -163,6 +174,8 @@ class MainActivity : ComponentActivity() {
                 permissionRequestList.add(ACCESS_FINE_LOCATION)
             !isBackGroundPermissionGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ->
                 permissionRequestList.add(ACCESS_BACKGROUND_LOCATION)
+            !isPostNotificationsPermissionGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU ->
+                permissionRequestList.add(POST_NOTIFICATIONS)
         }
 
         if (permissionRequestList.isNotEmpty()) {
@@ -176,6 +189,12 @@ class MainActivity : ComponentActivity() {
         isBackGroundPermissionGranted =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 checkPermission(ACCESS_BACKGROUND_LOCATION)
+            } else {
+                true
+            }
+        isPostNotificationsPermissionGranted =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                checkPermission(POST_NOTIFICATIONS)
             } else {
                 true
             }
