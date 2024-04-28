@@ -211,7 +211,7 @@ class LocationServiceImpl(
     }
 
     private fun sendLocation(location: Location) {
-        CoroutineScope(Dispatchers.IO).launch {
+        scope.launch {
             runCatching {
                 sendLocationUseCase.execute(location.longitude, location.latitude) //TODO: Add parameters!
                     .let { response ->

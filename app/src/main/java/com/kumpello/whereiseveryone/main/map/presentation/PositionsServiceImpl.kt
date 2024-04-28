@@ -8,6 +8,7 @@ import com.kumpello.whereiseveryone.main.map.data.model.PositionsResponse
 import com.kumpello.whereiseveryone.main.map.domain.usecase.GetFriendsPositionsUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -22,6 +23,10 @@ class PositionsServiceImpl : Service(), PositionsService {
     private val updateFriendsInterval = 3000 // 3 min
     private val _positions = MutableSharedFlow<PositionsResponse>()
     private val positions = _positions.asSharedFlow() //TODO: StateFlow? Only one receiver
+
+    private val job = SupervisorJob()
+    private val scope = CoroutineScope(Dispatchers.IO + job)
+
     private val getFriendsPositionsUseCase: GetFriendsPositionsUseCase by inject()
 
     private var updateFriends = true
@@ -41,7 +46,7 @@ class PositionsServiceImpl : Service(), PositionsService {
     }
 
     override fun startFriendsUpdates() {
-        CoroutineScope(Dispatchers.IO).launch {
+        scope.launch {
             while (updateFriends) {
                 runCatching {
                     Timber.d("Trying to get location")
