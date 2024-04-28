@@ -22,7 +22,7 @@ fun FloatingCard(
                 start = 40.dp,
                 end = 40.dp,
                 top = 120.dp,
-                bottom = 50.dp
+                bottom = 100.dp
             ),
         colors = CardDefaults.cardColors().copy(
             containerColor = MaterialTheme.colorScheme.background

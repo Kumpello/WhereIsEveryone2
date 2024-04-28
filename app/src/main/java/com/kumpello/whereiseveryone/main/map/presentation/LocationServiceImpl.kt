@@ -1,11 +1,13 @@
 package com.kumpello.whereiseveryone.main.map.presentation
 
+import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.location.Location
 import android.os.Binder
@@ -16,6 +18,7 @@ import android.os.Looper
 import android.os.Process
 import android.os.SystemClock
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.Granularity.GRANULARITY_FINE
 import com.google.android.gms.location.LocationCallback
@@ -23,8 +26,7 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.Priority
 import com.kumpello.whereiseveryone.main.MainActivity
-import com.kumpello.whereiseveryone.main.MainActivity.Companion.STATUS_PARAM
-import com.kumpello.whereiseveryone.main.map.domain.usecase.SendPositionUseCase
+import com.kumpello.whereiseveryone.main.map.domain.usecase.SendLocationUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -53,16 +55,29 @@ class LocationServiceImpl(
     private val channelID = "WhereIsEveryone"
     private val job = SupervisorJob()
     private val scope = CoroutineScope(Dispatchers.IO + job)
-    private val sendPositionUseCase: SendPositionUseCase by inject()
+    private val sendLocationUseCase: SendLocationUseCase by inject()
 
     override fun onCreate() {
+        Timber.d("LocationService onCreate")
         super.onCreate()
+
+        startService()
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
+        Timber.d("LocationService onStartCommand")
+
+        startService()
+        // If we get killed, after returning from here, restart
+        return START_STICKY
+    }
+
+    private fun startService() {
+        Timber.d("LocationService checking permissions")
+        checkPermissions()
         Timber.d("LocationService starting")
 
-        val input = intent.getStringExtra(STATUS_PARAM)
+        //val input = intent.getStringExtra(STATUS_PARAM)
         createNotificationChannel()
         val notificationIntent = Intent(this, MainActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(
@@ -73,7 +88,7 @@ class LocationServiceImpl(
         //TODO: Add icons and logo
         val notification: Notification = NotificationCompat.Builder(this, channelID)
             .setContentTitle(getText(com.kumpello.whereiseveryone.R.string.notification_title))
-            .setContentText(input)
+            //.setContentText(input)
             //.setSmallIcon(R.drawable.ic_stat_name)
             //.setTicker(getText(R.string.ticker_text))
             .setContentIntent(pendingIntent)
@@ -89,9 +104,32 @@ class LocationServiceImpl(
             start()
             startLocationUpdates(updateType = exposedState.value.updateType)
         }
+    }
 
-        // If we get killed, after returning from here, restart
-        return START_STICKY
+    private fun checkPermissions() {
+        val backgroundPermission =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                )
+            } else {
+                PackageManager.PERMISSION_GRANTED
+            }
+        val fineLocationPermission =
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+        val coarseLocationPermission =
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+
+        if (
+            backgroundPermission == PackageManager.PERMISSION_DENIED
+            || fineLocationPermission == PackageManager.PERMISSION_DENIED
+            || coarseLocationPermission == PackageManager.PERMISSION_DENIED
+        ) {
+            // TODO: Consider informing user or updating your app UI if visible.
+            stopSelf()
+            return
+        }
     }
 
     override fun onDestroy() {
@@ -131,11 +169,12 @@ class LocationServiceImpl(
     }
 
     override fun changeUpdateType(updateType: LocationService.UpdateType) {
-        when(updateType) {
+        when (updateType) {
             LocationService.UpdateType.Background -> {
                 stopUpdates()
                 startLocationUpdates(updateType)
             }
+
             LocationService.UpdateType.Foreground -> {
                 stopUpdates()
                 startLocationUpdates(updateType)
@@ -148,7 +187,7 @@ class LocationServiceImpl(
             try {
                 Timber.d("Trying to send location")
                 fusedLocationClient.requestLocationUpdates(
-                    when(updateType) {
+                    when (updateType) {
                         LocationService.UpdateType.Background -> getBackgroundRequest()
                         LocationService.UpdateType.Foreground -> getForegroundRequest()
                     },
@@ -172,26 +211,33 @@ class LocationServiceImpl(
     }
 
     private fun sendLocation(location: Location) {
-        sendPositionUseCase.execute(location.longitude, location.latitude)
-            .let { response ->
-                Timber.d("Sending location code $response")
-            }
-    }
-
-    private fun getForegroundRequest() = LocationRequest //TODO: Get settings directly LocationRequestSettings as extension, or soome other better way
-        .Builder(state.value.foregroundSettings.interval)
-        .setGranularity(GRANULARITY_FINE)
-        .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
-        .setWaitForAccurateLocation(true)
-        .setMaxUpdateAgeMillis(state.value.foregroundSettings.maxAge)
-        .setMinUpdateIntervalMillis(state.value.foregroundSettings.minInterval)
-        .build().also {
-            state.update {
-                it.copy(
-                    updateType = LocationService.UpdateType.Foreground
-                )
+        CoroutineScope(Dispatchers.IO).launch {
+            runCatching {
+                sendLocationUseCase.execute(location.longitude, location.latitude) //TODO: Add parameters!
+                    .let { response ->
+                        Timber.d("Sending location code $response") //TODO: Send to UI if failed
+                    }
+            }.onFailure { error ->
+                Timber.d(error) //TODO: Send to UI if error
             }
         }
+    }
+
+    private fun getForegroundRequest() =
+        LocationRequest //TODO: Get settings directly LocationRequestSettings as extension, or soome other better way
+            .Builder(state.value.foregroundSettings.interval)
+            .setGranularity(GRANULARITY_FINE)
+            .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
+            .setWaitForAccurateLocation(true)
+            .setMaxUpdateAgeMillis(state.value.foregroundSettings.maxAge)
+            .setMinUpdateIntervalMillis(state.value.foregroundSettings.minInterval)
+            .build().also {
+                state.update {
+                    it.copy(
+                        updateType = LocationService.UpdateType.Foreground
+                    )
+                }
+            }
 
     private fun getBackgroundRequest() = LocationRequest
         .Builder(state.value.backgroundSettings.interval)

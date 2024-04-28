@@ -4,7 +4,7 @@ import com.kumpello.whereiseveryone.common.domain.ucecase.GetCurrentAuthKeyUseCa
 import com.kumpello.whereiseveryone.main.map.data.model.LocationResponse
 import com.kumpello.whereiseveryone.main.map.domain.repository.LocationRepository
 
-class SendPositionUseCase(
+class SendLocationUseCase(
     private val locationRepository: LocationRepository,
     private val getCurrentAuthKeyUseCase: GetCurrentAuthKeyUseCase
 ) {

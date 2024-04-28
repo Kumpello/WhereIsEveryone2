@@ -33,12 +33,12 @@ import timber.log.Timber
 
 class MainActivity : ComponentActivity() {
 
-    private val mapViewModel: MapViewModel by viewModel()//TODO: Add services as parameters?
+    private val mapViewModel: MapViewModel by viewModel()
 
-    private var isBackGroundPermissionGranted = false
+    private var isBackGroundPermissionGranted = false //TODO: There is too much variables, Enum list, map?
     private var isFineLocationPermissionGranted = false
     private var isCoarseLocationPermissionGranted = false
-    private var locationService: LocationService? = null
+    private var locationService: LocationService? = null //TODO: Create abstraction for service + bound status
     private var isLocationServiceBound: Boolean = false
     private var positionsService: PositionsService? = null
     private var isPositionsServiceBound: Boolean = false
@@ -86,10 +86,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun startLocationService() {
-        val serviceIntent = Intent(this, LocationServiceImpl::class.java)
+        val serviceIntent = Intent(applicationContext, LocationServiceImpl::class.java)
         //TODO: Add value to extra
         serviceIntent.putExtra(STATUS_PARAM, "test value")
-        applicationContext.startForegroundService(intent)
+        ContextCompat.startForegroundService(applicationContext, intent)
+        //applicationContext.startForegroundService(intent)
     }
 
     private fun setLocationService(type: LocationService.UpdateType) {
