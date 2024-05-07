@@ -11,4 +11,5 @@
     <string name="error_adding_friend">Error adding friend</string>
     <string name="friend_deleted_successfully">Friend deleted successfully</string>
     <string name="error_deleting_friend">Error deleting friend</string>
+    <string name="click_here_to_go_to_map">Click here to go to map!</string>
 </resources>

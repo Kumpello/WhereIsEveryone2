@@ -134,7 +134,7 @@ private fun FriendsFloatingCard(
 @Preview(showBackground = true)
 @Composable
 fun FriendsPreview() { //TODO: Get this preview unfucked
-    WhereIsEveryoneTheme {
+    WhereIsEveryoneTheme(darkTheme = true) {
         FriendsFloatingCard(
             viewState = FriendsViewModel.ViewState(
                 friends = listOf(

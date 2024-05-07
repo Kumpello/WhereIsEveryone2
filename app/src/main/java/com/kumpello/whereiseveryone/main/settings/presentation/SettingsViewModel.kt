@@ -2,7 +2,6 @@ package com.kumpello.whereiseveryone.main.settings.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.kumpello.whereiseveryone.common.entity.ScreenState
 import com.kumpello.whereiseveryone.authentication.login.presentation.LoginViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,32 +29,39 @@ class SettingsViewModel(
 
     fun trigger(command: Command) {
         when (command) {
-
+            Command.ClearData -> TODO() //TODO: CURRENT
+            Command.SwitchLocationServiceState -> TODO()
             else -> {}
         }
     }
 
     private fun State.toViewState(): ViewState {
         return ViewState(
-            //screenState = screenState,
-            mock = mock
+            locationServiceState = locationServiceState,
+            locationSwitchText = when(locationServiceState) {
+                true -> "Stop sharing location"
+                false -> "Start sharing location"
+            },
+            deleteLocationData = "Delete your location data"
         )
     }
 
     sealed class Action {
-
     }
 
     sealed class Command {
+        data object ClearData : Command()
+        data object SwitchLocationServiceState : Command()
+
     }
 
     data class State(
-        //val screenState: ScreenState = ScreenState.Map,
-        val mock: Any = "Dupa"
+        val locationServiceState: Boolean = true
     )
 
     data class ViewState(
-        //val screenState: ScreenState
-        val mock: Any
+        val locationServiceState: Boolean,
+        val locationSwitchText: String,
+        val deleteLocationData: String,
     )
 }

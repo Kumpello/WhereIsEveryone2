@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.kumpello.whereiseveryone.common.ui.entity.Button
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.map.ui.FloatingCard
 import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel
@@ -46,10 +47,21 @@ private fun SettingsFloatingCard(
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.Center,
+            verticalArrangement = Arrangement.spacedBy(15.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-
+            Button.Animated(
+                text = viewState.locationSwitchText,
+                width = 250
+            ) {
+                trigger(SettingsViewModel.Command.SwitchLocationServiceState)
+            }
+            Button.Animated(
+                text = viewState.deleteLocationData,
+                width = 250
+            ) {
+                trigger(SettingsViewModel.Command.ClearData)
+            }
         }
     }
 }
@@ -57,10 +69,12 @@ private fun SettingsFloatingCard(
 @Preview(showBackground = true)
 @Composable
 fun SettingsPreview() {
-    WhereIsEveryoneTheme {
+    WhereIsEveryoneTheme(darkTheme = true) {
         SettingsFloatingCard(
             viewState = SettingsViewModel.ViewState(
-                mock = "Dupa"
+                locationServiceState = true,
+                locationSwitchText = "Stop sharing location",
+                deleteLocationData = "Delete your location data"
             )
         ) {}
     }

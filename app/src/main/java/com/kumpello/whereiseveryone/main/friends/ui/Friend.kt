@@ -47,7 +47,10 @@ fun Friend(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(friend.nick) //TODO: Add friend since date
+            Text(
+                modifier = Modifier.padding(start = 4.dp),
+                text = friend.nick
+            ) //TODO: Add friend since date
             IconButton( //TODO: Add share location switch and confirmation by color change
                 onClick = { trigger(FriendsViewModel.Command.DeleteFriend(friend.id)) },
                 modifier = Modifier

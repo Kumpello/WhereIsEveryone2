@@ -25,6 +25,7 @@ import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.Priority
+import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.main.MainActivity
 import com.kumpello.whereiseveryone.main.map.domain.usecase.SendLocationUseCase
 import kotlinx.coroutines.CoroutineScope
@@ -78,18 +79,20 @@ class LocationServiceImpl(
         Timber.d("LocationService starting")
 
         //val input = intent.getStringExtra(STATUS_PARAM)
-        createNotificationChannel()
+        val manager = getSystemService(NotificationManager::class.java)
+        createNotificationChannel(manager)
         val notificationIntent = Intent(this, MainActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(
             this,
-            0, notificationIntent, PendingIntent.FLAG_IMMUTABLE
+            420, notificationIntent, PendingIntent.FLAG_IMMUTABLE
         )
 
         //TODO: Add icons and logo
         val notification: Notification = NotificationCompat.Builder(this, channelID)
-            .setContentTitle(getText(com.kumpello.whereiseveryone.R.string.notification_title))
-            //.setContentText(input)
-            //.setSmallIcon(R.drawable.ic_stat_name)
+            .setContentTitle(getText(R.string.notification_title))
+            .setContentText(getString(R.string.click_here_to_go_to_map))
+            //.setSubText(getString(R.string.click_here_to_go_to_map))
+            .setSmallIcon(R.drawable.ic_share_location)
             //.setTicker(getText(R.string.ticker_text))
             .setContentIntent(pendingIntent)
             .build()
@@ -146,14 +149,13 @@ class LocationServiceImpl(
         return binder
     }
 
-    private fun createNotificationChannel() {
+    private fun createNotificationChannel(notificationManager: NotificationManager) {
         val serviceChannel = NotificationChannel(
             channelID,
             "WhereIsEveryone Channel",
-            NotificationManager.IMPORTANCE_DEFAULT
+            NotificationManager.IMPORTANCE_HIGH
         )
-        val manager = getSystemService(NotificationManager::class.java)
-        manager.createNotificationChannel(serviceChannel)
+        notificationManager.createNotificationChannel(serviceChannel)
     }
 
     private val locationCallback = object : LocationCallback() {

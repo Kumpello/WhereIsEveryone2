@@ -50,13 +50,9 @@
         <activity
             android:name=".main.MainActivity"
             android:screenOrientation="portrait"
-            android:exported="false" >
-
-            <!--
-                <meta-data
-                android:name="com.google.android.geo.API_KEY"
-                android:value="${MAPS_API_KEY}" />
-            -->
+            android:exported="false"
+            android:launchMode="singleInstance"
+            >
         </activity>
         <activity
             android:name=".authentication.AuthenticationActivity"
