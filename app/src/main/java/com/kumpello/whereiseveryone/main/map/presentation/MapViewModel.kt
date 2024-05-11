@@ -6,6 +6,7 @@ import com.kumpello.whereiseveryone.common.entity.ScreenState
 import com.kumpello.whereiseveryone.main.friends.model.Location
 import com.kumpello.whereiseveryone.main.map.data.model.FriendPosition
 import com.kumpello.whereiseveryone.main.map.entity.MapSettings
+import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -23,7 +24,8 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalCoroutinesApi::class)
 class MapViewModel(
     private val locationService: LocationService,
-    private val positionsService: PositionsService
+    private val positionsService: PositionsService,
+    private val settingsViewModel: SettingsViewModel
 ) : ViewModel() {
 
     private val state = MutableStateFlow(State())
@@ -70,9 +72,12 @@ class MapViewModel(
     }
 
     private fun navigateSettings() {
+
         state.update {
             it.copy(
-                screenState = ScreenState.Settings
+                screenState = ScreenState.Settings(
+                    settingsViewModel = settingsViewModel
+                )
             )
         }
     }

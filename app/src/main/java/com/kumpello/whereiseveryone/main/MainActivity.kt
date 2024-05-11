@@ -24,17 +24,23 @@ import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.destinations.MapScreenDestination
 import com.kumpello.whereiseveryone.main.map.presentation.LocationService
 import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceImpl
+import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceInterface
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
 import com.kumpello.whereiseveryone.main.map.presentation.PositionsService
 import com.kumpello.whereiseveryone.main.map.presentation.PositionsServiceImpl
+import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.navigation.dependency
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import org.koin.core.parameter.parametersOf
 import timber.log.Timber
 
-class MainActivity : ComponentActivity() {
+class MainActivity : ComponentActivity(), LocationServiceInterface {
 
-    private val mapViewModel: MapViewModel by viewModel()
+    private val settingsViewModel: SettingsViewModel by viewModel{ parametersOf(this) }
+    private val mapViewModel: MapViewModel by viewModel { parametersOf(settingsViewModel) }
 
     private var isBackGroundPermissionGranted = false //TODO: There is too much variables, Enum list, map?
     private var isFineLocationPermissionGranted = false
@@ -87,12 +93,11 @@ class MainActivity : ComponentActivity() {
         unbindLocationService()
     }
 
-    private fun startLocationService() {
+    override fun startLocationService() {
         val serviceIntent = Intent(applicationContext, LocationServiceImpl::class.java)
         //TODO: Add value to extra
         serviceIntent.putExtra(STATUS_PARAM, "test value")
         ContextCompat.startForegroundService(applicationContext, intent)
-        //applicationContext.startForegroundService(intent)
     }
 
     private fun setLocationService(type: LocationService.UpdateType) {
@@ -102,7 +107,8 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun stopLocationService() {
+    override fun stopLocationService() {
+        Timber.d("Stopping location service")
         val serviceIntent = Intent(this, LocationServiceImpl::class.java)
         stopService(serviceIntent)
     }
@@ -252,7 +258,6 @@ class MainActivity : ComponentActivity() {
     }
 
     companion object {
-
         const val STATUS_PARAM = "STATUS"
     }
 }

@@ -34,8 +34,12 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
@@ -107,6 +111,8 @@ class LocationServiceImpl(
             start()
             startLocationUpdates(updateType = exposedState.value.updateType)
         }
+
+        scope.launch { LocationServiceImpl.state.emit(true) }
     }
 
     private fun checkPermissions() {
@@ -138,6 +144,8 @@ class LocationServiceImpl(
     override fun onDestroy() {
         Timber.d("LocationService stopping")
         super.onDestroy()
+
+        scope.launch { LocationServiceImpl.state.emit(false) }
     }
 
     inner class LocationBinder : Binder() {
@@ -303,4 +311,14 @@ class LocationServiceImpl(
             val interval: Long,
         )
     }
+
+    companion object { //TODO: Lift to interface
+        private val state: MutableStateFlow<Boolean> = MutableStateFlow(false)
+        val stateFlow: StateFlow<Boolean> = state.map { state.value } .stateIn(
+            scope = CoroutineScope(Dispatchers.Main),
+            started = SharingStarted.Eagerly,
+            initialValue = state.value
+        )
+    }
+
 }

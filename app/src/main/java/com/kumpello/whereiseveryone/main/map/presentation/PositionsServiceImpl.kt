@@ -20,7 +20,7 @@ import timber.log.Timber
 class PositionsServiceImpl : Service(), PositionsService {
 
     private val binder: IBinder = PositionsBinder()
-    private val updateFriendsInterval = 3000 // 3 min
+    private val updateFriendsInterval = 30000 // 30 s
     private val _positions = MutableSharedFlow<PositionsResponse>()
     private val positions = _positions.asSharedFlow() //TODO: StateFlow? Only one receiver
 
@@ -53,10 +53,10 @@ class PositionsServiceImpl : Service(), PositionsService {
                     val positions = getFriendsPositionsUseCase.execute()
                     Timber.d("Emiting friends location")
                     this@PositionsServiceImpl._positions.emit(positions)
-                    delay(updateFriendsInterval.toLong())
                 }.onFailure { error ->
                     Timber.d(error)
                 }
+                delay(updateFriendsInterval.toLong())
             }
         }
     }

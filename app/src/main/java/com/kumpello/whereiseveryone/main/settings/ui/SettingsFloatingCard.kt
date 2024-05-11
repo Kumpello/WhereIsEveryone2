@@ -2,6 +2,9 @@ package com.kumpello.whereiseveryone.main.settings.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -46,19 +49,19 @@ private fun SettingsFloatingCard(
         modifier = modifier
     ) {
         Column(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(15.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Button.Animated(
                 text = viewState.locationSwitchText,
-                width = 250
             ) {
                 trigger(SettingsViewModel.Command.SwitchLocationServiceState)
             }
             Button.Animated(
                 text = viewState.deleteLocationData,
-                width = 250
             ) {
                 trigger(SettingsViewModel.Command.ClearData)
             }
@@ -72,7 +75,7 @@ fun SettingsPreview() {
     WhereIsEveryoneTheme(darkTheme = true) {
         SettingsFloatingCard(
             viewState = SettingsViewModel.ViewState(
-                locationServiceState = true,
+                isLocationServiceRunning = true,
                 locationSwitchText = "Stop sharing location",
                 deleteLocationData = "Delete your location data"
             )

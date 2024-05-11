@@ -18,6 +18,7 @@ import com.kumpello.whereiseveryone.main.common.domain.usecase.RemoveFriendUseCa
 import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
 import com.kumpello.whereiseveryone.main.map.domain.usecase.GetFriendsPositionsUseCase
 import com.kumpello.whereiseveryone.main.map.domain.usecase.SendLocationUseCase
+import com.kumpello.whereiseveryone.main.map.domain.usecase.WipeLocationUseCase
 import com.kumpello.whereiseveryone.main.map.presentation.LocationService
 import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceImpl
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
@@ -33,14 +34,22 @@ val appModule = module {
     viewModel { SplashViewModel(get()) }
     viewModel { LoginViewModel(get(), get()) }
     viewModel { SignUpViewModel(get(), get(), get()) }
-    viewModel {
+    viewModel {settingsViewModel ->
         MapViewModel(
-            get(),
-            get()
+            locationService = get(),
+            positionsService = get(),
+            settingsViewModel = settingsViewModel.get()
         )
     }
-    viewModel { SettingsViewModel() }
-    viewModel { FriendsViewModel(get(), get()) }
+    viewModel { locationServiceInterface ->
+        SettingsViewModel(
+            locationServiceInterface = locationServiceInterface.get(),
+            wipeLocationUseCase = get()
+    ) }
+    viewModel { FriendsViewModel(
+        get(),
+        get()
+    ) }
     single<LocationService> {
         LocationServiceImpl(
             //fusedLocationClient = LocationServices.getFusedLocationProviderClient(androidContext())
@@ -52,6 +61,7 @@ val appModule = module {
     single<PositionsService> {
         PositionsServiceImpl()
     }
+    single { WipeLocationUseCase() }
     single { PositionsServiceImpl() }
     single { ValidateLoginInputUseCase() }
     single { ValidatePasswordUseCase() }

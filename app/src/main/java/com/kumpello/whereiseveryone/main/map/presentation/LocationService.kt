@@ -15,4 +15,5 @@ interface LocationService {
         data object Foreground : UpdateType
         data object Background : UpdateType
     }
+
 }

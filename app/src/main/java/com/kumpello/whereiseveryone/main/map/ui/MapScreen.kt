@@ -111,10 +111,11 @@ fun MapScreen(
             actions = actions,
             userLocation = viewState.user
         )
-        when (viewState.screenState) { //TODO: Clear with back action!!!
+        when (viewState.screenState) {
             ScreenState.Friends -> FriendsFloatingCard()
-            ScreenState.Settings -> SettingsFloatingCard(
-                navigator = navigator
+            is ScreenState.Settings -> SettingsFloatingCard(
+                navigator = navigator,
+                viewModel = viewState.screenState.settingsViewModel
             )
 
             else -> {}
