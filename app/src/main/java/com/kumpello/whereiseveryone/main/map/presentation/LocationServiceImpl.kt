@@ -284,6 +284,11 @@ class LocationServiceImpl(
         }
     }
 
+    override fun stopLocationService() {
+        stopUpdates()
+        stopSelf()
+    }
+
     override fun getLocation(): Flow<Location> {
         return exposedLocationFlow
     }

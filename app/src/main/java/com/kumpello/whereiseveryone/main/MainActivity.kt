@@ -31,8 +31,6 @@ import com.kumpello.whereiseveryone.main.map.presentation.PositionsServiceImpl
 import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.navigation.dependency
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
 import timber.log.Timber
@@ -98,6 +96,7 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
         //TODO: Add value to extra
         serviceIntent.putExtra(STATUS_PARAM, "test value")
         ContextCompat.startForegroundService(applicationContext, intent)
+        bindLocationService()
     }
 
     private fun setLocationService(type: LocationService.UpdateType) {
@@ -109,8 +108,8 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
 
     override fun stopLocationService() {
         Timber.d("Stopping location service")
-        val serviceIntent = Intent(this, LocationServiceImpl::class.java)
-        stopService(serviceIntent)
+        unbindLocationService()
+        locationService?.stopLocationService()
     }
 
     private fun bindLocationService() {

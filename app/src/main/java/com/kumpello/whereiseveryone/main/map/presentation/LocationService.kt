@@ -7,6 +7,8 @@ interface LocationService {
     fun changeForegroundUpdateInterval(interval: Long)
     fun changeBackgroundUpdateInterval(interval: Long)
 
+    fun stopLocationService()
+
     fun getLocation() : Flow<Location>
 
     fun changeUpdateType(updateType: UpdateType)
