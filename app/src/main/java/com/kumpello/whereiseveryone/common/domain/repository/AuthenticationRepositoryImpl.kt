@@ -1,10 +1,11 @@
 package com.kumpello.whereiseveryone.common.domain.repository
 
-import com.kumpello.whereiseveryone.common.model.AuthResponse
 import com.kumpello.whereiseveryone.authentication.login.domain.model.LogInRequest
 import com.kumpello.whereiseveryone.authentication.signUp.domain.model.SignUpRequest
 import com.kumpello.whereiseveryone.common.domain.model.AuthApi
 import com.kumpello.whereiseveryone.common.domain.services.RetrofitClient
+import com.kumpello.whereiseveryone.common.model.AuthResponse
+import com.kumpello.whereiseveryone.common.model.ErrorData
 import timber.log.Timber
 
 class AuthenticationRepositoryImpl : AuthenticationRepository {
@@ -18,7 +19,7 @@ class AuthenticationRepositoryImpl : AuthenticationRepository {
             authResponse.body()!!
         } else {
             Timber.e(authResponse.errorBody().toString())
-            AuthResponse.ErrorData(authResponse.code(), authResponse.errorBody().toString(), authResponse.message())
+            ErrorData(authResponse.code(), authResponse.errorBody().toString(), authResponse.message())
         }
     }
 
@@ -29,8 +30,12 @@ class AuthenticationRepositoryImpl : AuthenticationRepository {
             authResponse.body()!!
         } else {
             Timber.e(authResponse.errorBody().toString())
-            AuthResponse.ErrorData(authResponse.code(), authResponse.errorBody().toString(), authResponse.message())
+            ErrorData(authResponse.code(), authResponse.errorBody().toString(), authResponse.message())
         }
     }
+
+/*    override fun getRefreshToken(): RefreshResponse {
+        val refreshResponse = authApi.refresh()
+    }*/
 
 }

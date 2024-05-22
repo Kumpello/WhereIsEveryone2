@@ -13,4 +13,7 @@ interface AuthApi {
 
     @HTTP(method = "POST", path = "auth/login", hasBody = true)
     fun login(@Body requestData: LogInRequest): Call<AuthResponse.AuthData>
+
+    @HTTP(method = "GET", path = "auth/refresh", hasBody = true)
+    fun refresh(@Body requestData: LogInRequest): Call<AuthResponse.AuthData>
 }
