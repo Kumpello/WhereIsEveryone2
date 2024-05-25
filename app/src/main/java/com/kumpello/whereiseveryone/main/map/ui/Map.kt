@@ -13,7 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import com.kumpello.whereiseveryone.main.friends.model.Location
+import com.kumpello.whereiseveryone.main.friends.model.UserInfo
 import com.kumpello.whereiseveryone.main.map.entity.MapSettings
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
 import com.mapbox.maps.MapboxExperimental
@@ -31,7 +31,7 @@ fun Map(
     modifier: Modifier = Modifier,
     state: MapSettings,
     actions: SharedFlow<MapViewModel.Action>,
-    userLocation: Location,
+    userLocation: UserInfo,
     //friendsPositions: List<UserPosition>
 ) {
     val density = LocalDensity.current.density

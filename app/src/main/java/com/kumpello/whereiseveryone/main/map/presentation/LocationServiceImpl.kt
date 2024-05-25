@@ -27,7 +27,7 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.Priority
 import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.main.MainActivity
-import com.kumpello.whereiseveryone.main.map.domain.usecase.SendLocationUseCase
+import com.kumpello.whereiseveryone.main.common.domain.usecase.SendLocationUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -223,7 +223,13 @@ class LocationServiceImpl(
     private fun sendLocation(location: Location) {
         scope.launch {
             runCatching {
-                sendLocationUseCase.execute(location.longitude, location.latitude) //TODO: Add parameters!
+                sendLocationUseCase.execute(
+                    longitude = location.longitude,
+                    latitude = location.latitude,
+                    bearing = location.bearing,
+                    altitude = location.altitude,
+                    accuracy = location.accuracy
+                )
                     .let { response ->
                         Timber.d("Sending location code $response") //TODO: Send to UI if failed
                     }

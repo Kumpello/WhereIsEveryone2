@@ -4,5 +4,5 @@ import com.squareup.moshi.JsonClass
 
 interface PositionsResponse {
     @JsonClass(generateAdapter = true)
-    data class PositionsData(val positions: List<FriendPosition>?)
+    data class FriendsData(val positions: List<FriendData>?): PositionsResponse
 }

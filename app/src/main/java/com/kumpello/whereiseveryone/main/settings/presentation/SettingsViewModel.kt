@@ -3,7 +3,7 @@ package com.kumpello.whereiseveryone.main.settings.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kumpello.whereiseveryone.authentication.login.presentation.LoginViewModel
-import com.kumpello.whereiseveryone.main.map.domain.usecase.WipeLocationUseCase
+import com.kumpello.whereiseveryone.main.common.domain.usecase.WipeLocationUseCase
 import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceImpl
 import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceInterface
 import kotlinx.coroutines.Dispatchers

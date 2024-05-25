@@ -13,12 +13,12 @@ import com.kumpello.whereiseveryone.common.domain.ucecase.GetCurrentAuthKeyUseCa
 import com.kumpello.whereiseveryone.common.domain.ucecase.GetEncryptedPreferencesUseCase
 import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
 import com.kumpello.whereiseveryone.common.domain.ucecase.SaveKeyUseCase
-import com.kumpello.whereiseveryone.main.common.domain.usecase.AddFriendUseCase
-import com.kumpello.whereiseveryone.main.common.domain.usecase.RemoveFriendUseCase
+import com.kumpello.whereiseveryone.main.common.domain.usecase.GetFriendsDataUseCase
+import com.kumpello.whereiseveryone.main.common.domain.usecase.SendLocationUseCase
+import com.kumpello.whereiseveryone.main.common.domain.usecase.WipeLocationUseCase
+import com.kumpello.whereiseveryone.main.friends.domain.usecase.AddFriendUseCase
+import com.kumpello.whereiseveryone.main.friends.domain.usecase.RemoveFriendUseCase
 import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
-import com.kumpello.whereiseveryone.main.map.domain.usecase.GetFriendsPositionsUseCase
-import com.kumpello.whereiseveryone.main.map.domain.usecase.SendLocationUseCase
-import com.kumpello.whereiseveryone.main.map.domain.usecase.WipeLocationUseCase
 import com.kumpello.whereiseveryone.main.map.presentation.LocationService
 import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceImpl
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
@@ -48,6 +48,7 @@ val appModule = module {
     ) }
     viewModel { FriendsViewModel(
         get(),
+        get(),
         get()
     ) }
     single<LocationService> {
@@ -71,8 +72,8 @@ val appModule = module {
     single { LoginUseCase(get(), get()) }
     single { SignUpUseCase(get(), get()) }
     single { SendLocationUseCase(get(), get()) }
-    single { GetFriendsPositionsUseCase(get(), get(), get()) }
+    single { GetFriendsDataUseCase(get(), get()) }
     single { GetEncryptedPreferencesUseCase(androidContext()) }
-    single { AddFriendUseCase() }
-    single { RemoveFriendUseCase() }
+    single { AddFriendUseCase(get(), get()) }
+    single { RemoveFriendUseCase(get(), get()) }
 }

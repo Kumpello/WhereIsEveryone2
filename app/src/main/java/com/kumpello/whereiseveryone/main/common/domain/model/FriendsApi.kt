@@ -7,5 +7,5 @@ import retrofit2.http.Header
 
 interface FriendsApi {
     @HTTP(method = "GET", path = "me/friends", hasBody = false)
-    fun getPositions(@Header("Authorization") token:String): Call<PositionsResponse>
+    fun getPositions(@Header("Authorization") token:String): Call<PositionsResponse.FriendsData>
 }

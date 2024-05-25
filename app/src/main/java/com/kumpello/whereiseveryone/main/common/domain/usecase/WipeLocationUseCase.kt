@@ -1,4 +1,4 @@
-package com.kumpello.whereiseveryone.main.map.domain.usecase
+package com.kumpello.whereiseveryone.main.common.domain.usecase
 
 class WipeLocationUseCase {
     fun execute() {

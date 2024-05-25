@@ -30,7 +30,7 @@ fun DeleteFriendDialog(
                 onClick = {
                     // perform the confirm action and
                     // close the dialog
-                    trigger(FriendsViewModel.Command.DeleteFriend(friend.id))
+                    trigger(FriendsViewModel.Command.DeleteFriend(friend.nick))
                     trigger(FriendsViewModel.Command.CloseDeleteFriendDialog)
                 }
             ) {

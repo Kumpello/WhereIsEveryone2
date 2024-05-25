@@ -3,9 +3,11 @@ package com.kumpello.whereiseveryone.main.friends.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kumpello.whereiseveryone.common.entity.ScreenState
-import com.kumpello.whereiseveryone.main.common.domain.usecase.AddFriendUseCase
-import com.kumpello.whereiseveryone.main.common.domain.usecase.RemoveFriendUseCase
+import com.kumpello.whereiseveryone.main.common.domain.usecase.GetFriendsDataUseCase
+import com.kumpello.whereiseveryone.main.friends.domain.usecase.AddFriendUseCase
+import com.kumpello.whereiseveryone.main.friends.domain.usecase.RemoveFriendUseCase
 import com.kumpello.whereiseveryone.main.friends.model.Friend
+import com.kumpello.whereiseveryone.main.map.data.model.PositionsResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,7 +22,8 @@ import kotlinx.coroutines.launch
 
 class FriendsViewModel(
     private val addFriendUseCase: AddFriendUseCase,
-    private val removeFriendUseCase: RemoveFriendUseCase
+    private val removeFriendUseCase: RemoveFriendUseCase,
+    private val getFriendsDataUseCase: GetFriendsDataUseCase
 ) : ViewModel() {
     private var state = MutableStateFlow(State())
     val viewState: StateFlow<ViewState> = state.map { state ->
@@ -31,6 +34,25 @@ class FriendsViewModel(
         initialValue = state.value.toViewState()
     )
 
+    init {
+        when (val friends = getFriendsDataUseCase.execute()) {
+            is PositionsResponse.FriendsData -> {
+                val friendList = friends.positions?.map { friendData ->
+                    friendData.friend
+                }
+                state.update { state ->
+                    state.copy(
+                        friends = friendList.orEmpty()
+                    )
+                }
+            }
+            else -> {
+                //TODO: Toast
+            }
+        }
+
+    }
+
     private val _action = MutableSharedFlow<Action>()
     val action: SharedFlow<Action> = _action.asSharedFlow()
 
@@ -38,7 +60,7 @@ class FriendsViewModel(
         when (command) {
             is Command.SetAddFriendNick -> setAddFriendNick(command.nick)
             Command.AddFriend -> addFriend()
-            is Command.DeleteFriend -> deleteFriend(command.id)
+            is Command.DeleteFriend -> deleteFriend(command.nick)
             is Command.OpenDeleteFriendDialog -> openDeleteFriendDialog(command.friend)
             Command.CloseDeleteFriendDialog -> closeDeleteFriendDialog()
         }
@@ -52,10 +74,10 @@ class FriendsViewModel(
         }
     }
 
-    private fun deleteFriend(id: String) {
+    private fun deleteFriend(nick: String) {
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
-                removeFriendUseCase.execute(id) //TODO: Get result, emit action
+                removeFriendUseCase.execute(nick) //TODO: Get result, emit action
             }
         }
     }
@@ -103,7 +125,7 @@ class FriendsViewModel(
         data object AddFriend : Command()
         data class OpenDeleteFriendDialog(val friend: Friend): Command()
         data object CloseDeleteFriendDialog: Command()
-        data class DeleteFriend(val id: String): Command()
+        data class DeleteFriend(val nick: String): Command()
     }
 
     data class State(

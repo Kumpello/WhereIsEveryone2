@@ -54,7 +54,7 @@ class SaveKeyUseCase(
 
     fun saveFriend(nick: String) {
         val currentList = getKeyUseCase.getFriends().toMutableList()
-        currentList.add(Friend(nick, ""))
+        currentList.add(Friend(nick))
         val adapter = moshi.adapter(FriendList::class.java)
         val jsonText: String = adapter.toJson(FriendList(currentList))
         preferences

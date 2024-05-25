@@ -3,8 +3,8 @@ package com.kumpello.whereiseveryone.main.map.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kumpello.whereiseveryone.common.entity.ScreenState
-import com.kumpello.whereiseveryone.main.friends.model.Location
-import com.kumpello.whereiseveryone.main.map.data.model.FriendPosition
+import com.kumpello.whereiseveryone.main.common.domain.model.Location
+import com.kumpello.whereiseveryone.main.map.data.model.FriendData
 import com.kumpello.whereiseveryone.main.map.entity.MapSettings
 import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel
 import kotlinx.coroutines.Dispatchers
@@ -50,13 +50,12 @@ class MapViewModel(
 
     private suspend fun collectLocation() {
         locationService.getLocation().mapLatest { location ->
-            //TODO: Add location.accuracy ?
-
             Location(
                 lat = location.latitude,
                 lon = location.longitude,
                 bearing = location.bearing,
-                alt = location.altitude
+                alt = location.altitude,
+                accuracy = location.accuracy
             )
         }.collect { location ->
             state.update {
@@ -136,12 +135,13 @@ class MapViewModel(
     data class State(
         val screenState: ScreenState = ScreenState.Map,
         val mapSettings: MapSettings = MapSettings(),
-        val friends: List<FriendPosition> = emptyList(),
+        val friends: List<FriendData> = emptyList(),
         val user: Location = Location(
-            0.0,
-            0.0,
-            0.0f,
-            0.0
+            lat = 0.0,
+            lon = 0.0,
+            bearing = 0.0f,
+            alt = 0.0,
+            accuracy = 0.0f,
         ), // TODO: Cache last location?
     )
 

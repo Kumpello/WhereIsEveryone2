@@ -4,8 +4,8 @@ import android.app.Service
 import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
+import com.kumpello.whereiseveryone.main.common.domain.usecase.GetFriendsDataUseCase
 import com.kumpello.whereiseveryone.main.map.data.model.PositionsResponse
-import com.kumpello.whereiseveryone.main.map.domain.usecase.GetFriendsPositionsUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -27,7 +27,7 @@ class PositionsServiceImpl : Service(), PositionsService {
     private val job = SupervisorJob()
     private val scope = CoroutineScope(Dispatchers.IO + job)
 
-    private val getFriendsPositionsUseCase: GetFriendsPositionsUseCase by inject()
+    private val getFriendsDataUseCase: GetFriendsDataUseCase by inject()
 
     private var updateFriends = true
 
@@ -50,7 +50,7 @@ class PositionsServiceImpl : Service(), PositionsService {
             while (updateFriends) {
                 runCatching {
                     Timber.d("Trying to get location")
-                    val positions = getFriendsPositionsUseCase.execute()
+                    val positions = getFriendsDataUseCase.execute()
                     Timber.d("Emiting friends location")
                     this@PositionsServiceImpl._positions.emit(positions)
                 }.onFailure { error ->
