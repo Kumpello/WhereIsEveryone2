@@ -24,8 +24,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kumpello.whereiseveryone.R
-import com.kumpello.whereiseveryone.common.ui.shortToast
 import com.kumpello.whereiseveryone.common.ui.entity.Button
+import com.kumpello.whereiseveryone.common.ui.shortToast
 import com.kumpello.whereiseveryone.common.ui.theme.Shapes
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.friends.model.Friend
@@ -140,7 +140,7 @@ fun FriendsPreview() { //TODO: Get this preview unfucked
                 friends = listOf(
                     Friend(
                         nick = "Buddy",
-                        id = "2137"
+                        //id = "2137"
                     )
                 ),
                 addFriendNick = "Papator2000",

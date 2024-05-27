@@ -149,7 +149,8 @@ class MapViewModel(
         val screenState: ScreenState,
         val mapSettings: MapSettings,
         val user: Location,
-        //TODO val friends: List<FriendPosition>
+        //TODO val friends: List<FriendPosition>,
+        //TODO val userMessage: String
     )
 
 }

@@ -1,8 +1,7 @@
 package com.kumpello.whereiseveryone.main.common.domain.repository
 
-import com.kumpello.whereiseveryone.common.domain.model.SuccessResponse
+import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
 import com.kumpello.whereiseveryone.common.domain.services.RetrofitClient
-import com.kumpello.whereiseveryone.common.model.ErrorData
 import com.kumpello.whereiseveryone.main.map.data.model.LocationRequest
 import com.kumpello.whereiseveryone.main.map.domain.model.LocationApi
 import timber.log.Timber
@@ -19,7 +18,7 @@ class LocationRepositoryImpl : LocationRepository {
         bearing: Float,
         altitude: Double,
         accuracy: Float
-    ): SuccessResponse {
+    ): CodeResponse {
         val response = locationApi.sendLocation(
             "Bearer: $token", LocationRequest(
                 longitude = longitude,
@@ -29,11 +28,17 @@ class LocationRepositoryImpl : LocationRepository {
                 accuracy = accuracy
             )
         ).execute()
-        return if (response.isSuccessful) {
-            SuccessResponse.SuccessData(response.code())
-        } else {
-            Timber.e(response.errorBody().toString())
-            ErrorData(response.code(), response.errorBody().toString(), response.message())
+        return when {
+            response.isSuccessful -> CodeResponse.SuccessData(response.code())
+
+            else -> {
+                Timber.e(response.errorBody().toString())
+                CodeResponse.ErrorData(
+                    response.code(),
+                    response.errorBody().toString(),
+                    response.message()
+                )
+            }
         }
     }
 

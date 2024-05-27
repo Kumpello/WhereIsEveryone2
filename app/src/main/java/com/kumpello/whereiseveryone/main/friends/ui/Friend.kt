@@ -52,7 +52,7 @@ fun Friend(
                 text = friend.nick
             ) //TODO: Add friend since date
             IconButton( //TODO: Add share location switch and confirmation by color change
-                onClick = { trigger(FriendsViewModel.Command.DeleteFriend(friend.id)) },
+                onClick = { trigger(FriendsViewModel.Command.DeleteFriend(friend.nick)) },
                 modifier = Modifier
                     .height(50.dp)
             ) {
@@ -77,7 +77,7 @@ fun FriendPreview() {
         Friend(
             friend = Friend(
                 nick = "JanuszAndrzejNowak",
-                id = "2137"
+                //id = "2137"
             )
         ) {}
     }

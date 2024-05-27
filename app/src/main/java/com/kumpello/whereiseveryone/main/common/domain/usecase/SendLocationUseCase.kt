@@ -1,6 +1,6 @@
 package com.kumpello.whereiseveryone.main.common.domain.usecase
 
-import com.kumpello.whereiseveryone.common.domain.model.SuccessResponse
+import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
 import com.kumpello.whereiseveryone.common.domain.ucecase.GetCurrentAuthKeyUseCase
 import com.kumpello.whereiseveryone.main.common.domain.repository.LocationRepository
 
@@ -14,7 +14,7 @@ class SendLocationUseCase(
         bearing: Float,
         altitude: Double,
         accuracy: Float
-    ): SuccessResponse {
+    ): CodeResponse {
         return locationRepository.sendPosition(
             token = getCurrentAuthKeyUseCase.execute().toString(),
             longitude = longitude,

@@ -14,13 +14,13 @@ class LoginUseCase(
     fun execute(
         username: String,
         password: String
-    ) : Response {
+    ): Response {
         val response = login(
             username = username,
             password = password
         )
         saveUserData(response)
-        return when(response.authResponse) {
+        return when (response.authResponse) {
             is AuthResponse.AuthData -> Response.Success
             is AuthResponse.ErrorData -> Response.Error
         }
@@ -31,12 +31,13 @@ class LoginUseCase(
             username = username,
             password = password,
             authResponse = authenticationRepository.logIn(
-            username,
-            password
-        ))
+                username,
+                password
+            )
+        )
     }
 
-    private fun saveUserData(response: AuthResponseWithParams) : Response {
+    private fun saveUserData(response: AuthResponseWithParams): Response {
         return when (response.authResponse) {
             is AuthResponse.AuthData -> {
                 saveKeyUseCase.saveUserID(response.authResponse.id)
