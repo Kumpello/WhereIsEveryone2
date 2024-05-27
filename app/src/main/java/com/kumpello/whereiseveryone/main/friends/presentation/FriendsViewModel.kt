@@ -37,12 +37,12 @@ class FriendsViewModel(
     init {
         when (val friends = getFriendsDataUseCase.execute()) {
             is PositionsResponse.FriendsData -> {
-                val friendList = friends.positions?.map { friendData ->
+                val friendList = friends.positions.map { friendData ->
                     friendData.friend
                 }
                 state.update { state ->
                     state.copy(
-                        friends = friendList.orEmpty()
+                        friends = friendList
                     )
                 }
             }

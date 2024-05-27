@@ -5,7 +5,6 @@ import com.kumpello.whereiseveryone.BuildConfig
 import com.kumpello.whereiseveryone.common.di.appModule
 import com.kumpello.whereiseveryone.common.domain.model.networkModule
 import org.koin.android.ext.koin.androidContext
-import org.koin.android.ext.koin.androidFileProperties
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.GlobalContext.startKoin
 import timber.log.Timber
@@ -33,6 +32,7 @@ class WhereIsEveryoneApplication : Application() {
         const val preferencesName = "secret_keeper"
         const val userIDKey = "user_id"
         const val userNameKey = "user_name"
+        const val userMessageKey = "user_message"
         const val authTokenKey = "auth_token"
         const val authRefreshTokenKey = "auth_refresh_token"
         const val friendsKey = "friends"

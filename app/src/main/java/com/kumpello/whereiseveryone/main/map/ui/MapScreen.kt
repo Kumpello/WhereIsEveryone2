@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
@@ -82,6 +83,18 @@ fun MapScreen(
                 .zIndex(1000f)
         ) {
             FloatingActionButton(
+                onClick = { trigger(MapViewModel.Command.NavigateMessage) },
+            ) {
+                Icon(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(4.dp),
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = "Message"
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            FloatingActionButton(
                 onClick = { trigger(MapViewModel.Command.NavigateFriends) },
             ) {
                 Icon(
@@ -116,6 +129,11 @@ fun MapScreen(
             is ScreenState.Settings -> SettingsFloatingCard(
                 navigator = navigator,
                 viewModel = viewState.screenState.settingsViewModel
+            )
+            is ScreenState.Message -> MessageFloatingCard(
+                viewState = viewState,
+                actions = actions,
+                trigger = trigger
             )
 
             else -> {}

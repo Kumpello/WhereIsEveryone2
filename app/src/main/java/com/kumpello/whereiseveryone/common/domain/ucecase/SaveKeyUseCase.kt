@@ -24,6 +24,13 @@ class SaveKeyUseCase(
             .apply()
     }
 
+    fun saveUserMessage(message: String) {
+        preferences
+            .edit()
+            .putString(WhereIsEveryoneApplication.userMessageKey, message)
+            .apply()
+    }
+
     fun saveAuthToken(token: String) {
         preferences
             .edit()

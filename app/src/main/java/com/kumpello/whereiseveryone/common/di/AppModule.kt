@@ -38,7 +38,10 @@ val appModule = module {
         MapViewModel(
             locationService = get(),
             positionsService = get(),
-            settingsViewModel = settingsViewModel.get()
+            settingsViewModel = settingsViewModel.get(),
+            getKeyUseCase = get(),
+            saveKeyUseCase = get(),
+            updateStatusUseCase = get()
         )
     }
     viewModel { locationServiceInterface ->

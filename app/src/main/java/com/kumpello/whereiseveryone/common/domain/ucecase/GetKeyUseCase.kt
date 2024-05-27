@@ -23,6 +23,11 @@ class GetKeyUseCase(
             .getString(WhereIsEveryoneApplication.userNameKey, null)
     }
 
+    fun getUserMessage(): String? {
+        return preferences
+            .getString(WhereIsEveryoneApplication.userMessageKey, null)
+    }
+
     fun getAuthToken(): String? {
         return preferences
             .getString(WhereIsEveryoneApplication.authTokenKey, null)
