@@ -2,6 +2,7 @@ package com.kumpello.whereiseveryone.main.map.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
 import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
 import com.kumpello.whereiseveryone.common.domain.ucecase.SaveKeyUseCase
 import com.kumpello.whereiseveryone.common.entity.ScreenState
@@ -91,6 +92,7 @@ class MapViewModel(
                         )
                     }
                 }
+
                 is PositionsResponse.ErrorData -> {
                     //TODO: Toast!
                     Timber.d(positions.toString())
@@ -121,15 +123,32 @@ class MapViewModel(
     private fun writeMessage(message: String) {
         state.update {
             it.copy(
-                userMessage = message
+                userMessageField = message
             )
         }
     }
 
     private fun sendMessage() {
         viewModelScope.launch {
-            updateStatusUseCase.execute(state.value.userMessage)
-            //TODO: Add tempUserMessage field, check for result and then save
+
+            when (updateStatusUseCase.execute(state.value.userMessageField)) {
+                is CodeResponse.ErrorData -> {
+                    //TODO: Toast!
+                    Timber.d("Error updating message!")
+                }
+
+                is CodeResponse.SuccessData -> {
+                    val message = state.value.userMessageField
+                    state.update { state ->
+                        state.copy(
+                            userMessage = message,
+                            userMessageField = ""
+                        )
+                    }.also {
+                        saveKeyUseCase.saveUserMessage(message = message)
+                    }
+                }
+            }
         }
     }
 
@@ -163,8 +182,8 @@ class MapViewModel(
             Command.BackToMap -> backToMap()
             Command.CenterMap -> centerMap()
             Command.NavigateMessage -> navigateMessage()
-            is Command.WriteMessage -> TODO()
-            Command.SendMessage -> TODO()
+            is Command.WriteMessage -> writeMessage(message = command.message)
+            Command.SendMessage -> sendMessage()
         }
     }
 
@@ -175,6 +194,7 @@ class MapViewModel(
             user = user,
             friends = friends,
             userMessage = userMessage,
+            userMessageField = userMessageField
         )
     }
 
@@ -198,6 +218,7 @@ class MapViewModel(
         val mapSettings: MapSettings = MapSettings(),
         val friends: List<FriendData> = emptyList(),
         val userMessage: String = "",
+        val userMessageField: String = "",
         val user: Location = Location(
             lat = 0.0,
             lon = 0.0,
@@ -212,7 +233,8 @@ class MapViewModel(
         val mapSettings: MapSettings,
         val user: Location,
         val friends: List<FriendData>,
-        val userMessage: String
+        val userMessage: String,
+        val userMessageField: String,
     )
 
 }

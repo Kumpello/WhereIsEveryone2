@@ -53,7 +53,7 @@ fun MessageFloatingCard(
                     TextField( //TODO: Make it more funky, maybe other composable? To consider in all Textfields
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text(text = "Your message") },
-                        value = viewState.userMessage,
+                        value = viewState.userMessageField,
                         onValueChange = { message ->
                             trigger(MapViewModel.Command.WriteMessage(message))
                         }
@@ -91,7 +91,8 @@ fun MessagePreview() { //TODO: Get this preview unfucked
                     accuracy = 26.27f
                 ),
                 friends = listOf(),
-                userMessage = "Where is everyone?"
+                userMessage = "Where is everyone?",
+                userMessageField = ""
 
             ), actions = MutableSharedFlow(), trigger = {}
         )
