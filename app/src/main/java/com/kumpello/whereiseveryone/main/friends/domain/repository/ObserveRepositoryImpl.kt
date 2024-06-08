@@ -11,10 +11,10 @@ class ObserveRepositoryImpl : ObserveRepository {
     private val observeApi = retrofit.create(ObserveApi::class.java)
 
     override fun addFriend(token: String, nick: String): CodeResponse {
-        val response = observeApi.addFriend("Bearer: $token", nick).execute()
+        val response = observeApi.addFriend("Bearer $token", nick).execute()
 
         return when {
-            response.isSuccessful -> CodeResponse.SuccessData(response.code())
+            response.isSuccessful -> CodeResponse.SuccessNoContent
 
             else -> {
                 Timber.e(response.errorBody().toString())
@@ -28,10 +28,10 @@ class ObserveRepositoryImpl : ObserveRepository {
     }
 
     override fun removeFriend(token: String, nick: String): CodeResponse {
-        val response = observeApi.removeFriend("Bearer: $token", nick).execute()
+        val response = observeApi.removeFriend("Bearer $token", nick).execute()
 
         return when {
-            response.isSuccessful -> CodeResponse.SuccessData(response.code())
+            response.isSuccessful -> CodeResponse.SuccessNoContent
 
             else -> {
                 Timber.e(response.errorBody().toString())

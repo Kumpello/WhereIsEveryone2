@@ -11,6 +11,7 @@ import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
 import android.os.IBinder
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -56,7 +57,16 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
         enableEdgeToEdge()
 
         checkInitialPermissions()
-        requestPermissionsOrStartLocationService(getPermissionsLauncher())
+        requestPermissionsOrStart(getPermissionsLauncher()) {
+            startLocationService()
+            bindLocationService()
+            setLocationService(LocationService.UpdateType.Foreground)
+            requestBackgroundPermission(getPermissionsLauncher())
+        }
+
+        Handler().postDelayed({ //TODO: Temp workaround! That should come from callback not this shitty wait
+            requestBackgroundPermission(getPermissionsLauncher())
+        }, 20000L)
 
         setContent {
             WhereIsEveryoneTheme {
@@ -67,7 +77,8 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
 
     override fun onStart() {
         super.onStart()
-        if (!isLocationServiceBound) {
+        requestBackgroundPermission(getPermissionsLauncher()) //TEMP
+        if (!isLocationServiceBound && checkInitialPermissions()) {
             bindLocationService()
             setLocationService(LocationService.UpdateType.Foreground)
         }
@@ -157,40 +168,48 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
             isCoarseLocationPermissionGranted =
                 permissions[ACCESS_COARSE_LOCATION]
                     ?: isCoarseLocationPermissionGranted
-            if (isBackGroundPermissionGranted &&
+            if (//isBackGroundPermissionGranted &&
                 isCoarseLocationPermissionGranted &&
                 isFineLocationPermissionGranted &&
                 isPostNotificationsPermissionGranted
             ) {
                 startLocationService()
+                bindLocationService()
+                setLocationService(LocationService.UpdateType.Foreground)
             } else {
                 //TODO: Action when user deny permissions
+                //requestBackgroundPermission(getPermissionsLauncher()) //TEMP!
             }
         }
     }
 
-    private fun requestPermissionsOrStartLocationService(permissionLauncher: ActivityResultLauncher<Array<String>>) {
-        val permissionRequestList = ArrayList<String>()
+    private fun requestPermissionsOrStart(permissionLauncher: ActivityResultLauncher<Array<String>>, function: () -> Unit) {
+        val permissionRequestList = mutableListOf<String>()
 
-        when {
-            !isCoarseLocationPermissionGranted ->
-                permissionRequestList.add(ACCESS_COARSE_LOCATION)
-            !isFineLocationPermissionGranted ->
-                permissionRequestList.add(ACCESS_FINE_LOCATION)
-            !isBackGroundPermissionGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ->
-                permissionRequestList.add(ACCESS_BACKGROUND_LOCATION)
-            !isPostNotificationsPermissionGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU ->
-                permissionRequestList.add(POST_NOTIFICATIONS)
-        }
+        /*if(!isCoarseLocationPermissionGranted)
+            permissionRequestList.add(ACCESS_COARSE_LOCATION)*/
+        /*        if (!isBackGroundPermissionGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    permissionRequestList.add(ACCESS_BACKGROUND_LOCATION)
+                }*/
+        if(!isFineLocationPermissionGranted)
+            permissionRequestList.add(ACCESS_FINE_LOCATION)
+        if(!isPostNotificationsPermissionGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+            permissionRequestList.add(POST_NOTIFICATIONS)
 
         if (permissionRequestList.isNotEmpty()) {
             permissionLauncher.launch(permissionRequestList.toTypedArray())
         } else {
-            startLocationService()
+            function()
         }
     }
 
-    private fun checkInitialPermissions() {
+    private fun requestBackgroundPermission(permissionLauncher: ActivityResultLauncher<Array<String>>) {
+        if (!isBackGroundPermissionGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            permissionLauncher.launch(arrayOf(ACCESS_BACKGROUND_LOCATION))
+        }
+    }
+
+    private fun checkInitialPermissions(): Boolean {
         isBackGroundPermissionGranted =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 checkPermission(ACCESS_BACKGROUND_LOCATION)
@@ -205,6 +224,9 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
             }
         isFineLocationPermissionGranted = checkPermission(ACCESS_FINE_LOCATION)
         isCoarseLocationPermissionGranted = checkPermission(ACCESS_COARSE_LOCATION)
+
+        return isBackGroundPermissionGranted && isPostNotificationsPermissionGranted
+                && isFineLocationPermissionGranted && isCoarseLocationPermissionGranted
     }
 
     private fun checkPermission(permission: String): Boolean {

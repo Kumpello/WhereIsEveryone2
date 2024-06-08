@@ -9,5 +9,5 @@ import retrofit2.http.Header
 
 interface StatusApi {
     @HTTP(method = "PUT", path = "me/status", hasBody = true)
-    fun updateStatus(@Header("Authorization") token:String, @Body message: String): Call<CodeResponse.SuccessData>
+    fun updateStatus(@Header("Authorization") token:String, @Body message: String): Call<CodeResponse.SuccessNoContent>
 }

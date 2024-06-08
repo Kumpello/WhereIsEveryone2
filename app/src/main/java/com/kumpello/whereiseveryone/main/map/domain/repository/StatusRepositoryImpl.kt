@@ -12,10 +12,10 @@ class StatusRepositoryImpl : StatusRepository {
     private val statusApi = retrofit.create(StatusApi::class.java)
 
     override fun updateStatus(token: String, message: String): CodeResponse {
-        val response = statusApi.updateStatus("Bearer: $token", message).execute()
+        val response = statusApi.updateStatus("Bearer $token", message).execute()
 
         return when {
-            response.isSuccessful -> CodeResponse.SuccessData(response.code())
+            response.isSuccessful -> CodeResponse.SuccessNoContent
 
             else -> {
                 Timber.e(response.errorBody().toString())

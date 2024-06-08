@@ -10,9 +10,9 @@ import retrofit2.http.Header
 interface ObserveApi {
 
     @HTTP(method = "POST", path = "me/observe", hasBody = true)
-    fun addFriend(@Header("Authorization") token:String, @Body nick: String): Call<CodeResponse.SuccessData?>
+    fun addFriend(@Header("Authorization") token:String, @Body nick: String): Call<CodeResponse.SuccessNoContent?>
 
     @HTTP(method = "DEL", path = "me/observe", hasBody = true)
-    fun removeFriend(@Header("Authorization") token:String, @Body nick: String): Call<CodeResponse.SuccessData>
+    fun removeFriend(@Header("Authorization") token:String, @Body nick: String): Call<CodeResponse.SuccessNoContent>
 
 }

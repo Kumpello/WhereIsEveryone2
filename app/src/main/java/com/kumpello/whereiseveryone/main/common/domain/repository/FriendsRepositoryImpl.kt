@@ -12,7 +12,7 @@ class FriendsRepositoryImpl : FriendsRepository {
     private val friendsApi = retrofit.create(FriendsApi::class.java)
 
     override fun getPositions(token: String): PositionsResponse {
-        val response = friendsApi.getPositions("Bearer: $token").execute()
+        val response = friendsApi.getPositions("Bearer $token").execute()
         return when {
             response.isSuccessful -> response.body() ?: PositionsResponse.FriendsData(
                 emptyList()

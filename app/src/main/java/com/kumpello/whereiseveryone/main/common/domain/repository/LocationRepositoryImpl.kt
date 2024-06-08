@@ -20,7 +20,7 @@ class LocationRepositoryImpl : LocationRepository {
         accuracy: Float
     ): CodeResponse {
         val response = locationApi.sendLocation(
-            "Bearer: $token", LocationRequest(
+            "Bearer $token", LocationRequest(
                 longitude = longitude,
                 latitude = latitude,
                 bearing = bearing,
@@ -29,7 +29,7 @@ class LocationRepositoryImpl : LocationRepository {
             )
         ).execute()
         return when {
-            response.isSuccessful -> CodeResponse.SuccessData(response.code())
+            response.isSuccessful -> CodeResponse.SuccessNoContent
 
             else -> {
                 Timber.e(response.errorBody().toString())

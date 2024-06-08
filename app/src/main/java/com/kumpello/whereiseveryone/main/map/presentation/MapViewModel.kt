@@ -137,7 +137,7 @@ class MapViewModel(
                     Timber.d("Error updating message!")
                 }
 
-                is CodeResponse.SuccessData -> {
+                is CodeResponse.SuccessNoContent -> {
                     val message = state.value.userMessageField
                     state.update { state ->
                         state.copy(
