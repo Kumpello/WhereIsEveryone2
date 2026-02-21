@@ -1,13 +1,13 @@
 plugins {
     id(libs.plugins.android.application.get().pluginId)
-    id(libs.plugins.kotlin.android.get().pluginId)
     id(libs.plugins.ksp.get().pluginId) version (libs.plugins.ksp.get().version.toString())
     id(libs.plugins.kotlin.parcelize.get().pluginId)
+    alias(libs.plugins.kotlin.compose)
 }
 
 android {
     namespace = "com.kumpello.whereiseveryone"
-    compileSdk = 34
+    compileSdk = 36
 
     buildFeatures {
         buildConfig = true
@@ -52,14 +52,8 @@ android {
         sourceCompatibility = JavaVersion.VERSION_19
         targetCompatibility = JavaVersion.VERSION_19
     }
-    kotlinOptions {
-        jvmTarget = "19"
-    }
     buildFeatures {
         compose = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.5"
     }
     packaging {
         resources.excludes.add("/META-INF/{AL2.0,LGPL2.1}")
