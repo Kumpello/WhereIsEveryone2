@@ -15,38 +15,38 @@ class GetKeyUseCase(
 
     fun getUserID(): String? {
         return preferences
-            .getString(WhereIsEveryoneApplication.userIDKey, null)
+            .getString(WhereIsEveryoneApplication.USER_ID_KEY, null)
     }
 
     fun getUserName(): String? {
         return preferences
-            .getString(WhereIsEveryoneApplication.userNameKey, null)
+            .getString(WhereIsEveryoneApplication.USER_NAME_KEY, null)
     }
 
     fun getUserMessage(): String? {
         return preferences
-            .getString(WhereIsEveryoneApplication.userMessageKey, null)
+            .getString(WhereIsEveryoneApplication.USER_MESSAGE_KEY, null)
     }
 
     fun getAuthToken(): String? {
         return preferences
-            .getString(WhereIsEveryoneApplication.authTokenKey, null)
+            .getString(WhereIsEveryoneApplication.AUTH_TOKEN_KEY, null)
     }
 
     fun getAuthRefreshToken(): String? {
         return preferences
-            .getString(WhereIsEveryoneApplication.authRefreshTokenKey, null)
+            .getString(WhereIsEveryoneApplication.AUTH_REFRESH_TOKEN_KEY, null)
     }
 
     fun getLatitude(): Double {
         return preferences
-            .getFloat(WhereIsEveryoneApplication.latitudeKey, 0F)
+            .getFloat(WhereIsEveryoneApplication.LATITUDE_KEY, 0F)
             .toDouble()
     }
 
     fun getLongitude(): Double {
         return preferences
-            .getFloat(WhereIsEveryoneApplication.longitudeKey, 0F)
+            .getFloat(WhereIsEveryoneApplication.LONGITUDE_KEY, 0F)
             .toDouble()
     }
 
@@ -57,7 +57,7 @@ class GetKeyUseCase(
         val jsonText = getEncryptedPreferencesUseCase
             .execute()
             .getString(
-                WhereIsEveryoneApplication.friendsKey,
+                WhereIsEveryoneApplication.FRIENDS_KEY,
                 defaultList.toString()
             )
 

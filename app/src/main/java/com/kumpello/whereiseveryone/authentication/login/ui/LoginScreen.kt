@@ -5,7 +5,6 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,26 +23,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.kumpello.whereiseveryone.authentication.AuthenticationNavGraph
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import com.kumpello.whereiseveryone.authentication.common.AuthenticationNavigation
 import com.kumpello.whereiseveryone.authentication.common.ui.entity.TextField
 import com.kumpello.whereiseveryone.authentication.login.presentation.LoginViewModel
 import com.kumpello.whereiseveryone.common.entity.ScreenState
 import com.kumpello.whereiseveryone.common.ui.entity.Button
 import com.kumpello.whereiseveryone.common.ui.entity.Logo
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
-import com.kumpello.whereiseveryone.destinations.SignUpScreenDestination
 import com.kumpello.whereiseveryone.main.MainActivity
-import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
-@AuthenticationNavGraph(start = false)
-@Destination
 @Composable
 fun LoginScreen(
-    navigator: DestinationsNavigator,
-    viewModel: LoginViewModel,
+    navController: NavController,
+    viewModel: LoginViewModel = viewModel()
 ) {
-    val context = LocalContext.current //TODO: CHeck if it's right use
+    val context = LocalContext.current
     val state by viewModel.viewState.collectAsState()
 
     BackHandler(true) {
@@ -57,7 +53,7 @@ fun LoginScreen(
                     .show()
 
                 LoginViewModel.Action.NavigateMain -> context.startActivity(Intent(context, MainActivity::class.java))
-                LoginViewModel.Action.NavigateSignUp -> navigator.navigate(SignUpScreenDestination)
+                LoginViewModel.Action.NavigateSignUp -> navController.navigate(AuthenticationNavigation.SignUp)
             }
         }
     }
@@ -73,24 +69,22 @@ fun LoginScreen(
     viewState: LoginViewModel.ViewState,
     trigger: (LoginViewModel.Command) -> Unit,
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize(),
+    Column(
+        verticalArrangement = Arrangement.SpaceEvenly,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.padding(24.dp)
     ) {
         Logo.Text(
             modifier = Modifier
-                .padding(top = 30.dp)
-                .align(Alignment.TopCenter),
+                .padding(top = 30.dp),
             size = 35
         )
         Column(
             modifier = Modifier
-                .align(Alignment.Center)
                 .padding(15.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-
             Text(
                 text = "Login",
                 style = MaterialTheme.typography.headlineLarge

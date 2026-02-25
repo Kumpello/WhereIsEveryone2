@@ -5,7 +5,6 @@ import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.Manifest.permission.POST_NOTIFICATIONS
 import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
@@ -20,26 +19,31 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.core.content.ContextCompat
-import com.kumpello.whereiseveryone.NavGraphs
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.kumpello.whereiseveryone.authentication.common.AuthenticationNavigation
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
-import com.kumpello.whereiseveryone.destinations.MapScreenDestination
+import com.kumpello.whereiseveryone.main.common.MainNavigation
+import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
+import com.kumpello.whereiseveryone.main.friends.ui.FriendsScreen
 import com.kumpello.whereiseveryone.main.map.presentation.LocationService
 import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceImpl
 import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceInterface
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
 import com.kumpello.whereiseveryone.main.map.presentation.PositionsService
 import com.kumpello.whereiseveryone.main.map.presentation.PositionsServiceImpl
+import com.kumpello.whereiseveryone.main.map.ui.MapScreen
 import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel
-import com.ramcosta.composedestinations.DestinationsNavHost
-import com.ramcosta.composedestinations.navigation.dependency
+import com.kumpello.whereiseveryone.main.settings.ui.SettingsScreen
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import org.koin.core.parameter.parametersOf
 import timber.log.Timber
 
 class MainActivity : ComponentActivity(), LocationServiceInterface {
 
-    private val settingsViewModel: SettingsViewModel by viewModel{ parametersOf(this) }
-    private val mapViewModel: MapViewModel by viewModel { parametersOf(settingsViewModel) }
+    private val mapViewModel: MapViewModel by viewModel()
+    private val friendsViewModel: FriendsViewModel by viewModel()
+    private val settingsViewModel: SettingsViewModel by viewModel()
 
     private var isBackGroundPermissionGranted = false //TODO: There is too much variables, Enum list, map?
     private var isFineLocationPermissionGranted = false
@@ -125,13 +129,13 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
 
     private fun bindLocationService() {
         Intent(this, LocationServiceImpl::class.java).also { intent ->
-            bindService(intent, locationServiceConnection, Context.BIND_AUTO_CREATE)
+            bindService(intent, locationServiceConnection, BIND_AUTO_CREATE)
         }
     }
 
     private fun bindPositionsService() {
         Intent(this, PositionsServiceImpl::class.java).also { intent ->
-            bindService(intent, positionsServiceConnection, Context.BIND_AUTO_CREATE)
+            bindService(intent, positionsServiceConnection, BIND_AUTO_CREATE)
         }
     }
 
@@ -238,13 +242,20 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
 
     @Composable
     private fun MainScreen() {
-        WhereIsEveryoneTheme {
-            DestinationsNavHost(
-                navGraph = NavGraphs.main,
-                dependenciesContainerBuilder = {
-                    dependency(MapScreenDestination) { mapViewModel }
-                }
-            )
+        val navController = rememberNavController()
+        NavHost(
+            navController = navController,
+            startDestination = MainNavigation.Map.route
+        ) {
+            composable(MainNavigation.Map.route) {
+                MapScreen(navController = navController, viewModel = mapViewModel)
+            }
+            composable(AuthenticationNavigation.Login.route) {
+                FriendsScreen(navController = navController, viewModel = friendsViewModel)
+            }
+            composable(AuthenticationNavigation.SignUp.route) {
+                SettingsScreen(navController = navController, viewModel = settingsViewModel)
+            }
         }
     }
 

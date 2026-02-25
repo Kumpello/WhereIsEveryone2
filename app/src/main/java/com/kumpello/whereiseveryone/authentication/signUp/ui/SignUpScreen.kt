@@ -23,7 +23,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.kumpello.whereiseveryone.authentication.AuthenticationNavGraph
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import com.kumpello.whereiseveryone.authentication.common.AuthenticationNavigation
 import com.kumpello.whereiseveryone.authentication.common.ui.entity.TextField
 import com.kumpello.whereiseveryone.authentication.signUp.domain.model.PasswordValidationState
 import com.kumpello.whereiseveryone.authentication.signUp.presentation.SignUpViewModel
@@ -31,17 +33,12 @@ import com.kumpello.whereiseveryone.common.entity.ScreenState
 import com.kumpello.whereiseveryone.common.ui.entity.Button
 import com.kumpello.whereiseveryone.common.ui.entity.Logo
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
-import com.kumpello.whereiseveryone.destinations.LoginScreenDestination
 import com.kumpello.whereiseveryone.main.MainActivity
-import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
-@AuthenticationNavGraph(start = false)
-@Destination
 @Composable
 fun SignUpScreen(
-    navigator: DestinationsNavigator,
-    viewModel: SignUpViewModel,
+    navController: NavController,
+    viewModel: SignUpViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
@@ -63,7 +60,8 @@ fun SignUpScreen(
                     )
                 )
 
-                SignUpViewModel.Action.NavigateLogin -> navigator.navigate(LoginScreenDestination)
+                SignUpViewModel.Action.NavigateLogin -> navController.navigate(
+                    AuthenticationNavigation.Login)
             }
         }
     }

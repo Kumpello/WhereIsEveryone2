@@ -23,6 +23,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.common.ui.entity.Button
 import com.kumpello.whereiseveryone.common.ui.shortToast
@@ -32,12 +34,11 @@ import com.kumpello.whereiseveryone.main.friends.model.Friend
 import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
 import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel.DeleteFriendDialogState
 import com.kumpello.whereiseveryone.main.map.ui.FloatingCard
-import org.koin.androidx.compose.getViewModel
 
 @Composable
-fun FriendsFloatingCard(
-    modifier: Modifier = Modifier,
-    viewModel: FriendsViewModel = getViewModel()
+fun FriendsScreen(
+    navController: NavController,
+    viewModel: FriendsViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val state by viewModel.viewState.collectAsState()
@@ -48,32 +49,31 @@ fun FriendsFloatingCard(
                 is FriendsViewModel.Action.AddFriendResult -> Toast.makeText(
                     context,
                     when(action.success) {
-                        true -> context.getString(R.string.friend_added_successfully)
-                        false -> context.getString(R.string.error_adding_friend)
+                        true -> stringResource(R.string.friend_added_successfully)
+                        false -> stringResource(R.string.error_adding_friend)
                     },
                     Toast.LENGTH_SHORT
                 ).show()
                 is FriendsViewModel.Action.DeleteFriendResult -> shortToast(
                     context,
                     when(action.success) {
-                        true -> context.getString(R.string.friend_deleted_successfully)
-                        false -> context.getString(R.string.error_deleting_friend)
+                        true -> stringResource(R.string.friend_deleted_successfully)
+                        false -> stringResource(R.string.error_deleting_friend)
                     }
                 )
+                FriendsViewModel.Action.BackToMap -> navController.popBackStack()
             }
         }
     }
 
-    FriendsFloatingCard(
-        modifier = modifier,
+    FriendsScreen(
         viewState = state,
         trigger = viewModel::trigger
     )
 }
 
 @Composable
-private fun FriendsFloatingCard(
-    modifier: Modifier = Modifier,
+private fun FriendsScreen(
     viewState: FriendsViewModel.ViewState,
     trigger: (FriendsViewModel.Command) -> Unit,
 ) {
@@ -135,7 +135,7 @@ private fun FriendsFloatingCard(
 @Composable
 fun FriendsPreview() { //TODO: Get this preview unfucked
     WhereIsEveryoneTheme(darkTheme = true) {
-        FriendsFloatingCard(
+        FriendsScreen(
             viewState = FriendsViewModel.ViewState(
                 friends = listOf(
                     Friend(

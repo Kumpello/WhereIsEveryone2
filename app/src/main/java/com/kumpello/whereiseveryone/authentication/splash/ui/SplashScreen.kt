@@ -30,21 +30,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.kumpello.whereiseveryone.authentication.AuthenticationNavGraph
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import com.kumpello.whereiseveryone.authentication.common.AuthenticationNavigation
 import com.kumpello.whereiseveryone.authentication.splash.presentation.SplashViewModel
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
-import com.kumpello.whereiseveryone.destinations.SignUpScreenDestination
 import com.kumpello.whereiseveryone.main.MainActivity
-import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.delay
 
-@AuthenticationNavGraph(start = true)
-@Destination
 @Composable
 fun SplashScreen(
-    navigator: DestinationsNavigator,
-    viewModel: SplashViewModel
+    navController: NavController,
+    viewModel: SplashViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
@@ -59,7 +56,8 @@ fun SplashScreen(
         viewModel.action.collect { action ->
             when (action) {
                 SplashViewModel.Action.NavigateMain -> context.startActivity(Intent(context, MainActivity::class.java))
-                SplashViewModel.Action.NavigateSignUp -> navigator.navigate(SignUpScreenDestination)
+                SplashViewModel.Action.NavigateSignUp -> navController.navigate(
+                    AuthenticationNavigation.SignUp.route)
             }
         }
     }

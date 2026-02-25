@@ -12,7 +12,7 @@ class GetEncryptedPreferencesUseCase(
 
     private val mainKey = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC) //TODO: Use builder
     private val sharedPreferences = EncryptedSharedPreferences.create(
-        WhereIsEveryoneApplication.preferencesName,
+        WhereIsEveryoneApplication.PREFERENCES_NAME,
         mainKey,
         appContext,
         EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,

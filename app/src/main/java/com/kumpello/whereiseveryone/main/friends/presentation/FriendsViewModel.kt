@@ -118,6 +118,7 @@ class FriendsViewModel(
     sealed class Action {
         data class AddFriendResult(val success: Boolean) : Action()
         data class DeleteFriendResult(val success: Boolean) : Action()
+        data object BackToMap : Action()
     }
 
     sealed class Command {

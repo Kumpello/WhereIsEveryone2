@@ -2,7 +2,6 @@ package com.kumpello.whereiseveryone.main.settings.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.kumpello.whereiseveryone.authentication.login.presentation.LoginViewModel
 import com.kumpello.whereiseveryone.main.common.domain.usecase.WipeLocationUseCase
 import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceImpl
 import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceInterface
@@ -44,8 +43,8 @@ class SettingsViewModel(
         }
     }
 
-    private val _action = MutableSharedFlow<LoginViewModel.Action>()
-    val action: SharedFlow<LoginViewModel.Action> = _action.asSharedFlow()
+    private val _action = MutableSharedFlow<Action>()
+    val action: SharedFlow<Action> = _action.asSharedFlow()
 
     fun trigger(command: Command) {
         when (command) {
@@ -81,6 +80,7 @@ class SettingsViewModel(
     }
 
     sealed class Action {
+        data object BackToMap : Action()
     }
 
     sealed class Command {

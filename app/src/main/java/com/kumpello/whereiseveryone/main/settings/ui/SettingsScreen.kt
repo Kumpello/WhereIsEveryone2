@@ -2,9 +2,7 @@ package com.kumpello.whereiseveryone.main.settings.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -14,33 +12,36 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.kumpello.whereiseveryone.common.ui.entity.Button
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.map.ui.FloatingCard
 import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
-import org.koin.androidx.compose.getViewModel
 
 @Composable
-fun SettingsFloatingCard(
-    modifier: Modifier = Modifier,
-    navigator: DestinationsNavigator,
-    viewModel: SettingsViewModel = getViewModel()
+fun SettingsScreen(
+    navController: NavController,
+    viewModel: SettingsViewModel = viewModel()
 ) {
     val state by viewModel.state.collectAsState()
 
-    LaunchedEffect(Unit) {
-
+    LaunchedEffect(viewModel.action) {
+        viewModel.action.collect { action ->
+            when (action) {
+                SettingsViewModel.Action.BackToMap -> navController.popBackStack()
+            }
+        }
     }
 
-    SettingsFloatingCard(
+    SettingsScreen(
         viewState = state,
         trigger = viewModel::trigger
     )
 }
 
 @Composable
-private fun SettingsFloatingCard(
+private fun SettingsScreen(
     modifier: Modifier = Modifier,
     viewState: SettingsViewModel.ViewState,
     trigger: (SettingsViewModel.Command) -> Unit,
@@ -73,7 +74,7 @@ private fun SettingsFloatingCard(
 @Composable
 fun SettingsPreview() {
     WhereIsEveryoneTheme(darkTheme = true) {
-        SettingsFloatingCard(
+        SettingsScreen(
             viewState = SettingsViewModel.ViewState(
                 isLocationServiceRunning = true,
                 locationSwitchText = "Stop sharing location",

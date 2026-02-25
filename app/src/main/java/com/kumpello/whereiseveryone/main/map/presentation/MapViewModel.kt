@@ -31,7 +31,6 @@ import timber.log.Timber
 class MapViewModel(
     private val locationService: LocationService,
     private val positionsService: PositionsService,
-    private val settingsViewModel: SettingsViewModel,
     private val saveKeyUseCase: SaveKeyUseCase,
     private val getKeyUseCase: GetKeyUseCase,
     private val updateStatusUseCase: UpdateStatusUseCase
@@ -200,6 +199,8 @@ class MapViewModel(
 
     sealed class Action {
         data object CenterMap : Action()
+        data object NavigateSettings : Action()
+        data object NavigateFriends : Action()
     }
 
     sealed class Command {

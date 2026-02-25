@@ -4,6 +4,7 @@ import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
 import com.kumpello.whereiseveryone.main.friends.model.Friend
 import com.kumpello.whereiseveryone.main.friends.model.FriendList
 import com.squareup.moshi.Moshi
+import androidx.core.content.edit
 
 class SaveKeyUseCase(
     getEncryptedPreferencesUseCase: GetEncryptedPreferencesUseCase,
@@ -14,49 +15,49 @@ class SaveKeyUseCase(
     private val preferences = getEncryptedPreferencesUseCase.execute()
 
     fun saveUserID(id: String) {
-        preferences.edit().putString(WhereIsEveryoneApplication.userIDKey, id).apply()
+        preferences.edit { putString(WhereIsEveryoneApplication.USER_ID_KEY, id) }
     }
 
     fun saveUserName(name: String) {
         preferences
-            .edit()
-            .putString(WhereIsEveryoneApplication.userNameKey, name)
-            .apply()
+            .edit {
+                putString(WhereIsEveryoneApplication.USER_NAME_KEY, name)
+            }
     }
 
     fun saveUserMessage(message: String) {
         preferences
-            .edit()
-            .putString(WhereIsEveryoneApplication.userMessageKey, message)
-            .apply()
+            .edit {
+                putString(WhereIsEveryoneApplication.USER_MESSAGE_KEY, message)
+            }
     }
 
     fun saveAuthToken(token: String) {
         preferences
-            .edit()
-            .putString(WhereIsEveryoneApplication.authTokenKey, token)
-            .apply()
+            .edit {
+                putString(WhereIsEveryoneApplication.AUTH_TOKEN_KEY, token)
+            }
     }
 
     fun saveAuthRefreshToken(token: String) {
         preferences
-            .edit()
-            .putString(WhereIsEveryoneApplication.authRefreshTokenKey, token)
-            .apply()
+            .edit {
+                putString(WhereIsEveryoneApplication.AUTH_REFRESH_TOKEN_KEY, token)
+            }
     }
 
     fun saveLatitude(latitude: Double) {
         preferences
-            .edit()
-            .putFloat(WhereIsEveryoneApplication.latitudeKey, latitude.toFloat())
-            .apply()
+            .edit {
+                putFloat(WhereIsEveryoneApplication.LATITUDE_KEY, latitude.toFloat())
+            }
     }
 
     fun saveLongitude(longitude: Double) {
         preferences
-            .edit()
-            .putFloat(WhereIsEveryoneApplication.longitudeKey, longitude.toFloat())
-            .apply()
+            .edit {
+                putFloat(WhereIsEveryoneApplication.LONGITUDE_KEY, longitude.toFloat())
+            }
     }
 
     fun saveFriend(nick: String) {
@@ -65,8 +66,8 @@ class SaveKeyUseCase(
         val adapter = moshi.adapter(FriendList::class.java)
         val jsonText: String = adapter.toJson(FriendList(currentList))
         preferences
-            .edit()
-            .putString(WhereIsEveryoneApplication.friendsKey, jsonText)
-            .apply()
+            .edit {
+                putString(WhereIsEveryoneApplication.FRIENDS_KEY, jsonText)
+            }
     }
 }

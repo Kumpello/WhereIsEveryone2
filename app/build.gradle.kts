@@ -16,7 +16,7 @@ android {
     defaultConfig {
         applicationId = "com.kumpello.whereiseveryone"
         minSdk = 28
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 1
         versionName = "0.3"
 
@@ -73,7 +73,7 @@ dependencies {
     implementation(libs.bundles.moshi)
     implementation(libs.logging.interceptor)
     implementation(libs.timber)
-    implementation(libs.compose.destinations.core)
+    implementation(libs.navigation)
     implementation(libs.retrofit2)
     implementation(libs.retrofit2.converter.moshi)
 
@@ -83,8 +83,6 @@ dependencies {
     implementation(libs.mapbox.compose)
 
     ksp(libs.moshi.kotlin.codegen)
-    ksp(libs.compose.destinations.ksp)
-
     testImplementation(libs.test.junit)
 
     androidTestImplementation(libs.android.test.junit)

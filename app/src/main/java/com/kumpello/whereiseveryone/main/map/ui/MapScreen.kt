@@ -23,22 +23,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.kumpello.whereiseveryone.common.entity.ScreenState
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
-import com.kumpello.whereiseveryone.main.MainNavGraph
-import com.kumpello.whereiseveryone.main.friends.ui.FriendsFloatingCard
+import com.kumpello.whereiseveryone.main.common.MainNavigation
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
-import com.kumpello.whereiseveryone.main.settings.ui.SettingsFloatingCard
-import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.flow.SharedFlow
 
-@MainNavGraph(start = true)
-@Destination
 @Composable
 fun MapScreen(
-    navigator: DestinationsNavigator,
-    viewModel: MapViewModel
+    navController: NavController,
+    viewModel: MapViewModel = viewModel()
 ) {
     val state by viewModel.viewState.collectAsState()
 
@@ -48,17 +44,18 @@ fun MapScreen(
                 MapViewModel.Action.CenterMap -> {
                     //action in Map
                 }
+                MapViewModel.Action.NavigateFriends -> navController.navigate(MainNavigation.Friends)
+                MapViewModel.Action.NavigateSettings -> navController.navigate(MainNavigation.Settings)
             }
         }
     }
 
 
     BackHandler(true) { //TODO: Add click on map
-        viewModel.trigger(MapViewModel.Command.BackToMap)
+        viewModel.trigger(MapViewModel.Command.BackToMap) //TODO Change to exit app?
     }
 
     MapScreen(
-        navigator = navigator,
         viewState = state,
         actions = viewModel.action,
         trigger = viewModel::trigger
@@ -67,7 +64,6 @@ fun MapScreen(
 
 @Composable
 fun MapScreen(
-    navigator: DestinationsNavigator,
     viewState: MapViewModel.ViewState,
     actions: SharedFlow<MapViewModel.Action>,
     trigger: (MapViewModel.Command) -> Unit,
@@ -125,18 +121,15 @@ fun MapScreen(
             userLocation = viewState.user
         )
         when (viewState.screenState) {
-            ScreenState.Friends -> FriendsFloatingCard()
-            is ScreenState.Settings -> SettingsFloatingCard(
-                navigator = navigator,
-                viewModel = viewState.screenState.settingsViewModel
-            )
             is ScreenState.Message -> MessageFloatingCard(
                 viewState = viewState,
                 actions = actions,
                 trigger = trigger
             )
 
-            else -> {}
+            else -> {
+            //TODO
+            }
         }
         Row(
             modifier = Modifier

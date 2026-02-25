@@ -43,10 +43,10 @@ class ValidatePasswordUseCase {
         }
 
     private fun validateMinimum(password: String): Boolean =
-        password.length > minPasswordLength
+        password.length > MIN_PASSWORD_LENGTH
 
     companion object {
-        private const val minPasswordLength = 8
-        private const val maxPasswordLength = 32
+        private const val MIN_PASSWORD_LENGTH = 8
+        private const val MAX_PASSWORD_LENGTH = 32
     }
 }
