@@ -3,6 +3,7 @@ plugins {
     id(libs.plugins.ksp.get().pluginId) version (libs.plugins.ksp.get().version.toString())
     id(libs.plugins.kotlin.parcelize.get().pluginId)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -76,6 +77,7 @@ dependencies {
     implementation(libs.navigation)
     implementation(libs.retrofit2)
     implementation(libs.retrofit2.converter.moshi)
+    implementation(libs.kotlinx.serialization.json)
 
     implementation(libs.play.services.location)
     implementation(libs.androidx.security.crypto)

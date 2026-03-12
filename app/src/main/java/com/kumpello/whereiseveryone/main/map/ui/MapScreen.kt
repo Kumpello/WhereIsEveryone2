@@ -38,35 +38,33 @@ fun MapScreen(
 ) {
     val state by viewModel.viewState.collectAsState()
 
-    LaunchedEffect(viewModel.action) {
+    LaunchedEffect(Unit) {
         viewModel.action.collect { action ->
             when (action) {
-                MapViewModel.Action.CenterMap -> {
-                    //action in Map
-                }
-                MapViewModel.Action.NavigateFriends -> navController.navigate(MainNavigation.Friends)
-                MapViewModel.Action.NavigateSettings -> navController.navigate(MainNavigation.Settings)
+                MapViewModel.Action.NavigateFriends -> navController.navigate(MainNavigation.Friends.route)
+                MapViewModel.Action.NavigateSettings -> navController.navigate(MainNavigation.Settings.route)
+                else -> Unit
             }
         }
     }
 
 
     BackHandler(true) { //TODO: Add click on map
-        viewModel.trigger(MapViewModel.Command.BackToMap) //TODO Change to exit app?
+        viewModel.onEvent(MapViewModel.Event.BackToMap) //TODO Change to exit app?
     }
 
     MapScreen(
         viewState = state,
-        actions = viewModel.action,
-        trigger = viewModel::trigger
+        action = viewModel.action,
+        event = viewModel::onEvent
     )
 }
 
 @Composable
 fun MapScreen(
     viewState: MapViewModel.ViewState,
-    actions: SharedFlow<MapViewModel.Action>,
-    trigger: (MapViewModel.Command) -> Unit,
+    action: SharedFlow<MapViewModel.Action>,
+    event: (MapViewModel.Event) -> Unit,
 ) {
     Box {
         Row(
@@ -79,7 +77,7 @@ fun MapScreen(
                 .zIndex(1000f)
         ) {
             FloatingActionButton(
-                onClick = { trigger(MapViewModel.Command.NavigateMessage) },
+                onClick = { event(MapViewModel.Event.NavigateMessage) },
             ) {
                 Icon(
                     modifier = Modifier
@@ -91,7 +89,7 @@ fun MapScreen(
             }
             Spacer(modifier = Modifier.width(8.dp))
             FloatingActionButton(
-                onClick = { trigger(MapViewModel.Command.NavigateFriends) },
+                onClick = { event(MapViewModel.Event.NavigateFriends) },
             ) {
                 Icon(
                     modifier = Modifier
@@ -103,7 +101,7 @@ fun MapScreen(
             }
             Spacer(modifier = Modifier.width(8.dp))
             FloatingActionButton(
-                onClick = { trigger(MapViewModel.Command.NavigateSettings) },
+                onClick = { event(MapViewModel.Event.NavigateSettings) },
             ) {
                 Icon(
                     modifier = Modifier
@@ -117,14 +115,14 @@ fun MapScreen(
         Map(
             modifier = Modifier.align(Alignment.Center),
             state = viewState.mapSettings,
-            actions = actions,
+            actions = action,
             userLocation = viewState.user
         )
         when (viewState.screenState) {
             is ScreenState.Message -> MessageFloatingCard(
                 viewState = viewState,
-                actions = actions,
-                trigger = trigger
+                actions = action,
+                trigger = event
             )
 
             else -> {
@@ -138,7 +136,7 @@ fun MapScreen(
                 .padding(4.dp)
         ) {
             FloatingActionButton(
-                onClick = { trigger(MapViewModel.Command.CenterMap) },
+                onClick = { event(MapViewModel.Event.CenterMap) },
             ) {
                 Icon(
                     modifier = Modifier

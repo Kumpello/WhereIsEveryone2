@@ -34,11 +34,10 @@ val appModule = module {
     viewModel { SplashViewModel(get()) }
     viewModel { LoginViewModel(get(), get()) }
     viewModel { SignUpViewModel(get(), get(), get()) }
-    viewModel {settingsViewModel ->
+    viewModel {
         MapViewModel(
             locationService = get(),
             positionsService = get(),
-            settingsViewModel = settingsViewModel.get(),
             getKeyUseCase = get(),
             saveKeyUseCase = get(),
             updateStatusUseCase = get()

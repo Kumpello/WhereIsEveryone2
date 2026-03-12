@@ -6,23 +6,20 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.kumpello.whereiseveryone.main.common.domain.model.Location
 import com.kumpello.whereiseveryone.main.map.entity.MapSettings
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
 import com.mapbox.maps.MapboxExperimental
+import com.mapbox.maps.extension.compose.MapEffect
 import com.mapbox.maps.extension.compose.MapboxMap
 import com.mapbox.maps.extension.compose.animation.viewport.rememberMapViewportState
 import com.mapbox.maps.plugin.PuckBearing
-import com.mapbox.maps.plugin.gestures.generated.GesturesSettings
+import com.mapbox.maps.plugin.gestures.gestures
 import com.mapbox.maps.plugin.locationcomponent.createDefault2DPuck
-import com.mapbox.maps.plugin.locationcomponent.generated.LocationComponentSettings
+import com.mapbox.maps.plugin.locationcomponent.location
 import kotlinx.coroutines.flow.SharedFlow
 
 @OptIn(MapboxExperimental::class)
@@ -34,37 +31,6 @@ fun Map(
     userLocation: Location,
     //friendsPositions: List<UserPosition>
 ) {
-    val density = LocalDensity.current.density
-
-    //DefaultSettingsProvider may be useful
-    //FollowPuckViewportState also
-    //TODO: Use passed user location data!
-    //TODO: removal/change of logo
-    val locationComponentSettings: LocationComponentSettings by remember {
-        mutableStateOf(
-            LocationComponentSettings(
-                locationPuck = createDefault2DPuck(withBearing = true), //TODO: Change to 3D?
-                initializer = {
-                    enabled = true
-                    puckBearingEnabled = true
-                    pulsingMaxRadius *= density
-                    puckBearing =
-                        PuckBearing.HEADING //TODO: Change depending on move or not? Or switch by button?
-                }
-            )
-        )
-    }
-
-    val mapBoxUiSettings: GesturesSettings by remember {
-        mutableStateOf(
-            GesturesSettings {
-                rotateEnabled = true
-                pinchToZoomEnabled = true
-                pitchEnabled = true
-            }
-        )
-    }
-
     val mapViewportState = rememberMapViewportState {
         setCameraOptions {
             //center(userLocation.toPoint())
@@ -80,6 +46,7 @@ fun Map(
                 MapViewModel.Action.CenterMap -> {
                     mapViewportState.transitionToFollowPuckState()
                 }
+                else -> Unit
             }
         }
     }
@@ -87,8 +54,6 @@ fun Map(
     MapboxMap(
         modifier.fillMaxSize(),
         mapViewportState = mapViewportState,
-        locationComponentSettings = locationComponentSettings,
-        gesturesSettings = mapBoxUiSettings,
         scaleBar = {
             ScaleBar(
                 modifier = Modifier
@@ -111,14 +76,21 @@ fun Map(
                 )
             )
         }
-    )
+    ) {
+        //TODO: Use passed user location data!
+        //TODO: removal/change of logo
+        MapEffect(Unit) { mapView ->
+            mapView.location.updateSettings {
+                locationPuck = createDefault2DPuck(withBearing = true)
+                puckBearingEnabled = true
+                puckBearing = PuckBearing.HEADING
+                enabled = true
+            }
+            mapView.gestures.updateSettings {
+                rotateEnabled = true
+                pinchToZoomEnabled = true
+                pitchEnabled = true
+            }
+        }
+    }
 }
-
-/*@Preview
-@Composable
-fun MapPreview() {
-    Map(
-        state = MapSettings(),
-        userLocation = Location()
-    )
-}*/

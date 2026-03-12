@@ -46,14 +46,14 @@ fun LoginScreen(
         //TODO: Close keyboard?
     }
 
-    LaunchedEffect(viewModel.action) {
+    LaunchedEffect(Unit) {
         viewModel.action.collect { action ->
             when (action) {
                 is LoginViewModel.Action.MakeToast -> Toast.makeText(context, action.string, Toast.LENGTH_SHORT)
                     .show()
 
                 LoginViewModel.Action.NavigateMain -> context.startActivity(Intent(context, MainActivity::class.java))
-                LoginViewModel.Action.NavigateSignUp -> navController.navigate(AuthenticationNavigation.SignUp)
+                LoginViewModel.Action.NavigateSignUp -> navController.navigate(AuthenticationNavigation.SignUp.route)
             }
         }
     }
@@ -70,18 +70,18 @@ fun LoginScreen(
     trigger: (LoginViewModel.Command) -> Unit,
 ) {
     Column(
-        verticalArrangement = Arrangement.SpaceEvenly,
+        verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.padding(24.dp)
     ) {
         Logo.Text(
             modifier = Modifier
-                .padding(top = 30.dp),
+                .padding(vertical = 30.dp),
             size = 35
         )
         Column(
             modifier = Modifier
-                .padding(15.dp),
+                .padding(20.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -115,7 +115,7 @@ fun LoginScreen(
             Button.Animated(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(40.dp, 0.dp, 40.dp, 0.dp),
+                    .padding(horizontal = 40.dp),
                 text = "Login",
                 textSize = 26,
                 height = 50,
@@ -125,7 +125,7 @@ fun LoginScreen(
 
             Button.Animated(
                 modifier = Modifier
-                    .align(Alignment.CenterHorizontally),
+                    .padding(horizontal = 40.dp),
                 text = "Sign up here",
             ) { trigger(LoginViewModel.Command.NavigateSignUp) }
         }

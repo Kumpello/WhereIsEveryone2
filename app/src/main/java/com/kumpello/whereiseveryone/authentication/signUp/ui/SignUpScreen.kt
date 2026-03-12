@@ -4,7 +4,6 @@ import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -43,7 +42,7 @@ fun SignUpScreen(
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
 
-    LaunchedEffect(viewModel.action) {
+    LaunchedEffect(Unit) {
         viewModel.action.collect { action ->
             when (action) {
                 is SignUpViewModel.Action.MakeToast -> Toast.makeText(
@@ -61,7 +60,7 @@ fun SignUpScreen(
                 )
 
                 SignUpViewModel.Action.NavigateLogin -> navController.navigate(
-                    AuthenticationNavigation.Login)
+                    AuthenticationNavigation.Login.route)
             }
         }
     }
@@ -77,20 +76,19 @@ fun SignUpScreen(
     viewState: SignUpViewModel.ViewState,
     trigger: (SignUpViewModel.Command) -> Unit,
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize(),
+    Column(
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.padding(24.dp)
     ) {
         Logo.Text(
             modifier = Modifier
-                .padding(top = 30.dp)
-                .align(Alignment.TopCenter),
+                .padding(vertical = 30.dp),
             size = 35
         )
         Column(
             modifier = Modifier
-                .padding(20.dp)
-                .align(Alignment.Center),
+                .padding(20.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -122,33 +120,14 @@ fun SignUpScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Column(
-                verticalArrangement = Arrangement.spacedBy(5.dp)
-            ) {
-                ConditionRow(
-                    condition = "Minimum 6 characters",
-                    checked = viewState.passwordState.hasMinimum
-                )
-                ConditionRow(
-                    condition = "Minimum 1 special character",
-                    checked = viewState.passwordState.hasSpecialCharacter
-                )
-                ConditionRow(
-                    condition = "Minimum 1 capitalized letter",
-                    checked = viewState.passwordState.hasCapitalizedLetter
-                )
-                ConditionRow(
-                    condition = "No whitespaces",
-                    checked = viewState.passwordState.noWhitespaces
-                )
-            }
+            Conditions(viewState)
 
             Spacer(modifier = Modifier.height(20.dp))
 
             Button.Animated(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(40.dp, 0.dp, 40.dp, 0.dp),
+                    .padding(horizontal = 40.dp),
                 enabled = viewState.passwordState.successful,
                 text = "Sign up",
                 textSize = 26,
@@ -159,10 +138,34 @@ fun SignUpScreen(
 
             Button.Animated(
                 modifier = Modifier
-                    .align(Alignment.CenterHorizontally),
+                    .padding(horizontal = 40.dp),
                 text = "Login here",
             ) { trigger(SignUpViewModel.Command.NavigateLogin) }
         }
+    }
+}
+
+@Composable
+fun Conditions(viewState: SignUpViewModel.ViewState) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(5.dp)
+    ) {
+        ConditionRow(
+            condition = "Minimum 6 characters",
+            checked = viewState.passwordState.hasMinimum
+        )
+        ConditionRow(
+            condition = "Minimum 1 special character",
+            checked = viewState.passwordState.hasSpecialCharacter
+        )
+        ConditionRow(
+            condition = "Minimum 1 capitalized letter",
+            checked = viewState.passwordState.hasCapitalizedLetter
+        )
+        ConditionRow(
+            condition = "No whitespaces",
+            checked = viewState.passwordState.noWhitespaces
+        )
     }
 }
 

@@ -32,7 +32,7 @@ fun MessageFloatingCard(
     modifier: Modifier = Modifier,
     viewState: MapViewModel.ViewState,
     actions: SharedFlow<MapViewModel.Action>,
-    trigger: (MapViewModel.Command) -> Unit,
+    trigger: (MapViewModel.Event) -> Unit,
 ) {
     FloatingCard(modifier = modifier) {
         Column(
@@ -55,7 +55,7 @@ fun MessageFloatingCard(
                         label = { Text(text = "Your message") },
                         value = viewState.userMessageField,
                         onValueChange = { message ->
-                            trigger(MapViewModel.Command.WriteMessage(message))
+                            trigger(MapViewModel.Event.WriteMessage(message))
                         }
                     )
                     Spacer(Modifier.size(20.dp))
@@ -63,7 +63,7 @@ fun MessageFloatingCard(
                         text = stringResource(R.string.update_message),
                         width = 250
                     ) {
-                        trigger(MapViewModel.Command.SendMessage)
+                        trigger(MapViewModel.Event.SendMessage)
                     }
                 }
             }

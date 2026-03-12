@@ -52,7 +52,7 @@ fun SplashScreen(
         viewModel.trigger(SplashViewModel.Command.NavigateToNextDestination)
     }
 
-    LaunchedEffect(viewModel.action) {
+    LaunchedEffect(Unit) {
         viewModel.action.collect { action ->
             when (action) {
                 SplashViewModel.Action.NavigateMain -> context.startActivity(Intent(context, MainActivity::class.java))

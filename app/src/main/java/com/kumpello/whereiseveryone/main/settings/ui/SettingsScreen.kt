@@ -26,7 +26,7 @@ fun SettingsScreen(
 ) {
     val state by viewModel.state.collectAsState()
 
-    LaunchedEffect(viewModel.action) {
+    LaunchedEffect(Unit) {
         viewModel.action.collect { action ->
             when (action) {
                 SettingsViewModel.Action.BackToMap -> navController.popBackStack()

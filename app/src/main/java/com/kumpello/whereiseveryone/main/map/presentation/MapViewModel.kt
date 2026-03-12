@@ -11,7 +11,6 @@ import com.kumpello.whereiseveryone.main.map.data.model.FriendData
 import com.kumpello.whereiseveryone.main.map.data.model.PositionsResponse
 import com.kumpello.whereiseveryone.main.map.domain.usecase.UpdateStatusUseCase
 import com.kumpello.whereiseveryone.main.map.entity.MapSettings
-import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -101,13 +100,8 @@ class MapViewModel(
     }
 
     private fun navigateSettings() {
-
-        state.update {
-            it.copy(
-                screenState = ScreenState.Settings(
-                    settingsViewModel = settingsViewModel
-                )
-            )
+        viewModelScope.launch {
+            _action.emit(Action.NavigateSettings)
         }
     }
 
@@ -152,10 +146,8 @@ class MapViewModel(
     }
 
     private fun navigateFriends() {
-        state.update {
-            it.copy(
-                screenState = ScreenState.Friends
-            )
+        viewModelScope.launch {
+            _action.emit(Action.NavigateFriends)
         }
     }
 
@@ -173,16 +165,15 @@ class MapViewModel(
         }
     }
 
-    fun trigger(command: Command) {
-
-        when (command) {
-            Command.NavigateFriends -> navigateFriends()
-            Command.NavigateSettings -> navigateSettings()
-            Command.BackToMap -> backToMap()
-            Command.CenterMap -> centerMap()
-            Command.NavigateMessage -> navigateMessage()
-            is Command.WriteMessage -> writeMessage(message = command.message)
-            Command.SendMessage -> sendMessage()
+    fun onEvent(event: Event) {
+        when (event) {
+            Event.NavigateFriends -> navigateFriends()
+            Event.NavigateSettings -> navigateSettings()
+            Event.BackToMap -> backToMap()
+            Event.CenterMap -> centerMap()
+            Event.NavigateMessage -> navigateMessage()
+            is Event.WriteMessage -> writeMessage(message = event.message)
+            Event.SendMessage -> sendMessage()
         }
     }
 
@@ -203,14 +194,14 @@ class MapViewModel(
         data object NavigateFriends : Action()
     }
 
-    sealed class Command {
-        data object NavigateSettings : Command()
-        data object NavigateFriends : Command()
-        data object NavigateMessage : Command()
-        data class WriteMessage(val message: String) : Command()
-        data object SendMessage : Command()
-        data object CenterMap : Command()
-        data object BackToMap : Command()
+    sealed class Event {
+        data object NavigateSettings : Event()
+        data object NavigateFriends : Event()
+        data object NavigateMessage : Event()
+        data class WriteMessage(val message: String) : Event()
+        data object SendMessage : Event()
+        data object CenterMap : Event()
+        data object BackToMap : Event()
         //data object LockMap: Command() //TODO: Add?
     }
 

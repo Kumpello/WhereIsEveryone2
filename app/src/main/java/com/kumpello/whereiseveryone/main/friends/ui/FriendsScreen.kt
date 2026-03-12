@@ -20,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -42,23 +43,24 @@ fun FriendsScreen(
 ) {
     val context = LocalContext.current
     val state by viewModel.viewState.collectAsState()
+    val resources = LocalResources.current
 
-    LaunchedEffect(viewModel.action) {
+    LaunchedEffect(Unit) {
         viewModel.action.collect { action ->
             when (action) {
                 is FriendsViewModel.Action.AddFriendResult -> Toast.makeText(
                     context,
                     when(action.success) {
-                        true -> stringResource(R.string.friend_added_successfully)
-                        false -> stringResource(R.string.error_adding_friend)
+                        true -> resources.getString(R.string.friend_added_successfully)
+                        false -> resources.getString(R.string.error_adding_friend)
                     },
                     Toast.LENGTH_SHORT
                 ).show()
                 is FriendsViewModel.Action.DeleteFriendResult -> shortToast(
                     context,
                     when(action.success) {
-                        true -> stringResource(R.string.friend_deleted_successfully)
-                        false -> stringResource(R.string.error_deleting_friend)
+                        true -> resources.getString(R.string.friend_deleted_successfully)
+                        false -> resources.getString(R.string.error_deleting_friend)
                     }
                 )
                 FriendsViewModel.Action.BackToMap -> navController.popBackStack()
@@ -83,7 +85,7 @@ private fun FriendsScreen(
             trigger = trigger
         )
     }
-    FloatingCard(modifier = modifier) {
+    FloatingCard() { //TODO: Handle modifier?
         Column(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
