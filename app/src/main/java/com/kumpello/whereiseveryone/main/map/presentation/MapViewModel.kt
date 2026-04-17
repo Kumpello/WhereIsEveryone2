@@ -1,7 +1,9 @@
 package com.kumpello.whereiseveryone.main.map.presentation
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
 import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
 import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
 import com.kumpello.whereiseveryone.common.domain.ucecase.SaveKeyUseCase
@@ -9,6 +11,7 @@ import com.kumpello.whereiseveryone.common.entity.ScreenState
 import com.kumpello.whereiseveryone.main.common.domain.model.Location
 import com.kumpello.whereiseveryone.main.map.data.model.FriendData
 import com.kumpello.whereiseveryone.main.map.data.model.PositionsResponse
+import com.kumpello.whereiseveryone.main.map.domain.usecase.GetPermissionsStatusUseCase
 import com.kumpello.whereiseveryone.main.map.domain.usecase.UpdateStatusUseCase
 import com.kumpello.whereiseveryone.main.map.entity.MapSettings
 import kotlinx.coroutines.Dispatchers
@@ -25,14 +28,16 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.util.EnumMap
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class MapViewModel(
+class MapViewModel( //Rename to Main?
     private val locationService: LocationService,
     private val positionsService: PositionsService,
     private val saveKeyUseCase: SaveKeyUseCase,
     private val getKeyUseCase: GetKeyUseCase,
-    private val updateStatusUseCase: UpdateStatusUseCase
+    private val updateStatusUseCase: UpdateStatusUseCase,
+    private val getPermissionsStatusUseCase: GetPermissionsStatusUseCase
 ) : ViewModel() {
 
     private val state = MutableStateFlow(State())
@@ -56,9 +61,53 @@ class MapViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             state.update { state ->
                 state.copy(
-                    userMessage = getKeyUseCase.getUserMessage().orEmpty()
+                    userMessage = getKeyUseCase
+                        .getValue(WhereIsEveryoneApplication.USER_MESSAGE_KEY)
+                        .orEmpty()
                 )
             }
+        }
+    }
+
+    fun setPermissions(context: Context) {
+        state.update {
+            it.copy(
+                permissionsState = getPermissionsStatusUseCase.execute(context)
+            )
+        }
+    }
+
+    fun onEvent(event: Event) {
+        when (event) {
+            Event.NavigateFriends -> navigateFriends()
+            Event.NavigateSettings -> navigateSettings()
+            Event.BackToMap -> backToMap()
+            Event.CenterMap -> centerMap()
+            Event.NavigateMessage -> navigateMessage()
+            is Event.WriteMessage -> writeMessage(message = event.message)
+            Event.SendMessage -> sendMessage()
+            Event.OnPermissionAllow -> onPermissionAllow()
+            Event.OnPermissionDeny -> onPermissionDeny()
+        }
+    }
+
+    private fun onPermissionAllow() {
+        viewModelScope.launch {
+            _action.emit(Action.ShowPermissionSettings(state.value.permissionsState))
+        }
+        state.update {
+            it.copy(
+                permissionNotificationShown = true
+            )
+        }
+    }
+
+    private fun onPermissionDeny() {
+        //TODO: ?
+        state.update {
+            it.copy(
+                permissionNotificationShown = true
+            )
         }
     }
 
@@ -138,7 +187,7 @@ class MapViewModel(
                             userMessageField = ""
                         )
                     }.also {
-                        saveKeyUseCase.saveUserMessage(message = message)
+                        saveKeyUseCase.saveValue(WhereIsEveryoneApplication.USER_MESSAGE_KEY, message)
                     }
                 }
             }
@@ -165,18 +214,6 @@ class MapViewModel(
         }
     }
 
-    fun onEvent(event: Event) {
-        when (event) {
-            Event.NavigateFriends -> navigateFriends()
-            Event.NavigateSettings -> navigateSettings()
-            Event.BackToMap -> backToMap()
-            Event.CenterMap -> centerMap()
-            Event.NavigateMessage -> navigateMessage()
-            is Event.WriteMessage -> writeMessage(message = event.message)
-            Event.SendMessage -> sendMessage()
-        }
-    }
-
     private fun State.toViewState(): ViewState {
         return ViewState(
             screenState = screenState,
@@ -184,7 +221,9 @@ class MapViewModel(
             user = user,
             friends = friends,
             userMessage = userMessage,
-            userMessageField = userMessageField
+            userMessageField = userMessageField,
+            showPermissionNotification = !permissionNotificationShown && permissionsState.containsValue(false),
+            permissions = permissionsState
         )
     }
 
@@ -192,9 +231,12 @@ class MapViewModel(
         data object CenterMap : Action()
         data object NavigateSettings : Action()
         data object NavigateFriends : Action()
+        data class ShowPermissionSettings(val permissions: Map<String, Boolean>): Action()
     }
 
     sealed class Event {
+        data object OnPermissionAllow: Event()
+        data object OnPermissionDeny: Event()
         data object NavigateSettings : Event()
         data object NavigateFriends : Event()
         data object NavigateMessage : Event()
@@ -206,6 +248,8 @@ class MapViewModel(
     }
 
     data class State(
+        val permissionsState: Map<String, Boolean> = emptyMap(),
+        val permissionNotificationShown: Boolean = false,
         val screenState: ScreenState = ScreenState.Map,
         val mapSettings: MapSettings = MapSettings(),
         val friends: List<FriendData> = emptyList(),
@@ -221,6 +265,8 @@ class MapViewModel(
     )
 
     data class ViewState(
+        val showPermissionNotification: Boolean,
+        val permissions: Map<String, Boolean>,
         val screenState: ScreenState,
         val mapSettings: MapSettings,
         val user: Location,

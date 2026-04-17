@@ -13,4 +13,11 @@
     <string name="friend_deleted_successfully">Friend deleted successfully</string>
     <string name="error_deleting_friend">Error deleting friend</string>
     <string name="click_here_to_go_to_map">Click here to go to map!</string>
+    <string name="minimum_8_characters">Minimum 8 characters</string>
+    <string name="minimum_1_special_character">Minimum 1 special character</string>
+    <string name="minimum_1_capitalized_letter">Minimum 1 capitalized letter</string>
+    <string name="no_whitespaces">No whitespaces</string>
+    <string name="deny">Deny</string>
+    <string name="allow">Allow</string>
+    <string name="permissions_message">This application requires permission to show notification and to get precise location in background to be able to share your location with friends, without it you will be only able to see your friends locations.</string>
 </resources>

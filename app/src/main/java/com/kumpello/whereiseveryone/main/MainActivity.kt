@@ -1,5 +1,6 @@
 package com.kumpello.whereiseveryone.main
 
+import android.Manifest
 import android.Manifest.permission.ACCESS_BACKGROUND_LOCATION
 import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
@@ -7,10 +8,8 @@ import android.Manifest.permission.POST_NOTIFICATIONS
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
 import android.os.IBinder
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -19,10 +18,10 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.kumpello.whereiseveryone.authentication.common.AuthenticationNavigation
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.common.MainNavigation
 import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
@@ -36,55 +35,61 @@ import com.kumpello.whereiseveryone.main.map.presentation.PositionsServiceImpl
 import com.kumpello.whereiseveryone.main.map.ui.MapScreen
 import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel
 import com.kumpello.whereiseveryone.main.settings.ui.SettingsScreen
+import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import org.koin.core.parameter.parametersOf
 import timber.log.Timber
 
 class MainActivity : ComponentActivity(), LocationServiceInterface {
 
     private val mapViewModel: MapViewModel by viewModel()
     private val friendsViewModel: FriendsViewModel by viewModel()
-    private val settingsViewModel: SettingsViewModel by viewModel()
+    private val settingsViewModel: SettingsViewModel by viewModel { parametersOf(locationService) }
 
-    private var isBackGroundPermissionGranted = false //TODO: There is too much variables, Enum list, map?
-    private var isFineLocationPermissionGranted = false
-    private var isCoarseLocationPermissionGranted = false
-    private var isPostNotificationsPermissionGranted = false
-    private var locationService: LocationService? = null //TODO: Create abstraction for service + bound status
-    private var isLocationServiceBound: Boolean = false
+    private var locationService: LocationService? =
+        null //TODO: Create abstraction for service + bound status
     private var positionsService: PositionsService? = null
+    private var isLocationServiceBound: Boolean = false
     private var isPositionsServiceBound: Boolean = false
-    //TODO: Init somehow better, avoid vars
+
+    private lateinit var permissionsLauncher: ActivityResultLauncher<Array<String>>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         enableEdgeToEdge()
 
-        checkInitialPermissions()
-        requestPermissionsOrStart(getPermissionsLauncher()) {
-            startLocationService()
-            bindLocationService()
-            setLocationService(LocationService.UpdateType.Foreground)
-            requestBackgroundPermission(getPermissionsLauncher())
-        }
-
-        Handler().postDelayed({ //TODO: Temp workaround! That should come from callback not this shitty wait
-            requestBackgroundPermission(getPermissionsLauncher())
-        }, 20000L)
+        permissionsLauncher = getPermissionsLauncher()
+        mapViewModel.setPermissions(this)
 
         setContent {
             WhereIsEveryoneTheme {
                 MainScreen()
             }
         }
+
+        lifecycleScope.launch {
+            mapViewModel.action.collect { action ->
+                when (action) {
+                    is MapViewModel.Action.ShowPermissionSettings -> requestPermissionsOrStart(
+                        permissionsLauncher,
+                        action.permissions
+                    ) {
+                        initializeLocationServices()
+                    }
+
+                    else -> Unit
+                }
+            }
+        }
     }
 
     override fun onStart() {
         super.onStart()
-        requestBackgroundPermission(getPermissionsLauncher()) //TEMP
-        if (!isLocationServiceBound && checkInitialPermissions()) {
-            bindLocationService()
-            setLocationService(LocationService.UpdateType.Foreground)
+        if (!isLocationServiceBound
+            && !mapViewModel.viewState.value.permissions.containsValue(false)
+        ) {
+            initializeLocationServices()
         }
         if (!isPositionsServiceBound) {
             bindPositionsService()
@@ -110,12 +115,11 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
         val serviceIntent = Intent(applicationContext, LocationServiceImpl::class.java)
         //TODO: Add value to extra
         serviceIntent.putExtra(STATUS_PARAM, "test value")
-        ContextCompat.startForegroundService(applicationContext, intent)
-        bindLocationService()
+        ContextCompat.startForegroundService(applicationContext, serviceIntent)
     }
 
     private fun setLocationService(type: LocationService.UpdateType) {
-        when(type) {
+        when (type) {
             LocationService.UpdateType.Background -> locationService?.changeUpdateType(type)
             LocationService.UpdateType.Foreground -> locationService?.changeUpdateType(type)
         }
@@ -151,93 +155,58 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
         }
     }
 
-    private fun getPermissionsLauncher(): ActivityResultLauncher<Array<String>> { //TODO: It's done horrible, refactor
-        return registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
-            isBackGroundPermissionGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                permissions[ACCESS_BACKGROUND_LOCATION]
-                    ?: isBackGroundPermissionGranted
+    private fun getPermissionsLauncher(): ActivityResultLauncher<Array<String>> {
+        return registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissionsResult ->
+            if (permissionsResult.containsKey(ACCESS_BACKGROUND_LOCATION)) {
+                if (permissionsResult[ACCESS_BACKGROUND_LOCATION] == true) {
+                    //TODO: ?
+                } else {
+                    //TODO: Action when user deny permissions
+                }
             } else {
-                true
+                if (!permissionsResult.containsValue(false)) {
+                    initializeLocationServices()
+                    requestBackgroundPermission(permissionsLauncher)
+                } else {
+                    //TODO: Action when user deny permissions
+                }
             }
-            isPostNotificationsPermissionGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                permissions[POST_NOTIFICATIONS]
-                    ?: isPostNotificationsPermissionGranted
-            } else {
-                true
-            }
-
-            isFineLocationPermissionGranted =
-                permissions[ACCESS_FINE_LOCATION]
-                    ?: isFineLocationPermissionGranted
-            isCoarseLocationPermissionGranted =
-                permissions[ACCESS_COARSE_LOCATION]
-                    ?: isCoarseLocationPermissionGranted
-            if (//isBackGroundPermissionGranted &&
-                isCoarseLocationPermissionGranted &&
-                isFineLocationPermissionGranted &&
-                isPostNotificationsPermissionGranted
-            ) {
-                startLocationService()
-                bindLocationService()
-                setLocationService(LocationService.UpdateType.Foreground)
-            } else {
-                //TODO: Action when user deny permissions
-                //requestBackgroundPermission(getPermissionsLauncher()) //TEMP!
-            }
+            mapViewModel.setPermissions(this)
         }
     }
 
-    private fun requestPermissionsOrStart(permissionLauncher: ActivityResultLauncher<Array<String>>, function: () -> Unit) {
-        val permissionRequestList = mutableListOf<String>()
+    private fun initializeLocationServices() {
+        startLocationService()
+        bindLocationService()
+        setLocationService(LocationService.UpdateType.Foreground)
+    }
 
-        /*if(!isCoarseLocationPermissionGranted)
-            permissionRequestList.add(ACCESS_COARSE_LOCATION)*/
-        /*        if (!isBackGroundPermissionGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    permissionRequestList.add(ACCESS_BACKGROUND_LOCATION)
-                }*/
-        if(!isFineLocationPermissionGranted)
-            permissionRequestList.add(ACCESS_FINE_LOCATION)
-        if(!isPostNotificationsPermissionGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
-            permissionRequestList.add(POST_NOTIFICATIONS)
-
-        if (permissionRequestList.isNotEmpty()) {
-            permissionLauncher.launch(permissionRequestList.toTypedArray())
+    private fun requestPermissionsOrStart(
+        permissionLauncher: ActivityResultLauncher<Array<String>>,
+        permissions: Map<String, Boolean>,
+        function: () -> Unit
+    ) {
+        val neededPermissions = permissions
+            .filter { permission ->
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    permission.key != ACCESS_BACKGROUND_LOCATION
+                } else {
+                    true
+                }
+            }
+            .filter { permission -> !permission.value }
+            .keys
+        if (neededPermissions.isNotEmpty()) {
+            permissionLauncher.launch(neededPermissions.toTypedArray())
         } else {
             function()
         }
     }
 
     private fun requestBackgroundPermission(permissionLauncher: ActivityResultLauncher<Array<String>>) {
-        if (!isBackGroundPermissionGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             permissionLauncher.launch(arrayOf(ACCESS_BACKGROUND_LOCATION))
         }
-    }
-
-    private fun checkInitialPermissions(): Boolean {
-        isBackGroundPermissionGranted =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                checkPermission(ACCESS_BACKGROUND_LOCATION)
-            } else {
-                true
-            }
-        isPostNotificationsPermissionGranted =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                checkPermission(POST_NOTIFICATIONS)
-            } else {
-                true
-            }
-        isFineLocationPermissionGranted = checkPermission(ACCESS_FINE_LOCATION)
-        isCoarseLocationPermissionGranted = checkPermission(ACCESS_COARSE_LOCATION)
-
-        return isBackGroundPermissionGranted && isPostNotificationsPermissionGranted
-                && isFineLocationPermissionGranted && isCoarseLocationPermissionGranted
-    }
-
-    private fun checkPermission(permission: String): Boolean {
-        return ContextCompat.checkSelfPermission(
-            this,
-            permission
-        ) == PackageManager.PERMISSION_GRANTED
     }
 
     @Composable
@@ -250,10 +219,10 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
             composable(MainNavigation.Map.route) {
                 MapScreen(navController = navController, viewModel = mapViewModel)
             }
-            composable(AuthenticationNavigation.Login.route) {
+            composable(MainNavigation.Friends.route) {
                 FriendsScreen(navController = navController, viewModel = friendsViewModel)
             }
-            composable(AuthenticationNavigation.SignUp.route) {
+            composable(MainNavigation.Settings.route) {
                 SettingsScreen(navController = navController, viewModel = settingsViewModel)
             }
         }
@@ -285,7 +254,7 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
 
         override fun onServiceDisconnected(arg0: ComponentName) {
             Timber.d("PositionsServiceConnection: disconnected from service.")
-            isLocationServiceBound = false
+            isPositionsServiceBound = false
         }
     }
 

@@ -1,5 +1,6 @@
 package com.kumpello.whereiseveryone.authentication.signUp.domain.usecase
 
+import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
 import com.kumpello.whereiseveryone.common.domain.repository.AuthenticationRepository
 import com.kumpello.whereiseveryone.common.domain.ucecase.SaveKeyUseCase
 import com.kumpello.whereiseveryone.common.entity.AuthResponseWithParams
@@ -40,10 +41,10 @@ class SignUpUseCase(
     private fun saveUserData(response: AuthResponseWithParams) : Response {
         return when (response.authResponse) {
             is AuthResponse.AuthData -> {
-                saveKeyUseCase.saveUserID(response.authResponse.id)
-                saveKeyUseCase.saveUserName(response.username)
-                saveKeyUseCase.saveAuthToken(response.authResponse.token)
-                saveKeyUseCase.saveAuthRefreshToken(response.authResponse.refresh_token)
+                saveKeyUseCase.saveValue(WhereIsEveryoneApplication.USER_ID_KEY, response.authResponse.id)
+                saveKeyUseCase.saveValue(WhereIsEveryoneApplication.USER_NAME_KEY, response.username)
+                saveKeyUseCase.saveValue(WhereIsEveryoneApplication.AUTH_TOKEN_KEY, response.authResponse.token)
+                saveKeyUseCase.saveValue(WhereIsEveryoneApplication.AUTH_REFRESH_TOKEN_KEY, response.authResponse.refresh_token)
 
                 Response.Success
             }

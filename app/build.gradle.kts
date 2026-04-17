@@ -70,6 +70,7 @@ dependencies {
     implementation(libs.bundles.viewmodel)
     implementation(libs.bundles.runtime)
     implementation(libs.bundles.koin)
+    implementation(platform(libs.koin.bom))
     implementation(libs.bundles.retrofit)
     implementation(libs.bundles.moshi)
     implementation(libs.logging.interceptor)
@@ -81,6 +82,8 @@ dependencies {
 
     implementation(libs.play.services.location)
     implementation(libs.androidx.security.crypto)
+    implementation(libs.androidx.datastore)
+    implementation(libs.tink.android)
     implementation(libs.mapbox)
     implementation(libs.mapbox.compose)
 

@@ -76,7 +76,7 @@ fun LoginScreen(
     ) {
         Logo.Text(
             modifier = Modifier
-                .padding(vertical = 30.dp),
+                .padding(vertical = 64.dp),
             size = 35
         )
         Column(

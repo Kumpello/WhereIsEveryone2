@@ -1,73 +1,20 @@
 package com.kumpello.whereiseveryone.common.domain.ucecase
 
-import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
-import com.kumpello.whereiseveryone.main.friends.model.Friend
-import com.kumpello.whereiseveryone.main.friends.model.FriendList
-import com.squareup.moshi.Moshi
-import androidx.core.content.edit
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import com.kumpello.whereiseveryone.common.domain.repository.EncryptedDataStoreRepository
+import kotlinx.coroutines.runBlocking
 
 class SaveKeyUseCase(
-    getEncryptedPreferencesUseCase: GetEncryptedPreferencesUseCase,
-    private val getKeyUseCase: GetKeyUseCase,
+    private val encryptedDataStoreRepository: EncryptedDataStoreRepository
 ) {
 
-    private val moshi = Moshi.Builder().build()
-    private val preferences = getEncryptedPreferencesUseCase.execute()
-
-    fun saveUserID(id: String) {
-        preferences.edit { putString(WhereIsEveryoneApplication.USER_ID_KEY, id) }
+    fun saveValue(key: String, value: String) {
+        runBlocking {
+            val prefKey = stringPreferencesKey(key)
+            val encryptedValue = encryptedDataStoreRepository.encrypt(value)
+            encryptedDataStoreRepository.dataStore().edit { it[prefKey] = encryptedValue }
+        }
     }
 
-    fun saveUserName(name: String) {
-        preferences
-            .edit {
-                putString(WhereIsEveryoneApplication.USER_NAME_KEY, name)
-            }
-    }
-
-    fun saveUserMessage(message: String) {
-        preferences
-            .edit {
-                putString(WhereIsEveryoneApplication.USER_MESSAGE_KEY, message)
-            }
-    }
-
-    fun saveAuthToken(token: String) {
-        preferences
-            .edit {
-                putString(WhereIsEveryoneApplication.AUTH_TOKEN_KEY, token)
-            }
-    }
-
-    fun saveAuthRefreshToken(token: String) {
-        preferences
-            .edit {
-                putString(WhereIsEveryoneApplication.AUTH_REFRESH_TOKEN_KEY, token)
-            }
-    }
-
-    fun saveLatitude(latitude: Double) {
-        preferences
-            .edit {
-                putFloat(WhereIsEveryoneApplication.LATITUDE_KEY, latitude.toFloat())
-            }
-    }
-
-    fun saveLongitude(longitude: Double) {
-        preferences
-            .edit {
-                putFloat(WhereIsEveryoneApplication.LONGITUDE_KEY, longitude.toFloat())
-            }
-    }
-
-    fun saveFriend(nick: String) {
-        val currentList = getKeyUseCase.getFriends().toMutableList()
-        currentList.add(Friend(nick))
-        val adapter = moshi.adapter(FriendList::class.java)
-        val jsonText: String = adapter.toJson(FriendList(currentList))
-        preferences
-            .edit {
-                putString(WhereIsEveryoneApplication.FRIENDS_KEY, jsonText)
-            }
-    }
 }

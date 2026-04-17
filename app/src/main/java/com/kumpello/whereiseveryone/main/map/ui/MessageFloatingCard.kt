@@ -21,6 +21,7 @@ import com.kumpello.whereiseveryone.common.ui.entity.Button
 import com.kumpello.whereiseveryone.common.ui.theme.Shapes
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.common.domain.model.Location
+import com.kumpello.whereiseveryone.main.common.ui.FloatingCard
 import com.kumpello.whereiseveryone.main.map.entity.MapSettings
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -73,7 +74,7 @@ fun MessageFloatingCard(
 
 @Preview(showBackground = true)
 @Composable
-fun MessagePreview() { //TODO: Get this preview unfucked
+fun MessagePreview() {
     WhereIsEveryoneTheme(darkTheme = true) {
         MessageFloatingCard(
             viewState = MapViewModel.ViewState(
@@ -92,7 +93,9 @@ fun MessagePreview() { //TODO: Get this preview unfucked
                 ),
                 friends = listOf(),
                 userMessage = "Where is everyone?",
-                userMessageField = ""
+                userMessageField = "",
+                permissions = emptyMap(),
+                showPermissionNotification = false
 
             ), actions = MutableSharedFlow(), trigger = {}
         )

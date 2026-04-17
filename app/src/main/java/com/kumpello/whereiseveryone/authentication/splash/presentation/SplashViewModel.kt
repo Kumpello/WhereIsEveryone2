@@ -15,8 +15,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-//TODO: Fix navigation so user can't get back to this screen
-
 class SplashViewModel(
     private val getCurrentAuthKeyUseCase: GetCurrentAuthKeyUseCase
 ) : ViewModel() {

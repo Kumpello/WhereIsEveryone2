@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -16,7 +18,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.kumpello.whereiseveryone.common.ui.entity.Button
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
-import com.kumpello.whereiseveryone.main.map.ui.FloatingCard
 import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel
 
 @Composable
@@ -42,31 +43,28 @@ fun SettingsScreen(
 
 @Composable
 private fun SettingsScreen(
-    modifier: Modifier = Modifier,
     viewState: SettingsViewModel.ViewState,
     trigger: (SettingsViewModel.Command) -> Unit,
 ) {
-    FloatingCard(
-        modifier = modifier
-    ) {
+    Surface(color = MaterialTheme.colorScheme.background) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(15.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Button.Animated(
-                text = viewState.locationSwitchText,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(15.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                trigger(SettingsViewModel.Command.SwitchLocationServiceState)
+                Button.Animated(
+                    text = viewState.locationSwitchText,
+                ) {
+                    trigger(SettingsViewModel.Command.SwitchLocationServiceState)
+                }
+                Button.Animated(
+                    text = viewState.deleteLocationData,
+                ) {
+                    trigger(SettingsViewModel.Command.ClearData)
+                }
             }
-            Button.Animated(
-                text = viewState.deleteLocationData,
-            ) {
-                trigger(SettingsViewModel.Command.ClearData)
-            }
-        }
     }
 }
 

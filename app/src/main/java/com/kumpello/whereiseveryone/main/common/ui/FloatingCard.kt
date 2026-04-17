@@ -1,4 +1,4 @@
-package com.kumpello.whereiseveryone.main.map.ui
+package com.kumpello.whereiseveryone.main.common.ui
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -16,14 +16,7 @@ fun FloatingCard(
     content: @Composable () -> Unit
 ) {
     Card(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(
-                start = 40.dp,
-                end = 40.dp,
-                top = 120.dp,
-                bottom = 100.dp
-            ),
+        modifier = modifier,
         colors = CardDefaults.cardColors().copy(
             containerColor = MaterialTheme.colorScheme.background
         ),

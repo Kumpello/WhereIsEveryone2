@@ -2,6 +2,7 @@ package com.kumpello.whereiseveryone.authentication.signUp.ui
 
 import android.content.Intent
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -20,10 +21,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.authentication.common.AuthenticationNavigation
 import com.kumpello.whereiseveryone.authentication.common.ui.entity.TextField
 import com.kumpello.whereiseveryone.authentication.signUp.domain.model.PasswordValidationState
@@ -65,6 +68,10 @@ fun SignUpScreen(
         }
     }
 
+    BackHandler(true) {
+        //TODO: Close keyboard?
+    }
+
     SignUpScreen(
         viewState = state,
         trigger = viewModel::trigger
@@ -83,7 +90,7 @@ fun SignUpScreen(
     ) {
         Logo.Text(
             modifier = Modifier
-                .padding(vertical = 30.dp),
+                .padding(vertical = 64.dp),
             size = 35
         )
         Column(
@@ -151,19 +158,19 @@ fun Conditions(viewState: SignUpViewModel.ViewState) {
         verticalArrangement = Arrangement.spacedBy(5.dp)
     ) {
         ConditionRow(
-            condition = "Minimum 6 characters",
+            condition = stringResource(R.string.minimum_8_characters),
             checked = viewState.passwordState.hasMinimum
         )
         ConditionRow(
-            condition = "Minimum 1 special character",
+            condition = stringResource(R.string.minimum_1_special_character),
             checked = viewState.passwordState.hasSpecialCharacter
         )
         ConditionRow(
-            condition = "Minimum 1 capitalized letter",
+            condition = stringResource(R.string.minimum_1_capitalized_letter),
             checked = viewState.passwordState.hasCapitalizedLetter
         )
         ConditionRow(
-            condition = "No whitespaces",
+            condition = stringResource(R.string.no_whitespaces),
             checked = viewState.passwordState.noWhitespaces
         )
     }

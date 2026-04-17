@@ -67,8 +67,7 @@ object Button {
         onClick: () -> Unit
     ) {
         Box(
-            modifier = modifier
-                .fillMaxWidth(),
+            modifier = modifier,
             contentAlignment = Alignment.Center
         ) {
             Button(

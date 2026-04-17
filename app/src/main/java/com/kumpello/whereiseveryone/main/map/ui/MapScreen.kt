@@ -4,7 +4,9 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
@@ -20,14 +22,17 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.common.entity.ScreenState
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.common.MainNavigation
+import com.kumpello.whereiseveryone.main.common.ui.Notification
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
 import kotlinx.coroutines.flow.SharedFlow
 
@@ -67,6 +72,17 @@ fun MapScreen(
     event: (MapViewModel.Event) -> Unit,
 ) {
     Box {
+        if (viewState.showPermissionNotification) {
+            Notification(
+                modifier = Modifier
+                    .zIndex(Float.MAX_VALUE)
+                    .align(Alignment.Center)
+                    .padding(8.dp),
+                notification = stringResource(R.string.permissions_message),
+                onAllowClick = { event(MapViewModel.Event.OnPermissionAllow) },
+                onDenyClick = { event(MapViewModel.Event.OnPermissionDeny) }
+            )
+        }
         Row(
             modifier = Modifier
                 .align(Alignment.TopEnd)
@@ -120,6 +136,9 @@ fun MapScreen(
         )
         when (viewState.screenState) {
             is ScreenState.Message -> MessageFloatingCard(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth(0.9f),
                 viewState = viewState,
                 actions = action,
                 trigger = event

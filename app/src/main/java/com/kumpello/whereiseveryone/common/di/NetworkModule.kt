@@ -1,4 +1,4 @@
-package com.kumpello.whereiseveryone.common.domain.model
+package com.kumpello.whereiseveryone.common.di
 
 import com.kumpello.whereiseveryone.common.domain.repository.AuthenticationRepository
 import com.kumpello.whereiseveryone.common.domain.repository.AuthenticationRepositoryImpl
@@ -19,7 +19,6 @@ import org.koin.dsl.bind
 import org.koin.dsl.module
 
 val networkModule = module {
-
     single { AuthenticationRepositoryImpl() } bind AuthenticationRepository::class
     single { LocationRepositoryImpl() } bind LocationRepository::class
     single { FriendsRepositoryImpl() } bind FriendsRepository::class

@@ -1,17 +1,13 @@
-package com.kumpello.whereiseveryone.common.di
+package com.kumpello.whereiseveryone.main.common.di
 
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
-import com.kumpello.whereiseveryone.authentication.common.domain.usecase.ValidateLoginInputUseCase
-import com.kumpello.whereiseveryone.authentication.login.domain.usecase.LoginUseCase
-import com.kumpello.whereiseveryone.authentication.login.presentation.LoginViewModel
-import com.kumpello.whereiseveryone.authentication.signUp.domain.usecase.SignUpUseCase
-import com.kumpello.whereiseveryone.authentication.signUp.domain.usecase.ValidatePasswordUseCase
-import com.kumpello.whereiseveryone.authentication.signUp.presentation.SignUpViewModel
-import com.kumpello.whereiseveryone.authentication.splash.presentation.SplashViewModel
 import com.kumpello.whereiseveryone.common.domain.ucecase.GetCurrentAuthKeyUseCase
-import com.kumpello.whereiseveryone.common.domain.ucecase.GetEncryptedPreferencesUseCase
+import com.kumpello.whereiseveryone.common.domain.repository.EncryptedDataStoreRepository
+import com.kumpello.whereiseveryone.common.domain.ucecase.GetFriendsUseCase
 import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
+import com.kumpello.whereiseveryone.common.domain.ucecase.GetNeededPermissionsUseCase
+import com.kumpello.whereiseveryone.common.domain.ucecase.SaveFriendsUseCase
 import com.kumpello.whereiseveryone.common.domain.ucecase.SaveKeyUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.GetFriendsDataUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.SendLocationUseCase
@@ -19,6 +15,7 @@ import com.kumpello.whereiseveryone.main.common.domain.usecase.WipeLocationUseCa
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.AddFriendUseCase
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.RemoveFriendUseCase
 import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
+import com.kumpello.whereiseveryone.main.map.domain.usecase.GetPermissionsStatusUseCase
 import com.kumpello.whereiseveryone.main.map.presentation.LocationService
 import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceImpl
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
@@ -26,21 +23,18 @@ import com.kumpello.whereiseveryone.main.map.presentation.PositionsService
 import com.kumpello.whereiseveryone.main.map.presentation.PositionsServiceImpl
 import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel
 import org.koin.android.ext.koin.androidContext
-import org.koin.androidx.viewmodel.dsl.viewModel
+import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
-//TODO Split into modules based on activity
-val appModule = module {
-    viewModel { SplashViewModel(get()) }
-    viewModel { LoginViewModel(get(), get()) }
-    viewModel { SignUpViewModel(get(), get(), get()) }
+val mainModule = module {
     viewModel {
         MapViewModel(
             locationService = get(),
             positionsService = get(),
             getKeyUseCase = get(),
             saveKeyUseCase = get(),
-            updateStatusUseCase = get()
+            updateStatusUseCase = get(),
+            getPermissionsStatusUseCase = get()
         )
     }
     viewModel { locationServiceInterface ->
@@ -64,18 +58,18 @@ val appModule = module {
     single<PositionsService> {
         PositionsServiceImpl()
     }
+    single { GetPermissionsStatusUseCase(get()) }
+    single { GetNeededPermissionsUseCase() }
     single { WipeLocationUseCase() }
     single { PositionsServiceImpl() }
-    single { ValidateLoginInputUseCase() }
-    single { ValidatePasswordUseCase() }
     single { GetCurrentAuthKeyUseCase(get(), get()) }
-    single { SaveKeyUseCase(get(), get()) }
+    single { SaveKeyUseCase(get()) }
     single { GetKeyUseCase(get()) }
-    single { LoginUseCase(get(), get()) }
-    single { SignUpUseCase(get(), get()) }
+    single { GetFriendsUseCase(get()) }
+    single { SaveFriendsUseCase(get(), get()) }
     single { SendLocationUseCase(get(), get()) }
     single { GetFriendsDataUseCase(get(), get()) }
-    single { GetEncryptedPreferencesUseCase(androidContext()) }
+    single { EncryptedDataStoreRepository(androidContext()) }
     single { AddFriendUseCase(get(), get()) }
     single { RemoveFriendUseCase(get(), get()) }
 }
