@@ -16,9 +16,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.koin.core.annotation.InjectedParam
 
 class SettingsViewModel(
-    private val locationServiceInterface: LocationServiceInterface,
+    @InjectedParam val locationServiceInterface: LocationServiceInterface,
     private val wipeLocationUseCase: WipeLocationUseCase
 ) : ViewModel() {
 

@@ -26,6 +26,7 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.Priority
 import com.kumpello.whereiseveryone.R
+import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
 import com.kumpello.whereiseveryone.main.MainActivity
 import com.kumpello.whereiseveryone.main.common.domain.usecase.SendLocationUseCase
 import kotlinx.coroutines.CoroutineScope
@@ -44,6 +45,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import timber.log.Timber
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 class LocationServiceImpl(
     //private val fusedLocationClient: FusedLocationProviderClient,
@@ -69,7 +72,7 @@ class LocationServiceImpl(
         startService()
     }
 
-    override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Timber.d("LocationService onStartCommand")
 
         startService()
@@ -172,7 +175,7 @@ class LocationServiceImpl(
                 scope.launch {
                     locationFlow.emit(location)
                     Timber.d("Emiting location")
-                    sendLocation(location)
+                    sendLocation(location, Clock.System.now())
                 }
             }
         }
@@ -220,19 +223,25 @@ class LocationServiceImpl(
         }
     }
 
-    private fun sendLocation(location: Location) {
+    private fun sendLocation(location: Location, lastUpdate: Instant) {
         scope.launch {
             runCatching {
-                sendLocationUseCase.execute(
+                val response = sendLocationUseCase.execute(
                     longitude = location.longitude,
                     latitude = location.latitude,
                     bearing = location.bearing,
                     altitude = location.altitude,
-                    accuracy = location.accuracy
+                    accuracy = location.accuracy,
+                    lastUpdate = lastUpdate
                 )
-                    .let { response ->
-                        Timber.d("Sending location code $response") //TODO: Send to UI if failed
+                when (response) {
+                    is CodeResponse.ErrorData -> {
+                        Timber.d(response.toString())
                     }
+                    CodeResponse.SuccessNoContent -> {
+                        Timber.d(response.toString())
+                    }
+                }
             }.onFailure { error ->
                 Timber.d(error) //TODO: Send to UI if error
             }
@@ -325,11 +334,7 @@ class LocationServiceImpl(
 
     companion object { //TODO: Lift to interface
         private val state: MutableStateFlow<Boolean> = MutableStateFlow(false)
-        val stateFlow: StateFlow<Boolean> = state.map { state.value } .stateIn(
-            scope = CoroutineScope(Dispatchers.Main),
-            started = SharingStarted.Eagerly,
-            initialValue = state.value
-        )
+        val stateFlow: StateFlow<Boolean> = state.asStateFlow()
     }
 
 }

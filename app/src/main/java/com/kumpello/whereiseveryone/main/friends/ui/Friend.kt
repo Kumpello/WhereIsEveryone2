@@ -48,7 +48,8 @@ fun Friend(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                modifier = Modifier.padding(start = 4.dp),
+                modifier = Modifier.padding(start = 8.dp),
+                fontSize = MaterialTheme.typography.headlineSmall.fontSize,
                 text = friend.nick
             ) //TODO: Add friend since date
             IconButton( //TODO: Add share location switch and confirmation by color change

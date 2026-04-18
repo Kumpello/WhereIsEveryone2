@@ -18,6 +18,7 @@ import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
 import com.kumpello.whereiseveryone.main.map.domain.usecase.GetPermissionsStatusUseCase
 import com.kumpello.whereiseveryone.main.map.presentation.LocationService
 import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceImpl
+import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceInterface
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
 import com.kumpello.whereiseveryone.main.map.presentation.PositionsService
 import com.kumpello.whereiseveryone.main.map.presentation.PositionsServiceImpl
@@ -37,11 +38,12 @@ val mainModule = module {
             getPermissionsStatusUseCase = get()
         )
     }
-    viewModel { locationServiceInterface ->
+    viewModel { (locationServiceInterface: LocationServiceInterface) ->
         SettingsViewModel(
-            locationServiceInterface = locationServiceInterface.get(),
+            locationServiceInterface = locationServiceInterface,
             wipeLocationUseCase = get()
-    ) }
+        )
+    }
     viewModel { FriendsViewModel(
         get(),
         get(),

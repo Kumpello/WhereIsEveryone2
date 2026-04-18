@@ -3,6 +3,7 @@ package com.kumpello.whereiseveryone.main.common.domain.usecase
 import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
 import com.kumpello.whereiseveryone.common.domain.ucecase.GetCurrentAuthKeyUseCase
 import com.kumpello.whereiseveryone.main.common.domain.repository.LocationRepository
+import kotlin.time.Instant
 
 class SendLocationUseCase(
     private val locationRepository: LocationRepository,
@@ -13,7 +14,8 @@ class SendLocationUseCase(
         latitude: Double,
         bearing: Float,
         altitude: Double,
-        accuracy: Float
+        accuracy: Float,
+        lastUpdate: Instant
     ): CodeResponse {
         return locationRepository.sendPosition(
             token = getCurrentAuthKeyUseCase.execute().toString(),
@@ -21,7 +23,8 @@ class SendLocationUseCase(
             latitude = latitude,
             bearing = bearing,
             altitude = altitude,
-            accuracy = accuracy
+            accuracy = accuracy,
+            lastUpdate = lastUpdate
         )
     }
 }

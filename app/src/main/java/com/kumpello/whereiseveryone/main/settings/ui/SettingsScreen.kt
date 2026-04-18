@@ -46,21 +46,27 @@ private fun SettingsScreen(
     viewState: SettingsViewModel.ViewState,
     trigger: (SettingsViewModel.Command) -> Unit,
 ) {
-    Surface(color = MaterialTheme.colorScheme.background) {
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
         Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(20.dp),
+                modifier = Modifier.padding(
+                    vertical = 64.dp,
+                    horizontal = 16.dp
+                ),
                 verticalArrangement = Arrangement.spacedBy(15.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Button.Animated(
                     text = viewState.locationSwitchText,
+                    textSize = 20
                 ) {
                     trigger(SettingsViewModel.Command.SwitchLocationServiceState)
                 }
                 Button.Animated(
                     text = viewState.deleteLocationData,
+                    textSize = 20
                 ) {
                     trigger(SettingsViewModel.Command.ClearData)
                 }

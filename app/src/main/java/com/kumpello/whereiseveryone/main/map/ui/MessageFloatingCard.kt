@@ -2,6 +2,7 @@ package com.kumpello.whereiseveryone.main.map.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -51,6 +52,8 @@ fun MessageFloatingCard(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
+                    Text(text = "Current status message:") //TODO: Customize style
+                    Text(text = viewState.userMessage)
                     TextField( //TODO: Make it more funky, maybe other composable? To consider in all Textfields
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text(text = "Your message") },
@@ -60,11 +63,22 @@ fun MessageFloatingCard(
                         }
                     )
                     Spacer(Modifier.size(20.dp))
-                    Button.Animated(
-                        text = stringResource(R.string.update_message),
-                        width = 250
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        trigger(MapViewModel.Event.SendMessage)
+                        Button.Animated(
+                            modifier = Modifier.weight(1f),
+                            text = stringResource(R.string.clear_message),
+                        ) {
+                            trigger(MapViewModel.Event.ClearMessage)
+                        }
+                        Button.Animated(
+                            modifier = Modifier.weight(1f),
+                            text = stringResource(R.string.update_message),
+                        ) {
+                            trigger(MapViewModel.Event.SendMessage)
+                        }
                     }
                 }
             }
@@ -82,7 +96,6 @@ fun MessagePreview() {
                 mapSettings = MapSettings(
                     zoom = 14.15,
                     zoomLocked = false,
-                    bearing = 16.17
                 ),
                 user = Location(
                     lat = 18.19,

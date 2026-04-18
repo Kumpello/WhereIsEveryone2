@@ -1,6 +1,7 @@
 package com.kumpello.whereiseveryone.main.map.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,6 +13,8 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
@@ -90,7 +93,8 @@ fun MapScreen(
                 .padding(
                     end = 8.dp
                 )
-                .zIndex(1000f)
+                .zIndex(1000f),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             FloatingActionButton(
                 onClick = { event(MapViewModel.Event.NavigateMessage) },
@@ -103,7 +107,6 @@ fun MapScreen(
                     contentDescription = "Message"
                 )
             }
-            Spacer(modifier = Modifier.width(8.dp))
             FloatingActionButton(
                 onClick = { event(MapViewModel.Event.NavigateFriends) },
             ) {
@@ -115,7 +118,6 @@ fun MapScreen(
                     contentDescription = "Friends"
                 )
             }
-            Spacer(modifier = Modifier.width(8.dp))
             FloatingActionButton(
                 onClick = { event(MapViewModel.Event.NavigateSettings) },
             ) {
@@ -137,6 +139,7 @@ fun MapScreen(
         when (viewState.screenState) {
             is ScreenState.Message -> MessageFloatingCard(
                 modifier = Modifier
+                    .padding(top = 128.dp)
                     .align(Alignment.TopCenter)
                     .fillMaxWidth(0.9f),
                 viewState = viewState,
@@ -152,8 +155,31 @@ fun MapScreen(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .safeDrawingPadding()
-                .padding(4.dp)
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            FloatingActionButton(
+                onClick = { event(MapViewModel.Event.ZoomOut) },
+            ) {
+                Icon(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(4.dp),
+                    imageVector = Icons.Default.KeyboardArrowUp,
+                    contentDescription = "Zoom out"
+                )
+            }
+            FloatingActionButton(
+                onClick = { event(MapViewModel.Event.ZoomIn) },
+            ) {
+                Icon(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(4.dp),
+                    imageVector = Icons.Default.KeyboardArrowDown,
+                    contentDescription = "Zoom in"
+                )
+            }
             FloatingActionButton(
                 onClick = { event(MapViewModel.Event.CenterMap) },
             ) {

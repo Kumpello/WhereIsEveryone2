@@ -5,6 +5,8 @@ import com.kumpello.whereiseveryone.common.domain.services.RetrofitClient
 import com.kumpello.whereiseveryone.main.map.data.model.LocationRequest
 import com.kumpello.whereiseveryone.main.map.domain.model.LocationApi
 import timber.log.Timber
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 class LocationRepositoryImpl : LocationRepository {
 
@@ -17,7 +19,8 @@ class LocationRepositoryImpl : LocationRepository {
         latitude: Double,
         bearing: Float,
         altitude: Double,
-        accuracy: Float
+        accuracy: Float,
+        lastUpdate: Instant
     ): CodeResponse {
         val response = locationApi.sendLocation(
             "Bearer $token", LocationRequest(
@@ -25,7 +28,8 @@ class LocationRepositoryImpl : LocationRepository {
                 latitude = latitude,
                 bearing = bearing,
                 altitude = altitude,
-                accuracy = accuracy
+                accuracy = accuracy,
+                lastUpdate = lastUpdate
             )
         ).execute()
         return when {

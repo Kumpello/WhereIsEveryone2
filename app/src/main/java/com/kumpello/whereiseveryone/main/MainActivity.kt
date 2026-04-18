@@ -44,7 +44,7 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
 
     private val mapViewModel: MapViewModel by viewModel()
     private val friendsViewModel: FriendsViewModel by viewModel()
-    private val settingsViewModel: SettingsViewModel by viewModel { parametersOf(locationService) }
+    private val settingsViewModel: SettingsViewModel by viewModel { parametersOf(this@MainActivity) }
 
     private var locationService: LocationService? =
         null //TODO: Create abstraction for service + bound status

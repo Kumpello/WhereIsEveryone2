@@ -2,6 +2,7 @@ package com.kumpello.whereiseveryone.main.friends.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
 import com.kumpello.whereiseveryone.common.entity.ScreenState
 import com.kumpello.whereiseveryone.main.common.domain.usecase.GetFriendsDataUseCase
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.AddFriendUseCase
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 class FriendsViewModel(
     private val addFriendUseCase: AddFriendUseCase,
@@ -35,22 +37,29 @@ class FriendsViewModel(
     )
 
     init {
-        when (val friends = getFriendsDataUseCase.execute()) {
-            is PositionsResponse.FriendsData -> {
-                val friendList = friends.positions.map { friendData ->
-                    friendData.friend
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching {
+                when (val friends = getFriendsDataUseCase.execute()) { //TODO: emit action
+                    is PositionsResponse.FriendsData -> {
+                        val friendList = friends.positions.map { friendData ->
+                            friendData.friend
+                        }
+                        state.update { state ->
+                            state.copy(
+                                friends = friendList
+                            )
+                        }
+                    }
+                    is PositionsResponse.ErrorData -> {
+                        //TODO: Toast!
+                        Timber.d("Error getting friends!\n%s", friends)
+                    }
                 }
-                state.update { state ->
-                    state.copy(
-                        friends = friendList
-                    )
-                }
-            }
-            else -> {
-                //TODO: Toast
+            }.onFailure { error ->
+                //TODO: Toast!
+                Timber.d("Error getting friends!\n%s", error.message.toString())
             }
         }
-
     }
 
     private val _action = MutableSharedFlow<Action>()
@@ -69,7 +78,17 @@ class FriendsViewModel(
     private fun addFriend() {
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
-                addFriendUseCase.execute(state.value.addFriendNick) //TODO: Get result, emit action
+                when (val response = addFriendUseCase.execute(state.value.addFriendNick)) {
+                    CodeResponse.SuccessNoContent -> {
+                        TODO()
+                    }
+                    is CodeResponse.ErrorData -> {
+                        TODO()
+                    }
+                }
+            }.onFailure { error ->
+                //TODO: Toast!
+                Timber.d("Error adding friend!\n%s", error.message.toString())
             }
         }
     }
@@ -77,7 +96,13 @@ class FriendsViewModel(
     private fun deleteFriend(nick: String) {
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
-                removeFriendUseCase.execute(nick) //TODO: Get result, emit action
+                when (val response = removeFriendUseCase.execute(nick)) {
+                    CodeResponse.SuccessNoContent -> TODO()
+                    is CodeResponse.ErrorData -> TODO()
+                }
+            }.onFailure { error ->
+                //TODO: Toast!
+                Timber.d("Error deleting friend!\n%s", error.message.toString())
             }
         }
     }

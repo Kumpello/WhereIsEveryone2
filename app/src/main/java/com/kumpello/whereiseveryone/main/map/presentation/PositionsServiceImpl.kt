@@ -25,7 +25,7 @@ class PositionsServiceImpl : Service(), PositionsService {
     private val positions = _positions.asSharedFlow() //TODO: StateFlow? Only one receiver
 
     private val job = SupervisorJob()
-    private val scope = CoroutineScope(Dispatchers.IO + job)
+    private val positionsServiceCoroutineScope = CoroutineScope(Dispatchers.IO + job)
 
     private val getFriendsDataUseCase: GetFriendsDataUseCase by inject()
 
@@ -46,7 +46,7 @@ class PositionsServiceImpl : Service(), PositionsService {
     }
 
     override fun startFriendsUpdates() { //TODO: Something's fucky about way it is done, refactor
-        scope.launch {
+        positionsServiceCoroutineScope.launch {
             while (updateFriends) {
                 runCatching {
                     Timber.d("Trying to get location")

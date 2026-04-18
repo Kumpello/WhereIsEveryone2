@@ -28,7 +28,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.util.EnumMap
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MapViewModel( //Rename to Main?
@@ -83,9 +82,12 @@ class MapViewModel( //Rename to Main?
             Event.NavigateSettings -> navigateSettings()
             Event.BackToMap -> backToMap()
             Event.CenterMap -> centerMap()
+            Event.ZoomIn -> zoomIn()
+            Event.ZoomOut -> zoomOut()
             Event.NavigateMessage -> navigateMessage()
             is Event.WriteMessage -> writeMessage(message = event.message)
             Event.SendMessage -> sendMessage()
+            Event.ClearMessage -> clearMessage()
             Event.OnPermissionAllow -> onPermissionAllow()
             Event.OnPermissionDeny -> onPermissionDeny()
         }
@@ -171,27 +173,40 @@ class MapViewModel( //Rename to Main?
     }
 
     private fun sendMessage() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching {
+                when (updateStatusUseCase.execute(state.value.userMessageField)) {
+                    is CodeResponse.ErrorData -> {
+                        //TODO: Toast!
+                        Timber.d("Error updating message!")
+                    }
 
-            when (updateStatusUseCase.execute(state.value.userMessageField)) {
-                is CodeResponse.ErrorData -> {
-                    //TODO: Toast!
-                    Timber.d("Error updating message!")
-                }
-
-                is CodeResponse.SuccessNoContent -> {
-                    val message = state.value.userMessageField
-                    state.update { state ->
-                        state.copy(
-                            userMessage = message,
-                            userMessageField = ""
-                        )
-                    }.also {
-                        saveKeyUseCase.saveValue(WhereIsEveryoneApplication.USER_MESSAGE_KEY, message)
+                    is CodeResponse.SuccessNoContent -> {
+                        val message = state.value.userMessageField
+                        state.update { state ->
+                            state.copy(
+                                userMessage = message,
+                                userMessageField = ""
+                            )
+                        }.also {
+                            saveKeyUseCase.saveValue(WhereIsEveryoneApplication.USER_MESSAGE_KEY, message)
+                        }
                     }
                 }
+            }.onFailure { error ->
+                //TODO: Toast!
+                Timber.d("Error updating message!\n%s", error.message.toString())
             }
         }
+    }
+
+    private fun clearMessage() {
+        state.update {
+            it.copy(
+                userMessageField = ""
+            )
+        }
+        sendMessage()
     }
 
     private fun navigateFriends() {
@@ -210,7 +225,33 @@ class MapViewModel( //Rename to Main?
 
     private fun centerMap() {
         viewModelScope.launch {
-            _action.emit(Action.CenterMap)
+            _action.emit(Action.CenterMap(state.value.mapSettings.zoom))
+        }
+    }
+
+    private fun zoomIn() {
+        state.update {
+            it.copy(
+                mapSettings = it.mapSettings.copy(
+                    zoom = it.mapSettings.zoom + 0.5
+                )
+            )
+        }
+        viewModelScope.launch {
+            _action.emit(Action.Zoom(state.value.mapSettings.zoom))
+        }
+    }
+
+    private fun zoomOut() {
+        state.update {
+            it.copy(
+                mapSettings = it.mapSettings.copy(
+                    zoom = it.mapSettings.zoom - 0.5
+                )
+            )
+        }
+        viewModelScope.launch {
+            _action.emit(Action.Zoom(state.value.mapSettings.zoom))
         }
     }
 
@@ -228,7 +269,8 @@ class MapViewModel( //Rename to Main?
     }
 
     sealed class Action {
-        data object CenterMap : Action()
+        data class CenterMap(val zoom: Double) : Action()
+        data class Zoom(val zoom: Double) : Action()
         data object NavigateSettings : Action()
         data object NavigateFriends : Action()
         data class ShowPermissionSettings(val permissions: Map<String, Boolean>): Action()
@@ -242,6 +284,9 @@ class MapViewModel( //Rename to Main?
         data object NavigateMessage : Event()
         data class WriteMessage(val message: String) : Event()
         data object SendMessage : Event()
+        data object ClearMessage: Event()
+        data object ZoomOut : Event()
+        data object ZoomIn : Event()
         data object CenterMap : Event()
         data object BackToMap : Event()
         //data object LockMap: Command() //TODO: Add?
