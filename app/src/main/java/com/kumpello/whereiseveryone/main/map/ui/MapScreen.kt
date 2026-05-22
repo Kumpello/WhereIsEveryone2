@@ -29,6 +29,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.kumpello.whereiseveryone.R
@@ -40,11 +41,11 @@ import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
 import kotlinx.coroutines.flow.SharedFlow
 
 @Composable
-fun MapScreen(
+fun MapScreen( //TODO: Add compass pointing to friend
     navController: NavController,
     viewModel: MapViewModel = viewModel()
 ) {
-    val state by viewModel.viewState.collectAsState()
+    val state by viewModel.viewState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.action.collect { action ->
@@ -57,7 +58,7 @@ fun MapScreen(
     }
 
 
-    BackHandler(true) { //TODO: Add click on map
+    BackHandler(state.screenState != ScreenState.Map) {
         viewModel.onEvent(MapViewModel.Event.BackToMap) //TODO Change to exit app?
     }
 
@@ -134,7 +135,8 @@ fun MapScreen(
             modifier = Modifier.align(Alignment.Center),
             state = viewState.mapSettings,
             actions = action,
-            userLocation = viewState.user
+            userLocation = viewState.user,
+            friendsPositions = viewState.friends
         )
         when (viewState.screenState) {
             is ScreenState.Message -> MessageFloatingCard(

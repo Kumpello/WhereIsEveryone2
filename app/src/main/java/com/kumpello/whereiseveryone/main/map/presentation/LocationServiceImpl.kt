@@ -28,19 +28,15 @@ import com.google.android.gms.location.Priority
 import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
 import com.kumpello.whereiseveryone.main.MainActivity
+import com.kumpello.whereiseveryone.main.common.database.UserLocationDao
+import com.kumpello.whereiseveryone.main.common.database.UserLocationEntity
 import com.kumpello.whereiseveryone.main.common.domain.usecase.SendLocationUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
@@ -48,16 +44,27 @@ import timber.log.Timber
 import kotlin.time.Clock
 import kotlin.time.Instant
 
+//TODO Refactor and Cleanup this shitshow
 class LocationServiceImpl(
     //private val fusedLocationClient: FusedLocationProviderClient,
     //private val fusedOrientationClient: FusedOrientationProviderClient
 ) : Service(), LocationService {
     private val fusedLocationClient: FusedLocationProviderClient by inject()
+    private val userLocationDao: UserLocationDao by inject()
 
     private val state = MutableStateFlow(State())
     private val exposedState = state.asStateFlow() //TODO: Change "exposed" to something else
-    private val locationFlow = MutableSharedFlow<Location>()
-    private val exposedLocationFlow = locationFlow.asSharedFlow()
+    private val locationFlow = MutableStateFlow(
+        Location("fused").apply {
+            latitude = 0.0
+            longitude = 0.0
+            bearing = 0f
+            altitude = 0.0
+            accuracy = 0f
+            time = Clock.System.now().toEpochMilliseconds()
+        }
+    )
+    private val exposedLocationFlow = locationFlow.asStateFlow()
 
     private val binder: IBinder = LocationBinder()
     private val channelID = "WhereIsEveryone"
@@ -68,7 +75,11 @@ class LocationServiceImpl(
     override fun onCreate() {
         Timber.d("LocationService onCreate")
         super.onCreate()
-
+        scope.launch {
+            val lastLocation = getLastLocation()
+            if (lastLocation != null)
+                locationFlow.emit(lastLocation)
+            }
         startService()
     }
 
@@ -173,8 +184,18 @@ class LocationServiceImpl(
         override fun onLocationResult(locationResult: LocationResult) {
             for (location in locationResult.locations) {
                 scope.launch {
-                    locationFlow.emit(location)
                     Timber.d("Emiting location")
+                    locationFlow.emit(location)
+                    userLocationDao.insertUserLocation(
+                        UserLocationEntity(
+                            latitude = location.latitude,
+                            longitude = location.longitude,
+                            bearing = location.bearing,
+                            altitude = location.altitude,
+                            accuracy = location.accuracy,
+                            lastUpdate = Clock.System.now().toString()
+                        )
+                    )
                     sendLocation(location, Clock.System.now())
                 }
             }
@@ -304,8 +325,21 @@ class LocationServiceImpl(
         stopSelf()
     }
 
-    override fun getLocation(): Flow<Location> {
+    override fun observeLocation(): StateFlow<Location> {
         return exposedLocationFlow
+    }
+
+    private suspend fun getLastLocation(): Location? {
+        return userLocationDao.getUserLocation()?.let { entity ->
+            Location("fused").apply {
+                latitude = entity.latitude
+                longitude = entity.longitude
+                bearing = entity.bearing ?: 0f
+                altitude = entity.altitude ?: 0.0
+                accuracy = entity.accuracy ?: 0f
+                time = Instant.parse(entity.lastUpdate).toEpochMilliseconds()
+            }
+        }
     }
 
     data class State(

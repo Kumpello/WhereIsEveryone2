@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.kumpello.whereiseveryone.R
@@ -34,7 +35,12 @@ import com.kumpello.whereiseveryone.common.ui.entity.Button
 import com.kumpello.whereiseveryone.common.ui.shortToast
 import com.kumpello.whereiseveryone.common.ui.theme.Shapes
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
-import com.kumpello.whereiseveryone.main.friends.model.Friend
+import com.kumpello.whereiseveryone.main.common.entity.AccuracyLevel
+import com.kumpello.whereiseveryone.main.common.entity.AltDifference
+import com.kumpello.whereiseveryone.main.common.entity.Friend
+import com.kumpello.whereiseveryone.main.common.entity.FriendState
+import com.kumpello.whereiseveryone.main.common.entity.LastUpdateAge
+import com.kumpello.whereiseveryone.main.common.entity.Location
 import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
 import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel.DeleteFriendDialogState
 
@@ -44,7 +50,7 @@ fun FriendsScreen(
     viewModel: FriendsViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    val state by viewModel.viewState.collectAsState()
+    val state by viewModel.viewState.collectAsStateWithLifecycle()
     val resources = LocalResources.current
 
     LaunchedEffect(Unit) {
@@ -81,6 +87,7 @@ private fun FriendsScreen(
     viewState: FriendsViewModel.ViewState,
     trigger: (FriendsViewModel.Command) -> Unit,
 ) {
+    //TODO: Split by type
     if (viewState.deleteFriendDialogState is DeleteFriendDialogState.Open) {
         DeleteFriendDialog(
             friend = viewState.deleteFriendDialogState.friend,
@@ -129,9 +136,10 @@ private fun FriendsScreen(
             LazyColumn(
                 modifier = Modifier.fillMaxWidth(),
                 contentPadding = PaddingValues(8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                items(viewState.friends) { friend ->
+                items(viewState.friends) { friend -> //TODO: OnClick with popup for friend info
                     Friend(
                         friend = friend,
                         trigger = trigger
@@ -150,8 +158,46 @@ fun FriendsPreview() { //TODO: Get this preview unfucked
             viewState = FriendsViewModel.ViewState(
                 friends = listOf(
                     Friend(
-                        nick = "Buddy",
-                        //id = "2137"
+                        username = "JanuszAndrzejNowak",
+                        status = "INBA",
+                        state = FriendState.ACCEPTED,
+                        location = Location(
+                            lat = 0.0,
+                            lon = 0.0,
+                            bearing = 0.0f,
+                            alt = AltDifference.SOMEWHAT_SAME,
+                            accuracy = AccuracyLevel.MEDIUM,
+                            lastUpdateTime = "20.04.2137",
+                            lastUpdateAge = LastUpdateAge.SOMEWHAT_NEW,
+                        )
+                    ),
+                    Friend(
+                        username = "Kozak",
+                        status = "INBA",
+                        state = FriendState.PENDING_INCOMING,
+                        location = Location(
+                            lat = 0.0,
+                            lon = 0.0,
+                            bearing = 0.0f,
+                            alt = AltDifference.WAY_HIGHER,
+                            accuracy = AccuracyLevel.PERFECT,
+                            lastUpdateTime = "20.04.2137",
+                            lastUpdateAge = LastUpdateAge.FRESH,
+                        )
+                    ),
+                    Friend(
+                        username = "TenTrzeci",
+                        status = "INBA",
+                        state = FriendState.PENDING_OUTGOING,
+                        location = Location(
+                            lat = 0.0,
+                            lon = 0.0,
+                            bearing = 0.0f,
+                            alt = AltDifference.WAY_LOWER,
+                            accuracy = AccuracyLevel.TRAGIC,
+                            lastUpdateTime = "20.04.2137",
+                            lastUpdateAge = LastUpdateAge.OLD,
+                        )
                     )
                 ),
                 addFriendNick = "Papator2000",

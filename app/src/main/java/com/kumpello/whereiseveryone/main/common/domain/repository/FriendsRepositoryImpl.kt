@@ -1,26 +1,23 @@
 package com.kumpello.whereiseveryone.main.common.domain.repository
 
-import com.kumpello.whereiseveryone.common.domain.services.RetrofitClient
-
 import com.kumpello.whereiseveryone.main.common.domain.model.FriendsApi
-import com.kumpello.whereiseveryone.main.map.data.model.PositionsResponse
+import com.kumpello.whereiseveryone.main.map.domain.model.FriendsResponse
 import timber.log.Timber
 
-class FriendsRepositoryImpl : FriendsRepository {
+class FriendsRepositoryImpl(
+    private val friendsApi: FriendsApi
+) : FriendsRepository {
 
-    private val retrofit = RetrofitClient.getClient()
-    private val friendsApi = retrofit.create(FriendsApi::class.java)
-
-    override fun getPositions(token: String): PositionsResponse {
-        val response = friendsApi.getPositions("Bearer $token").execute()
+    override fun getFriends(token: String): FriendsResponse {
+        val response = friendsApi.getFriends("Bearer $token").execute()
         return when {
-            response.isSuccessful -> response.body() ?: PositionsResponse.FriendsData(
-                emptyList()
+            response.isSuccessful -> FriendsResponse.FriendsData(
+                response.body() ?: emptyList()
             )
 
             else -> {
                 Timber.e(response.errorBody().toString())
-                PositionsResponse.ErrorData(
+                FriendsResponse.ErrorData(
                     response.code(),
                     response.errorBody().toString(),
                     response.message()

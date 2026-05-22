@@ -21,7 +21,10 @@ import com.kumpello.whereiseveryone.common.entity.ScreenState
 import com.kumpello.whereiseveryone.common.ui.entity.Button
 import com.kumpello.whereiseveryone.common.ui.theme.Shapes
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
-import com.kumpello.whereiseveryone.main.common.domain.model.Location
+import com.kumpello.whereiseveryone.main.common.entity.AccuracyLevel
+import com.kumpello.whereiseveryone.main.common.entity.AltDifference
+import com.kumpello.whereiseveryone.main.common.entity.LastUpdateAge
+import com.kumpello.whereiseveryone.main.common.entity.Location
 import com.kumpello.whereiseveryone.main.common.ui.FloatingCard
 import com.kumpello.whereiseveryone.main.map.entity.MapSettings
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
@@ -98,11 +101,13 @@ fun MessagePreview() {
                     zoomLocked = false,
                 ),
                 user = Location(
-                    lat = 18.19,
-                    lon = 20.21,
-                    bearing = 22.23f,
-                    alt = 24.25,
-                    accuracy = 26.27f
+                    lat = 0.0,
+                    lon = 0.0,
+                    bearing = 0.0f,
+                    alt = AltDifference.WAY_HIGHER,
+                    accuracy = AccuracyLevel.PERFECT,
+                    lastUpdateTime = "20.04.2137",
+                    lastUpdateAge = LastUpdateAge.FRESH,
                 ),
                 friends = listOf(),
                 userMessage = "Where is everyone?",

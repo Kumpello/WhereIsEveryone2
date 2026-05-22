@@ -1,10 +1,6 @@
 package com.kumpello.whereiseveryone.main
 
-import android.Manifest
 import android.Manifest.permission.ACCESS_BACKGROUND_LOCATION
-import android.Manifest.permission.ACCESS_COARSE_LOCATION
-import android.Manifest.permission.ACCESS_FINE_LOCATION
-import android.Manifest.permission.POST_NOTIFICATIONS
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
@@ -30,8 +26,6 @@ import com.kumpello.whereiseveryone.main.map.presentation.LocationService
 import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceImpl
 import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceInterface
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
-import com.kumpello.whereiseveryone.main.map.presentation.PositionsService
-import com.kumpello.whereiseveryone.main.map.presentation.PositionsServiceImpl
 import com.kumpello.whereiseveryone.main.map.ui.MapScreen
 import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel
 import com.kumpello.whereiseveryone.main.settings.ui.SettingsScreen
@@ -48,9 +42,7 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
 
     private var locationService: LocationService? =
         null //TODO: Create abstraction for service + bound status
-    private var positionsService: PositionsService? = null
     private var isLocationServiceBound: Boolean = false
-    private var isPositionsServiceBound: Boolean = false
 
     private lateinit var permissionsLauncher: ActivityResultLauncher<Array<String>>
 
@@ -91,9 +83,6 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
         ) {
             initializeLocationServices()
         }
-        if (!isPositionsServiceBound) {
-            bindPositionsService()
-        }
     }
 
     override fun onStop() {
@@ -101,14 +90,13 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
         if (isLocationServiceBound) {
             setLocationService(LocationService.UpdateType.Background)
         }
-        if (isPositionsServiceBound) {
-            unbindPositionsService()
-        }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        unbindLocationService()
+        if (isLocationServiceBound) {
+            setLocationService(LocationService.UpdateType.Background)
+        }
     }
 
     override fun startLocationService() {
@@ -127,31 +115,23 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
 
     override fun stopLocationService() {
         Timber.d("Stopping location service")
-        unbindLocationService()
         locationService?.stopLocationService()
+        unbindLocationService()
     }
 
     private fun bindLocationService() {
-        Intent(this, LocationServiceImpl::class.java).also { intent ->
-            bindService(intent, locationServiceConnection, BIND_AUTO_CREATE)
-        }
-    }
-
-    private fun bindPositionsService() {
-        Intent(this, PositionsServiceImpl::class.java).also { intent ->
-            bindService(intent, positionsServiceConnection, BIND_AUTO_CREATE)
+        if (!isLocationServiceBound) {
+            Intent(this, LocationServiceImpl::class.java).also { intent ->
+                isLocationServiceBound = bindService(intent, locationServiceConnection, BIND_AUTO_CREATE)
+            }
         }
     }
 
     private fun unbindLocationService() {
-        Intent(this, LocationServiceImpl::class.java).also {
+        if (isLocationServiceBound) {
             unbindService(locationServiceConnection)
-        }
-    }
-
-    private fun unbindPositionsService() {
-        Intent(this, PositionsServiceImpl::class.java).also {
-            unbindService(positionsServiceConnection)
+            isLocationServiceBound = false
+            locationService = null
         }
     }
 
@@ -239,22 +219,7 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
 
         override fun onServiceDisconnected(arg0: ComponentName) {
             Timber.d("LocationServiceConnection: disconnected from service.")
-            isLocationServiceBound = false
-        }
-    }
-
-    private val positionsServiceConnection = object : ServiceConnection {
-        override fun onServiceConnected(className: ComponentName, iBinder: IBinder) {
-            Timber.d("PositionsServiceConnection: connected to service.")
-            val binder = iBinder as PositionsServiceImpl.PositionsBinder
-            positionsService = binder.service
-            isPositionsServiceBound = true
-            // Do stuff
-        }
-
-        override fun onServiceDisconnected(arg0: ComponentName) {
-            Timber.d("PositionsServiceConnection: disconnected from service.")
-            isPositionsServiceBound = false
+            locationService = null
         }
     }
 

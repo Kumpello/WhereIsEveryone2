@@ -11,7 +11,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.common.ui.theme.Shapes
-import com.kumpello.whereiseveryone.main.friends.model.Friend
+import com.kumpello.whereiseveryone.main.common.entity.Friend
 import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
 
 @Composable
@@ -30,7 +30,7 @@ fun DeleteFriendDialog(
                 onClick = {
                     // perform the confirm action and
                     // close the dialog
-                    trigger(FriendsViewModel.Command.DeleteFriend(friend.nick))
+                    trigger(FriendsViewModel.Command.DeleteFriend(friend.username))
                     trigger(FriendsViewModel.Command.CloseDeleteFriendDialog)
                 }
             ) {

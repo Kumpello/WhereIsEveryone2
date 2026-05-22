@@ -1,7 +1,7 @@
 package com.kumpello.whereiseveryone.main.common.domain.repository
 
-import com.kumpello.whereiseveryone.main.map.data.model.PositionsResponse
+import com.kumpello.whereiseveryone.main.map.domain.model.FriendsResponse
 
 interface FriendsRepository {
-    fun getPositions(token: String): PositionsResponse
+    fun getFriends(token: String): FriendsResponse
 }

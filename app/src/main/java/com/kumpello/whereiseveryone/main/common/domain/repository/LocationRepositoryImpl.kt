@@ -1,17 +1,14 @@
 package com.kumpello.whereiseveryone.main.common.domain.repository
 
 import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
-import com.kumpello.whereiseveryone.common.domain.services.RetrofitClient
-import com.kumpello.whereiseveryone.main.map.data.model.LocationRequest
-import com.kumpello.whereiseveryone.main.map.domain.model.LocationApi
+import com.kumpello.whereiseveryone.main.map.domain.api.LocationApi
+import com.kumpello.whereiseveryone.main.map.domain.model.LocationRequest
 import timber.log.Timber
-import kotlin.time.Clock
 import kotlin.time.Instant
 
-class LocationRepositoryImpl : LocationRepository {
-
-    private val retrofit = RetrofitClient.getClient()
-    private val locationApi = retrofit.create(LocationApi::class.java)
+class LocationRepositoryImpl(
+    private val locationApi: LocationApi
+) : LocationRepository {
 
     override fun sendPosition(
         token: String,

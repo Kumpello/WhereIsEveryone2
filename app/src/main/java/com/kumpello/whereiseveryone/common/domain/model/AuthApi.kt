@@ -2,6 +2,7 @@ package com.kumpello.whereiseveryone.common.domain.model
 
 import com.kumpello.whereiseveryone.common.model.AuthResponse
 import com.kumpello.whereiseveryone.authentication.login.domain.model.LogInRequest
+import com.kumpello.whereiseveryone.authentication.login.domain.model.RefreshRequest
 import com.kumpello.whereiseveryone.authentication.signUp.domain.model.SignUpRequest
 import retrofit2.Call
 import retrofit2.http.Body
@@ -15,5 +16,5 @@ interface AuthApi {
     fun login(@Body requestData: LogInRequest): Call<AuthResponse.AuthData>
 
     @HTTP(method = "GET", path = "auth/refresh", hasBody = true)
-    fun refresh(@Body requestData: LogInRequest): Call<AuthResponse.AuthData>
+    fun refresh(@Body requestData: RefreshRequest): Call<AuthResponse.AuthData>
 }

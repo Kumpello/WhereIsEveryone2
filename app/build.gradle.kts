@@ -87,6 +87,10 @@ dependencies {
     implementation(libs.mapbox)
     implementation(libs.mapbox.compose)
 
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.compiler)
+
     ksp(libs.moshi.kotlin.codegen)
     testImplementation(libs.test.junit)
 

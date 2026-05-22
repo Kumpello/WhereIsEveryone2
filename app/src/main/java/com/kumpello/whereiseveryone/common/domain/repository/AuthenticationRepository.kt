@@ -6,5 +6,5 @@ sealed interface AuthenticationRepository {
     fun signUp(username: String, password: String): AuthResponse
     fun logIn(username: String, password: String): AuthResponse
 
-    //fun getRefreshToken(): RefreshResponse
+    fun refreshToken(refreshToken: String): AuthResponse
 }

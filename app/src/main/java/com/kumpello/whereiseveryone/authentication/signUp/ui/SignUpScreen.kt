@@ -24,11 +24,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.authentication.common.AuthenticationNavigation
-import com.kumpello.whereiseveryone.authentication.common.ui.entity.TextField
+import com.kumpello.whereiseveryone.authentication.common.ui.TextField
 import com.kumpello.whereiseveryone.authentication.signUp.domain.model.PasswordValidationState
 import com.kumpello.whereiseveryone.authentication.signUp.presentation.SignUpViewModel
 import com.kumpello.whereiseveryone.common.entity.ScreenState
@@ -43,7 +44,7 @@ fun SignUpScreen(
     viewModel: SignUpViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.action.collect { action ->

@@ -22,7 +22,7 @@ val authenticationModule = module {
     viewModel { SignUpViewModel(get(), get(), get()) }
     single { ValidateLoginInputUseCase() }
     single { ValidatePasswordUseCase() }
-    single { GetCurrentAuthKeyUseCase(get(), get()) }
+    single { GetCurrentAuthKeyUseCase(get()) }
     single { SaveKeyUseCase(get()) }
     single { GetKeyUseCase(get()) }
     single { LoginUseCase(get(), get()) }

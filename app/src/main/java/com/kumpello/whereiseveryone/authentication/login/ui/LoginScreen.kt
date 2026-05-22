@@ -23,10 +23,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.kumpello.whereiseveryone.authentication.common.AuthenticationNavigation
-import com.kumpello.whereiseveryone.authentication.common.ui.entity.TextField
+import com.kumpello.whereiseveryone.authentication.common.ui.TextField
 import com.kumpello.whereiseveryone.authentication.login.presentation.LoginViewModel
 import com.kumpello.whereiseveryone.common.entity.ScreenState
 import com.kumpello.whereiseveryone.common.ui.entity.Button
@@ -40,7 +41,7 @@ fun LoginScreen(
     viewModel: LoginViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    val state by viewModel.viewState.collectAsState()
+    val state by viewModel.viewState.collectAsStateWithLifecycle()
 
     BackHandler(true) {
         //TODO: Close keyboard?

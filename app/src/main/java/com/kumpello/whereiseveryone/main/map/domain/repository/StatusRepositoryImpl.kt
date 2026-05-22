@@ -1,16 +1,13 @@
 package com.kumpello.whereiseveryone.main.map.domain.repository
 
 import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
-import com.kumpello.whereiseveryone.common.domain.services.RetrofitClient
-import com.kumpello.whereiseveryone.main.map.data.model.StatusRequest
-
-import com.kumpello.whereiseveryone.main.map.domain.model.StatusApi
+import com.kumpello.whereiseveryone.main.map.domain.api.StatusApi
+import com.kumpello.whereiseveryone.main.map.domain.model.StatusRequest
 import timber.log.Timber
 
-class StatusRepositoryImpl : StatusRepository {
-
-    private val retrofit = RetrofitClient.getClient()
-    private val statusApi = retrofit.create(StatusApi::class.java)
+class StatusRepositoryImpl(
+    private val statusApi: StatusApi
+) : StatusRepository {
 
     override fun updateStatus(token: String, status: String): CodeResponse {
         val response = statusApi
