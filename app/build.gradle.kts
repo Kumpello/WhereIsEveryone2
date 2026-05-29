@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace = "com.kumpello.whereiseveryone"
-    compileSdk = 36
+    compileSdk = 37
 
     buildFeatures {
         buildConfig = true
@@ -17,7 +17,7 @@ android {
     defaultConfig {
         applicationId = "com.kumpello.whereiseveryone"
         minSdk = 28
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = "0.3"
 
