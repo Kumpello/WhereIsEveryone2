@@ -7,20 +7,23 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -42,9 +45,13 @@ fun LoginScreen(
 ) {
     val context = LocalContext.current
     val state by viewModel.viewState.collectAsStateWithLifecycle()
+    val focusManager = LocalFocusManager.current
 
-    BackHandler(true) {
-        //TODO: Close keyboard?
+    val keyboardVisible =
+        WindowInsets.ime.getBottom(LocalDensity.current) > 0
+
+    BackHandler(enabled = keyboardVisible) {
+        focusManager.clearFocus()
     }
 
     LaunchedEffect(Unit) {
@@ -117,6 +124,7 @@ fun LoginScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 40.dp),
+                enabled = !viewState.isLoading,
                 text = "Login",
                 textSize = 26,
                 height = 50,
@@ -146,7 +154,8 @@ fun LoginPreview() {
                 LoginViewModel.ViewState(
                     screenState = ScreenState.Map,
                     username = "Janusz",
-                    password = "dupadupadupa"
+                    password = "dupadupadupa",
+                    isLoading = false
                 )
             ) {}
         }
@@ -166,7 +175,8 @@ fun LoginPreviewDark() {
                 LoginViewModel.ViewState(
                     screenState = ScreenState.Map,
                     username = "Janusz",
-                    password = "dupadupadupa"
+                    password = "dupadupadupa",
+                    isLoading = false
                 )
             ) {}
         }

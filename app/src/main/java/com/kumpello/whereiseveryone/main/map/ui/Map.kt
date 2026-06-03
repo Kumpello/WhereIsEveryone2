@@ -133,7 +133,7 @@ fun Map(
             }
         }
 
-        //TODO Still not SFD ready, to change
+        //TODO Check if finally fixed
         val friendMarker = rememberBitmapFromDrawable(R.drawable.ic_map_friend_sdf)
         FriendsSymbolLayer(friendMarker, friendsPositions)
     }
@@ -239,14 +239,13 @@ fun FriendsSymbolLayer(
                             Color.BLACK
                         )
 
-                        //TODO: Readd when icon will be SFD ready
-/*                        iconHaloColor(
-                            Color.RED
+                        iconHaloColor(
+                            Color.RED //TODO Change if precision is UNKNOWN, settle for some color scheme
                         )
 
                         iconHaloWidth(
                             50.0//Expression.get("haloWidth")
-                        )*/
+                        )
 
                         iconAllowOverlap(true)
 

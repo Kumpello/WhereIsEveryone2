@@ -2,7 +2,7 @@ package com.kumpello.whereiseveryone.common.domain.ucecase
 
 import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
 
-class GetCurrentAuthKeyUseCase(
+class GetCurrentAuthTokenUseCase(
     private val getKeyUseCase: GetKeyUseCase
 ) {
    fun execute() : String? {

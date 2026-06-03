@@ -1,5 +1,6 @@
 package com.kumpello.whereiseveryone.main.map.ui
 
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,6 +26,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -45,6 +47,7 @@ fun MapScreen( //TODO: Add compass pointing to friend
     navController: NavController,
     viewModel: MapViewModel = viewModel()
 ) {
+    val context = LocalContext.current
     val state by viewModel.viewState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
@@ -52,14 +55,18 @@ fun MapScreen( //TODO: Add compass pointing to friend
             when (action) {
                 MapViewModel.Action.NavigateFriends -> navController.navigate(MainNavigation.Friends.route)
                 MapViewModel.Action.NavigateSettings -> navController.navigate(MainNavigation.Settings.route)
+                is MapViewModel.Action.Toast -> Toast.makeText(
+                    context,
+                    action.id,
+                    Toast.LENGTH_SHORT
+                )
                 else -> Unit
             }
         }
     }
 
-
     BackHandler(state.screenState != ScreenState.Map) {
-        viewModel.onEvent(MapViewModel.Event.BackToMap) //TODO Change to exit app?
+        viewModel.onEvent(MapViewModel.Event.BackToMap)
     }
 
     MapScreen(

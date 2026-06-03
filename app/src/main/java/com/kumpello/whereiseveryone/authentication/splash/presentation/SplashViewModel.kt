@@ -4,7 +4,9 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.kumpello.whereiseveryone.common.domain.ucecase.GetCurrentAuthKeyUseCase
+import com.kumpello.whereiseveryone.common.domain.ucecase.GetCurrentAuthTokenUseCase
+import com.kumpello.whereiseveryone.common.domain.ucecase.RefreshTokenUseCase
+import com.kumpello.whereiseveryone.common.entity.Response
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -16,7 +18,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class SplashViewModel(
-    private val getCurrentAuthKeyUseCase: GetCurrentAuthKeyUseCase
+    private val getCurrentAuthTokenUseCase: GetCurrentAuthTokenUseCase,
+    private val refreshTokenUseCase: RefreshTokenUseCase
 ) : ViewModel() {
     private var _state = MutableStateFlow(State())
     val state: StateFlow<ViewState> = _state.map { state ->
@@ -31,8 +34,14 @@ class SplashViewModel(
     val action: SharedFlow<Action> = _action.asSharedFlow()
 
     private fun isUserLogged() : Boolean {
-        //TODO: This needs to be done some other way
-        return getCurrentAuthKeyUseCase.execute().isNullOrEmpty().not()
+        val authKey = getCurrentAuthTokenUseCase.execute()
+        if (authKey.isNullOrEmpty()) return false
+
+        val result = refreshTokenUseCase.execute()
+        return when (result) {
+            Response.Success -> true
+            Response.Error -> false
+        }
     }
 
     private fun navigateToNextDestination() {

@@ -1,16 +1,16 @@
 package com.kumpello.whereiseveryone.main.map.domain.usecase
 
 import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
-import com.kumpello.whereiseveryone.common.domain.ucecase.GetCurrentAuthKeyUseCase
+import com.kumpello.whereiseveryone.common.domain.ucecase.GetCurrentAuthTokenUseCase
 import com.kumpello.whereiseveryone.main.map.domain.repository.StatusRepository
 
 class UpdateStatusUseCase(
     private val statusRepository: StatusRepository,
-    private val getCurrentAuthKeyUseCase: GetCurrentAuthKeyUseCase
+    private val getCurrentAuthTokenUseCase: GetCurrentAuthTokenUseCase
 ) {
     fun execute(status: String): CodeResponse {
         return statusRepository.updateStatus(
-            token = getCurrentAuthKeyUseCase.execute().toString(),
+            token = getCurrentAuthTokenUseCase.execute().toString(),
             status = status
         )
     }

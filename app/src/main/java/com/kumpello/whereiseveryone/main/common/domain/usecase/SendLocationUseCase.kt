@@ -1,13 +1,13 @@
 package com.kumpello.whereiseveryone.main.common.domain.usecase
 
 import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
-import com.kumpello.whereiseveryone.common.domain.ucecase.GetCurrentAuthKeyUseCase
+import com.kumpello.whereiseveryone.common.domain.ucecase.GetCurrentAuthTokenUseCase
 import com.kumpello.whereiseveryone.main.common.domain.repository.LocationRepository
 import kotlin.time.Instant
 
 class SendLocationUseCase(
     private val locationRepository: LocationRepository,
-    private val getCurrentAuthKeyUseCase: GetCurrentAuthKeyUseCase
+    private val getCurrentAuthTokenUseCase: GetCurrentAuthTokenUseCase
 ) {
     fun execute(
         longitude: Double,
@@ -18,7 +18,7 @@ class SendLocationUseCase(
         lastUpdate: Instant
     ): CodeResponse {
         return locationRepository.sendPosition(
-            token = getCurrentAuthKeyUseCase.execute().toString(),
+            token = getCurrentAuthTokenUseCase.execute().toString(),
             longitude = longitude,
             latitude = latitude,
             bearing = bearing,

@@ -4,7 +4,7 @@ import com.kumpello.whereiseveryone.main.common.entity.AccuracyLevel
 
 class ConvertAccuracyUseCase {
     fun execute(accuracy: Float?) : AccuracyLevel {
-        if (accuracy == null) return AccuracyLevel.PERFECT //TODO Add unknown
+        if (accuracy == null) return AccuracyLevel.UNKNOWN
         return when {
             accuracy > TRAGIC_LIMIT -> AccuracyLevel.TRAGIC
             accuracy > LOW_LIMIT -> AccuracyLevel.LOW

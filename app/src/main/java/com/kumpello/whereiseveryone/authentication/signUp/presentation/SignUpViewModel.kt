@@ -21,7 +21,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
-//TODO: Password is saved in plaintext, some kind of encryption needs to be added!
 class SignUpViewModel(
     private val signUpUseCase: SignUpUseCase,
     private val validatePasswordUseCase: ValidatePasswordUseCase,
@@ -41,6 +40,7 @@ class SignUpViewModel(
     val action: SharedFlow<Action> = _action.asSharedFlow()
 
     private fun onSignUpClick() {
+        _state.update { it.copy(isLoading = true) }
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
                 val response = signUpUseCase.execute(
@@ -55,6 +55,7 @@ class SignUpViewModel(
             }.onFailure { error ->
                 onSignUpError(error)
             }
+            _state.update { it.copy(isLoading = false) }
         }
     }
 
@@ -91,7 +92,7 @@ class SignUpViewModel(
         }
     }
 
-    fun trigger(command: Command) { //TODO: Throttable commands? Or blocking of clicks when waiting for server reply
+    fun trigger(command: Command) {
         when (command) {
             Command.OnSignUpClick -> onSignUpClick()
             Command.NavigateLogin -> navigateLogin()
@@ -105,7 +106,8 @@ class SignUpViewModel(
             screenState = screenState,
             username = username,
             password = password,
-            passwordState = validatePasswordUseCase.execute(password)
+            passwordState = validatePasswordUseCase.execute(password),
+            isLoading = isLoading
         )
     }
 
@@ -126,7 +128,8 @@ class SignUpViewModel(
         val screenState: ScreenState = ScreenState.Map,
         val username: String = "",
         val password: String = "",
-        val passwordValidationState: PasswordValidationState = PasswordValidationState()
+        val passwordValidationState: PasswordValidationState = PasswordValidationState(),
+        val isLoading: Boolean = false
     )
 
     data class ViewState(
@@ -134,5 +137,6 @@ class SignUpViewModel(
         val username: String,
         val password: String,
         val passwordState: PasswordValidationState,
+        val isLoading: Boolean
     )
 }

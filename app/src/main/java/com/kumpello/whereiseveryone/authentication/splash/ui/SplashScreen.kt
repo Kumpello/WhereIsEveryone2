@@ -55,9 +55,18 @@ fun SplashScreen(
     LaunchedEffect(Unit) {
         viewModel.action.collect { action ->
             when (action) {
-                SplashViewModel.Action.NavigateMain -> context.startActivity(Intent(context, MainActivity::class.java))
+                SplashViewModel.Action.NavigateMain -> context.startActivity(
+                    Intent(
+                        context,
+                        MainActivity::class.java
+                    )
+                )
+
                 SplashViewModel.Action.NavigateSignUp -> navController.navigate(
-                    AuthenticationNavigation.SignUp.route)
+                    AuthenticationNavigation.SignUp.route
+                ) {
+                    popUpTo(AuthenticationNavigation.Splash.route) { inclusive = true }
+                }
             }
         }
     }
@@ -113,14 +122,15 @@ fun AppLogo(modifier: Modifier = Modifier) {
 }
 
 private suspend fun animateLogo(state: SplashViewModel.ViewState) {
-    //TODO: This needs to be changed, maybe scale should be moved here?
+    //TODO: Upgrade, add proper logo
     state.scale.animateTo(
         targetValue = 0.9f,
         animationSpec = tween(
             durationMillis = 1200,
             easing = {
                 OvershootInterpolator(2f).getInterpolation(it)
-            })
+            }
+        )
     )
 }
 

@@ -9,8 +9,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 
 object TextField {
 
-    //TODO: Add shaking field when invalid value is written
-
     @Composable
     fun Regular(
         label: String,
@@ -35,7 +33,7 @@ object TextField {
             label = { Text(text = label) },
             value = value,
             visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Companion.Password),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             onValueChange = { password ->
                 onValueChange(password)
             })

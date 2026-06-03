@@ -7,9 +7,10 @@ import com.kumpello.whereiseveryone.authentication.signUp.domain.usecase.SignUpU
 import com.kumpello.whereiseveryone.authentication.signUp.domain.usecase.ValidatePasswordUseCase
 import com.kumpello.whereiseveryone.authentication.signUp.presentation.SignUpViewModel
 import com.kumpello.whereiseveryone.authentication.splash.presentation.SplashViewModel
-import com.kumpello.whereiseveryone.common.domain.ucecase.GetCurrentAuthKeyUseCase
+import com.kumpello.whereiseveryone.common.domain.ucecase.GetCurrentAuthTokenUseCase
 import com.kumpello.whereiseveryone.common.domain.repository.EncryptedDataStoreRepository
 import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
+import com.kumpello.whereiseveryone.common.domain.ucecase.RefreshTokenUseCase
 import com.kumpello.whereiseveryone.common.domain.ucecase.SaveKeyUseCase
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
@@ -17,12 +18,12 @@ import org.koin.dsl.module
 
 
 val authenticationModule = module {
-    viewModel { SplashViewModel(get()) }
+    viewModel { SplashViewModel(get(), get()) }
     viewModel { LoginViewModel(get(), get()) }
     viewModel { SignUpViewModel(get(), get(), get()) }
     single { ValidateLoginInputUseCase() }
     single { ValidatePasswordUseCase() }
-    single { GetCurrentAuthKeyUseCase(get()) }
+    single { GetCurrentAuthTokenUseCase(get()) }
     single { SaveKeyUseCase(get()) }
     single { GetKeyUseCase(get()) }
     single { LoginUseCase(get(), get()) }

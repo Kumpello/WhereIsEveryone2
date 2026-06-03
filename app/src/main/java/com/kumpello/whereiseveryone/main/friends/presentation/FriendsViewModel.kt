@@ -1,7 +1,9 @@
 package com.kumpello.whereiseveryone.main.friends.presentation
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
 import com.kumpello.whereiseveryone.common.entity.ScreenState
 import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertAccuracyUseCase
@@ -55,7 +57,6 @@ class FriendsViewModel(
     )
 
     init {
-        checkFriends()
         viewModelScope.launch(Dispatchers.IO) {
             locationService.observeLocation().collect { location ->
                 state.update {
@@ -89,21 +90,59 @@ class FriendsViewModel(
         }
     }
 
+    fun checkFriends() {
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching {
+                when (val friends = getFriendsDataUseCase.execute()) {
+                    is FriendsResponse.FriendsData -> {
+                        val friendList = friends.positions.map { friendData ->
+                            FriendLocalData(
+                                username = friendData.username,
+                                status = friendData.status,
+                                state = friendData.state.toFriendState(),
+                                location = LocationData(
+                                    lat = friendData.location.latitude,
+                                    lon = friendData.location.longitude,
+                                    bearing = friendData.location.bearing,
+                                    alt = friendData.location.altitude,
+                                    accuracy = friendData.location.accuracy,
+                                    last_update = Instant.parse(friendData.location.last_update)
+                                )
+                            )
+                        }
+                        state.update { state ->
+                            state.copy(
+                                friends = friendList
+                            )
+                        }
+                    }
+                    is FriendsResponse.ErrorData -> {
+                        _action.emit(Action.Toast(R.string.error_getting_friends))
+                        Timber.d("Error getting friends!\n%s", friends)
+                    }
+                }
+            }.onFailure { error ->
+                _action.emit(Action.Toast(R.string.error_getting_friends))
+                Timber.d("Error getting friends!\n%s", error.message.toString())
+            }
+        }
+    }
+
     private fun addFriend() {
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
                 when (val response = addFriendUseCase.execute(state.value.addFriendNick)) {
                     CodeResponse.SuccessNoContent -> {
-                        //TODO: Toast!
+                        _action.emit(Action.Toast(R.string.friend_added))
                         checkFriends()
                     }
                     is CodeResponse.ErrorData -> {
                         Timber.e(response.toString())
-                        //TODO: Toast!
+                        _action.emit(Action.Toast(R.string.error_adding_friend))
                     }
                 }
             }.onFailure { error ->
-                //TODO: Toast!
+                _action.emit(Action.Toast(R.string.error_adding_friend))
                 Timber.e("Error adding friend!\n%s", error.toString())
             }
         }
@@ -114,15 +153,15 @@ class FriendsViewModel(
             runCatching {
                 when (val response = removeFriendUseCase.execute(nick)) {
                     CodeResponse.SuccessNoContent -> {
-                        //TODO: Toast!
+                        _action.emit(Action.Toast(R.string.friend_deleted_successfully))
                         checkFriends()
                     }
                     is CodeResponse.ErrorData -> {
-                        //TODO: Toast!
+                        _action.emit(Action.Toast(R.string.error_deleting_friend))
                     }
                 }
             }.onFailure { error ->
-                //TODO: Toast!
+                _action.emit(Action.Toast(R.string.error_deleting_friend))
                 Timber.d("Error deleting friend!\n%s", error.message.toString())
             }
         }
@@ -133,15 +172,15 @@ class FriendsViewModel(
             runCatching {
                 when (val response = acceptFriendUseCase.execute(nick)) {
                     CodeResponse.SuccessNoContent -> {
-                        //TODO: Toast!
+                        _action.emit(Action.Toast(R.string.friend_accepted))
                         checkFriends()
                     }
                     is CodeResponse.ErrorData -> {
-                        //TODO: Toast!
+                        _action.emit(Action.Toast(R.string.error_occurred_during_accepting_friend))
                     }
                 }
             }.onFailure { error ->
-                //TODO: Toast!
+                _action.emit(Action.Toast(R.string.error_occurred_during_accepting_friend))
                 Timber.d("Error accepting friend!\n%s", error.message.toString())
             }
         }
@@ -152,15 +191,15 @@ class FriendsViewModel(
             runCatching {
                 when (val response = rejectFriendUseCase.execute(nick)) {
                     CodeResponse.SuccessNoContent -> {
-                        //TODO: Toast!
+                        _action.emit(Action.Toast(R.string.rejected_successfully))
                         checkFriends()
                     }
                     is CodeResponse.ErrorData -> {
-                        //TODO: Toast!
+                        _action.emit(Action.Toast(R.string.error_during_reject))
                     }
                 }
             }.onFailure { error ->
-                //TODO: Toast!
+                _action.emit(Action.Toast(R.string.error_during_reject))
                 Timber.d("Error rejecting friend!\n%s", error.message.toString())
             }
         }
@@ -190,44 +229,6 @@ class FriendsViewModel(
         }
     }
 
-    private fun checkFriends() {
-        viewModelScope.launch(Dispatchers.IO) {
-            runCatching {
-                when (val friends = getFriendsDataUseCase.execute()) { //TODO: emit action
-                    is FriendsResponse.FriendsData -> {
-                        val friendList = friends.positions.map { friendData ->
-                            FriendLocalData(
-                                username = friendData.username,
-                                status = friendData.status,
-                                state = friendData.state.toFriendState(),
-                                location = LocationData(
-                                    lat = friendData.location.latitude,
-                                    lon = friendData.location.longitude,
-                                    bearing = friendData.location.bearing,
-                                    alt = friendData.location.altitude,
-                                    accuracy = friendData.location.accuracy,
-                                    last_update = Instant.parse(friendData.location.last_update)
-                                )
-                            )
-                        }
-                        state.update { state ->
-                            state.copy(
-                                friends = friendList
-                            )
-                        }
-                    }
-                    is FriendsResponse.ErrorData -> {
-                        //TODO: Toast!
-                        Timber.d("Error getting friends!\n%s", friends)
-                    }
-                }
-            }.onFailure { error ->
-                //TODO: Toast!
-                Timber.d("Error getting friends!\n%s", error.message.toString())
-            }
-        }
-    }
-
     private fun State.toViewState(): ViewState {
         return ViewState(
             friends = friends.map { friend ->
@@ -252,8 +253,7 @@ class FriendsViewModel(
     }
 
     sealed class Action {
-        data class AddFriendResult(val success: Boolean) : Action()
-        data class DeleteFriendResult(val success: Boolean) : Action()
+        data class Toast(@StringRes val id: Int) : Action()
         data object BackToMap : Action()
     }
 
@@ -283,7 +283,7 @@ class FriendsViewModel(
     )
 
     data class ViewState(
-        //val screenState: ScreenState, //TODO: Delete?
+        //val screenState: ScreenState, //TODO: Consider adding loading state
         val friends: List<Friend>,
         val addFriendNick: String,
         val deleteFriendDialogState: DeleteFriendDialogState

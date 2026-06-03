@@ -43,6 +43,7 @@ class LoginViewModel(
     }
 
     private fun login() {
+        state.update { it.copy(isLoading = true) }
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
                 val response = loginUseCase.execute(
@@ -56,6 +57,7 @@ class LoginViewModel(
             }.onFailure { error ->
                 onLoginError(error)
             }
+            state.update { it.copy(isLoading = false) }
         }
     }
 
@@ -105,7 +107,8 @@ class LoginViewModel(
         return ViewState(
             screenState = screenState,
             username = username,
-            password = password
+            password = password,
+            isLoading = isLoading
         )
     }
 
@@ -126,11 +129,13 @@ class LoginViewModel(
         val screenState: ScreenState = ScreenState.Map,
         val username: String = "",
         val password: String = "",
+        val isLoading: Boolean = false
     )
 
     data class ViewState(
         val screenState: ScreenState,
         val username: String,
         val password: String,
+        val isLoading: Boolean
     )
 }

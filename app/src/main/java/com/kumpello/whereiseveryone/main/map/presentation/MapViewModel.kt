@@ -1,8 +1,10 @@
 package com.kumpello.whereiseveryone.main.map.presentation
 
 import android.content.Context
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
 import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
 import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
@@ -93,7 +95,7 @@ class MapViewModel( //Rename to Main?
                 }
 
                 is FriendsResponse.ErrorData -> {
-                    //TODO: TOAST!
+                    _action.emit(Action.Toast(R.string.error_getting_friends))
                     Timber.d(response.toString())
                     emptyList()
                 }
@@ -212,11 +214,6 @@ class MapViewModel( //Rename to Main?
             runCatching {
                 val message = uiState.value.userMessageField
                 when (updateStatusUseCase.execute(message)) {
-                    is CodeResponse.ErrorData -> {
-                        //TODO: Toast!
-                        Timber.d("Error updating message!")
-                    }
-
                     is CodeResponse.SuccessNoContent -> {
                         uiState.update { state ->
                             state.copy(
@@ -230,9 +227,14 @@ class MapViewModel( //Rename to Main?
                             )
                         }
                     }
+
+                    is CodeResponse.ErrorData -> {
+                        _action.emit(Action.Toast(R.string.error_updating_message))
+                        Timber.d("Error updating message!")
+                    }
                 }
             }.onFailure { error ->
-                //TODO: Toast!
+                _action.emit(Action.Toast(R.string.error_updating_message))
                 Timber.d("Error updating message!\n%s", error.message.toString())
             }
         }
@@ -337,6 +339,7 @@ class MapViewModel( //Rename to Main?
         data object NavigateSettings : Action()
         data object NavigateFriends : Action()
         data class ShowPermissionSettings(val permissions: Map<String, Boolean>) : Action()
+        data class Toast(@StringRes val id: Int) : Action()
     }
 
     sealed class Event {
@@ -370,7 +373,7 @@ class MapViewModel( //Rename to Main?
             alt = 0.0,
             accuracy = 0.0f,
             last_update = Instant.DISTANT_PAST,
-        ), // TODO: Cache last location?
+        ),
     )
 
     data class ViewState(

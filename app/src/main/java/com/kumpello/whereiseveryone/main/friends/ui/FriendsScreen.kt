@@ -1,12 +1,15 @@
 package com.kumpello.whereiseveryone.main.friends.ui
 
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,11 +26,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.kumpello.whereiseveryone.R
@@ -43,6 +51,8 @@ import com.kumpello.whereiseveryone.main.common.entity.LastUpdateAge
 import com.kumpello.whereiseveryone.main.common.entity.Location
 import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
 import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel.DeleteFriendDialogState
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun FriendsScreen(
@@ -51,27 +61,38 @@ fun FriendsScreen(
 ) {
     val context = LocalContext.current
     val state by viewModel.viewState.collectAsStateWithLifecycle()
-    val resources = LocalResources.current
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val focusManager = LocalFocusManager.current
+
+    val keyboardVisible =
+        WindowInsets.ime.getBottom(LocalDensity.current) > 0
+
+    BackHandler(enabled = keyboardVisible) {
+        focusManager.clearFocus()
+    }
+
+    //TODO: Add notification on server side to get rid of this
+    LaunchedEffect(lifecycle) {
+        lifecycle.repeatOnLifecycle(
+            Lifecycle.State.STARTED
+        ) {
+            while (true) {
+                viewModel.checkFriends()
+
+                delay(10.seconds)
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.action.collect { action ->
             when (action) {
-                is FriendsViewModel.Action.AddFriendResult -> Toast.makeText(
-                    context,
-                    when(action.success) {
-                        true -> resources.getString(R.string.friend_added_successfully)
-                        false -> resources.getString(R.string.error_adding_friend)
-                    },
-                    Toast.LENGTH_SHORT
-                ).show()
-                is FriendsViewModel.Action.DeleteFriendResult -> shortToast(
-                    context,
-                    when(action.success) {
-                        true -> resources.getString(R.string.friend_deleted_successfully)
-                        false -> resources.getString(R.string.error_deleting_friend)
-                    }
-                )
                 FriendsViewModel.Action.BackToMap -> navController.popBackStack()
+                is FriendsViewModel.Action.Toast -> Toast.makeText(
+                    context,
+                    action.id,
+                    Toast.LENGTH_SHORT
+                )
             }
         }
     }
