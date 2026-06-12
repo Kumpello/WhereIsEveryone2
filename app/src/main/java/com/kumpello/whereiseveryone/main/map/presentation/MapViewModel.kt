@@ -164,6 +164,8 @@ class MapViewModel( //Rename to Main?
             Event.ClearMessage -> clearMessage()
             Event.OnPermissionAllow -> onPermissionAllow()
             Event.OnPermissionDeny -> onPermissionDeny()
+            is Event.OnFriendClick -> TODO()
+            is Event.OnFriendLongClick -> TODO()
         }
     }
 
@@ -306,7 +308,9 @@ class MapViewModel( //Rename to Main?
                 alt = AltDifference.SOMEWHAT_SAME,
                 accuracy = convertAccuracyUseCase.execute(user.accuracy),
                 lastUpdateTime = user.last_update.toString(),
-                lastUpdateAge = convertLastUpdateUseCase.execute(user.last_update)
+                lastUpdateAge = convertLastUpdateUseCase.execute(user.last_update),
+                rawAlt = 0.0,
+                rawAccuracy = 0.0f
             ),
             friends = friends.map { friend ->
                 Friend(
@@ -320,7 +324,9 @@ class MapViewModel( //Rename to Main?
                         alt = convertAltUseCase.execute(user.alt, friend.location.alt),
                         accuracy = convertAccuracyUseCase.execute(friend.location.accuracy),
                         lastUpdateTime = friend.location.last_update.toString(),
-                        lastUpdateAge = convertLastUpdateUseCase.execute(friend.location.last_update)
+                        lastUpdateAge = convertLastUpdateUseCase.execute(friend.location.last_update),
+                        rawAlt = 0.0,
+                        rawAccuracy = 0.0f
                     )
                 )
             },
@@ -355,6 +361,8 @@ class MapViewModel( //Rename to Main?
         data object ZoomIn : Event()
         data object CenterMap : Event()
         data object BackToMap : Event()
+        data class OnFriendClick(val friend: Friend) : Event()
+        data class OnFriendLongClick(val friend: Friend) : Event()
         //data object LockMap: Command() //TODO: Add?
     }
 

@@ -1,5 +1,6 @@
 package com.kumpello.whereiseveryone.main.friends.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,8 +29,9 @@ import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.common.entity.AccuracyLevel
 import com.kumpello.whereiseveryone.main.common.entity.AltDifference
 import com.kumpello.whereiseveryone.main.common.entity.Friend
-import com.kumpello.whereiseveryone.main.common.entity.FriendState
-import com.kumpello.whereiseveryone.main.common.entity.FriendState.*
+import com.kumpello.whereiseveryone.main.common.entity.FriendState.ACCEPTED
+import com.kumpello.whereiseveryone.main.common.entity.FriendState.PENDING_INCOMING
+import com.kumpello.whereiseveryone.main.common.entity.FriendState.PENDING_OUTGOING
 import com.kumpello.whereiseveryone.main.common.entity.LastUpdateAge
 import com.kumpello.whereiseveryone.main.common.entity.Location
 import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
@@ -40,10 +42,10 @@ fun Friend(
     friend: Friend,
     trigger: (FriendsViewModel.Command) -> Unit,
 ) {
-    //TODO Add colors!
     Card(
         modifier = modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .clickable { trigger(FriendsViewModel.Command.SelectFriend(friend)) },
         colors = CardDefaults.cardColors().copy(
             containerColor = MaterialTheme.colorScheme.secondaryContainer
         ),
@@ -58,9 +60,10 @@ fun Friend(
         ) {
             Text(
                 modifier = Modifier.padding(start = 8.dp),
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
                 fontSize = MaterialTheme.typography.headlineSmall.fontSize,
                 text = friend.username
-            ) //TODO: Add friend since
+            ) //TODO: Add friend since, needs to be added on server
             Row(
                 modifier = Modifier
                     .fillMaxSize()
@@ -83,7 +86,7 @@ private fun AcceptedButtons(
     friend: Friend,
     trigger: (FriendsViewModel.Command) -> Unit,
 ) {
-    IconButton( //TODO: Add share location switch
+    IconButton( //TODO: Add stop share location switch, needs work on server
         onClick = { trigger(FriendsViewModel.Command.DeleteFriend(friend.username)) },
         modifier = Modifier
             .height(50.dp)
@@ -158,7 +161,7 @@ fun FriendPreview() {
             friend = Friend(
                 username = "JanuszAndrzejNowak",
                 status = "INBA",
-                state = FriendState.ACCEPTED,
+                state = ACCEPTED,
                 location = Location(
                     lat = 0.0,
                     lon = 0.0,
@@ -167,6 +170,8 @@ fun FriendPreview() {
                     accuracy = AccuracyLevel.PERFECT,
                     lastUpdateTime = "20.04.2137",
                     lastUpdateAge = LastUpdateAge.FRESH,
+                    rawAlt = 0.0,
+                    rawAccuracy = 0.0f,
                 ),
             )
         ) {}

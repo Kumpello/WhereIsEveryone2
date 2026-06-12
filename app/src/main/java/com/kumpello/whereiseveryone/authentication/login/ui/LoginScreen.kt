@@ -118,7 +118,7 @@ fun LoginScreen(
                 }
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
             Button.Animated(
                 modifier = Modifier
@@ -144,7 +144,7 @@ fun LoginScreen(
 @Preview(showBackground = true)
 @Composable
 fun LoginPreview() {
-    WhereIsEveryoneTheme {
+    WhereIsEveryoneTheme(false) {
         Surface(
             modifier = Modifier
                 .fillMaxSize()

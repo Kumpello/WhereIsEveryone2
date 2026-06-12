@@ -33,8 +33,11 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import kotlin.time.Clock
 import kotlin.time.Instant
+import java.time.Instant as JavaInstant
 
 class FriendsViewModel(
     private val addFriendUseCase: AddFriendUseCase,
@@ -87,6 +90,8 @@ class FriendsViewModel(
             Command.CloseDeleteFriendDialog -> closeDeleteFriendDialog()
             is Command.AcceptFriend -> acceptFriend(command.nick)
             is Command.RejectFriend -> rejectFriend(command.nick)
+            is Command.SelectFriend -> selectFriend(command.friend)
+            Command.ClearSelectedFriend -> clearSelectedFriend()
         }
     }
 
@@ -221,6 +226,22 @@ class FriendsViewModel(
         }
     }
 
+    private fun selectFriend(friend: Friend) {
+        state.update {
+            it.copy(
+                selectedFriend = friend
+            )
+        }
+    }
+
+    private fun clearSelectedFriend() {
+        state.update {
+            it.copy(
+                selectedFriend = null
+            )
+        }
+    }
+
     private fun setAddFriendNick(nick : String) {
         state.update {
             it.copy(
@@ -241,15 +262,25 @@ class FriendsViewModel(
                         lon = friend.location.lon,
                         bearing = friend.location.bearing,
                         alt = convertAltUseCase.execute(userLocation.alt, friend.location.alt),
+                        rawAlt = friend.location.alt,
                         accuracy = convertAccuracyUseCase.execute(friend.location.accuracy),
-                        lastUpdateTime = friend.location.last_update.toString(),
+                        rawAccuracy = friend.location.accuracy,
+                        lastUpdateTime = formatLastUpdate(friend.location.last_update),
                         lastUpdateAge = convertLastUpdateUseCase.execute(friend.location.last_update)
                     )
                 )
             },
             addFriendNick = addFriendNick,
-            deleteFriendDialogState = deleteFriendDialogState
+            deleteFriendDialogState = deleteFriendDialogState,
+            selectedFriend = selectedFriend
         )
+    }
+
+    private fun formatLastUpdate(instant: Instant): String {
+        val javaInstant = JavaInstant.parse(instant.toString())
+        val formatter = DateTimeFormatter.ofPattern("HH:mm:ss dd.MM.yyyy")
+            .withZone(ZoneId.systemDefault())
+        return formatter.format(javaInstant)
     }
 
     sealed class Action {
@@ -265,6 +296,8 @@ class FriendsViewModel(
         data class RejectFriend(val nick: String): Command()
         data class OpenDeleteFriendDialog(val friend: Friend): Command()
         data object CloseDeleteFriendDialog: Command()
+        data class SelectFriend(val friend: Friend): Command()
+        data object ClearSelectedFriend: Command()
     }
 
     data class State(
@@ -272,6 +305,7 @@ class FriendsViewModel(
         val friends: List<FriendLocalData> = emptyList(),
         val addFriendNick: String = "",
         val deleteFriendDialogState: DeleteFriendDialogState = DeleteFriendDialogState.Closed,
+        val selectedFriend: Friend? = null,
         val userLocation: LocationData = LocationData(
             lat = 0.0,
             lon = 0.0,
@@ -279,14 +313,15 @@ class FriendsViewModel(
             alt = 0.0,
             accuracy = 0.0f,
             last_update = Instant.DISTANT_PAST
-        )
+        ),
     )
 
     data class ViewState(
         //val screenState: ScreenState, //TODO: Consider adding loading state
         val friends: List<Friend>,
         val addFriendNick: String,
-        val deleteFriendDialogState: DeleteFriendDialogState
+        val deleteFriendDialogState: DeleteFriendDialogState,
+        val selectedFriend: Friend?
     )
 
     sealed class DeleteFriendDialogState {

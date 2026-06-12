@@ -26,6 +26,8 @@ import com.mapbox.maps.extension.compose.MapEffect
 import com.mapbox.maps.extension.compose.MapboxMap
 import com.mapbox.maps.extension.compose.animation.viewport.rememberMapViewportState
 import com.mapbox.maps.extension.compose.rememberMapState
+import com.mapbox.maps.extension.compose.style.GenericStyle
+import com.mapbox.maps.extension.compose.style.rememberStyleState
 import com.mapbox.maps.extension.style.expressions.generated.Expression
 import com.mapbox.maps.extension.style.layers.addLayer
 import com.mapbox.maps.extension.style.layers.generated.symbolLayer
@@ -51,7 +53,8 @@ fun Map(
     state: MapSettings,
     actions: SharedFlow<MapViewModel.Action>,
     userLocation: Location,
-    friendsPositions: List<Friend>
+    friendsPositions: List<Friend>,
+    event: (MapViewModel.Event) -> Unit,
 ) {
     val mapViewportState = rememberMapViewportState {
         transitionToFollowPuckState(
@@ -65,6 +68,9 @@ fun Map(
             pinchToZoomEnabled = true
             pitchEnabled = true
         }
+    }
+    val friendsById = remember(friendsPositions) {
+        friendsPositions.associateBy { it.username }
     }
 
     LaunchedEffect(actions) {
@@ -118,6 +124,29 @@ fun Map(
                     start = 6.dp,
                     bottom = 2.dp
                 )
+            )
+        },
+        style = {
+            GenericStyle(
+                styleState = rememberStyleState {
+
+                    styleInteractionsState
+                        .onLayerClicked("friends-layer") { feature, _ ->
+                            feature.properties.getString("id")
+                                .let(friendsById::get)
+                                ?.let{ friend -> MapViewModel.Event.OnFriendClick(friend) }
+
+                            true
+                        }
+                        .onLayerLongClicked("friends-layer") { feature, _ ->
+                            feature.properties.getString("id")
+                                .let(friendsById::get)
+                                ?.let{ friend -> MapViewModel.Event.OnFriendLongClick(friend) }
+
+                            true
+                        }
+                },
+                style = "mapbox://styles/mapbox/standard"
             )
         }
     ) {

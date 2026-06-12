@@ -9,14 +9,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Card
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import com.kumpello.whereiseveryone.R
+import com.kumpello.whereiseveryone.authentication.common.ui.TextField
 import com.kumpello.whereiseveryone.common.entity.ScreenState
 import com.kumpello.whereiseveryone.common.ui.entity.Button
 import com.kumpello.whereiseveryone.common.ui.theme.Shapes
@@ -38,49 +39,51 @@ fun MessageFloatingCard(
     viewState: MapViewModel.ViewState,
     actions: SharedFlow<MapViewModel.Action>,
     trigger: (MapViewModel.Event) -> Unit,
+    onDismiss: () -> Unit
 ) {
-    FloatingCard(modifier = modifier) {
-        Column(
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                shape = Shapes.large,
+    Dialog(onDismissRequest = onDismiss) {
+        FloatingCard(modifier = modifier) {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Column(
+                Card(
                     modifier = Modifier
-                        .padding(10.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                        .fillMaxWidth(),
+                    shape = Shapes.large,
                 ) {
-                    Text(text = "Current status message:") //TODO: Customize style
-                    Text(text = viewState.userMessage)
-                    TextField( //TODO: Make it more funky, maybe other composable? To consider in all Textfields
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text(text = "Your message") },
-                        value = viewState.userMessageField,
-                        onValueChange = { message ->
-                            trigger(MapViewModel.Event.WriteMessage(message))
-                        }
-                    )
-                    Spacer(Modifier.size(20.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    Column(
+                        modifier = Modifier
+                            .padding(10.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        Button.Animated(
-                            modifier = Modifier.weight(1f),
-                            text = stringResource(R.string.clear_message),
+                        Text(text = "Current status message:") //TODO: Customize style
+                        Text(text = viewState.userMessage) //TODO: Doesn't look good
+                        TextField.Regular(
+                            label = stringResource(R.string.your_message),
+                            value = viewState.userMessageField,
+                            onValueChange = { message ->
+                                trigger(MapViewModel.Event.WriteMessage(message))
+                            }
+                        )
+                        Spacer(Modifier.size(20.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            trigger(MapViewModel.Event.ClearMessage)
-                        }
-                        Button.Animated(
-                            modifier = Modifier.weight(1f),
-                            text = stringResource(R.string.update_message),
-                        ) {
-                            trigger(MapViewModel.Event.SendMessage)
+                            Button.Animated(
+                                modifier = Modifier.weight(1f),
+                                text = stringResource(R.string.clear_message),
+                            ) {
+                                trigger(MapViewModel.Event.ClearMessage)
+                            }
+                            Button.Animated(
+                                modifier = Modifier.weight(1f),
+                                text = stringResource(R.string.update_message),
+                            ) {
+                                trigger(MapViewModel.Event.SendMessage)
+                            }
                         }
                     }
                 }
@@ -108,6 +111,8 @@ fun MessagePreview() {
                     accuracy = AccuracyLevel.PERFECT,
                     lastUpdateTime = "20.04.2137",
                     lastUpdateAge = LastUpdateAge.FRESH,
+                    rawAlt = 0.0,
+                    rawAccuracy = 0f,
                 ),
                 friends = listOf(),
                 userMessage = "Where is everyone?",
@@ -115,7 +120,7 @@ fun MessagePreview() {
                 permissions = emptyMap(),
                 showPermissionNotification = false
 
-            ), actions = MutableSharedFlow(), trigger = {}
+            ), actions = MutableSharedFlow(), trigger = {}, onDismiss = {}
         )
     }
 }

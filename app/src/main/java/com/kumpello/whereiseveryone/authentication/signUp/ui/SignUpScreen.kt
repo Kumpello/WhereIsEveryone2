@@ -137,7 +137,7 @@ fun SignUpScreen(
 
             Conditions(viewState)
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
             Button.Animated(
                 modifier = Modifier

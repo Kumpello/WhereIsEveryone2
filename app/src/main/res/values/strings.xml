@@ -27,4 +27,10 @@
     <string name="rejected_successfully">Rejected successfully!</string>
     <string name="error_during_reject">Error during reject</string>
     <string name="error_updating_message">Error updating message!</string>
+    <string name="expand_colapse_icon">Expand/Colapse icon</string>
+    <string name="incoming_requests">Incoming requests</string>
+    <string name="outgoing_requests">Outgoing requests</string>
+    <string name="friends">Friends</string>
+    <string name="your_friends_nick">Your friends nick</string>
+    <string name="your_message">Your message</string>
 </resources>
