@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kumpello.whereiseveryone.authentication.common.domain.usecase.ValidateLoginInputUseCase
 import com.kumpello.whereiseveryone.authentication.login.domain.usecase.LoginUseCase
-import com.kumpello.whereiseveryone.common.entity.Response
 import com.kumpello.whereiseveryone.common.entity.ScreenState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -51,8 +50,8 @@ class LoginViewModel(
                     password = state.value.password
                 )
                 when (response) {
-                    Response.Success -> onLoginSuccess()
-                    Response.Error -> onLoginError(null)
+                    LoginUseCase.Response.Success -> onLoginSuccess()
+                    LoginUseCase.Response.Error -> onLoginError(null)
                 }
             }.onFailure { error ->
                 onLoginError(error)

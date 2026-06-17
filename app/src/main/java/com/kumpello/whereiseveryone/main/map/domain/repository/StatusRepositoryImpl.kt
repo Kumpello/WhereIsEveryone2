@@ -9,10 +9,9 @@ class StatusRepositoryImpl(
     private val statusApi: StatusApi
 ) : StatusRepository {
 
-    override fun updateStatus(token: String, status: String): CodeResponse {
+    override suspend fun updateStatus(token: String, status: String): CodeResponse {
         val response = statusApi
             .updateStatus("Bearer $token", StatusRequest(status))
-            .execute()
 
         return when {
             response.isSuccessful -> CodeResponse.SuccessNoContent

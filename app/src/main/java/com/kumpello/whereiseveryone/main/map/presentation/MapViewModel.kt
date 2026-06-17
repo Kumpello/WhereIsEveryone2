@@ -57,14 +57,16 @@ class MapViewModel( //Rename to Main?
 
     private val locationFlow =
         locationService.observeLocation().mapLatest { location ->
-            LocationData(
-                lat = location.latitude,
-                lon = location.longitude,
-                bearing = location.bearing,
-                alt = location.altitude,
-                accuracy = location.accuracy,
-                last_update = Clock.System.now(),
-            )
+            location?.let {
+                LocationData(
+                    lat = it.latitude,
+                    lon = it.longitude,
+                    bearing = it.bearing,
+                    alt = it.altitude,
+                    accuracy = it.accuracy,
+                    last_update = Clock.System.now(),
+                )
+            }
         }
 
     val friendsFlow =
@@ -301,17 +303,19 @@ class MapViewModel( //Rename to Main?
         return ViewState(
             screenState = screenState,
             mapSettings = mapSettings,
-            user = Location(
-                lat = user.lat,
-                lon = user.lon,
-                bearing = user.bearing,
-                alt = AltDifference.SOMEWHAT_SAME,
-                accuracy = convertAccuracyUseCase.execute(user.accuracy),
-                lastUpdateTime = user.last_update.toString(),
-                lastUpdateAge = convertLastUpdateUseCase.execute(user.last_update),
-                rawAlt = 0.0,
-                rawAccuracy = 0.0f
-            ),
+            user = user?.let {
+                Location(
+                    lat = it.lat,
+                    lon = it.lon,
+                    bearing = it.bearing,
+                    alt = AltDifference.SOMEWHAT_SAME,
+                    accuracy = convertAccuracyUseCase.execute(it.accuracy),
+                    lastUpdateTime = it.last_update.toString(),
+                    lastUpdateAge = convertLastUpdateUseCase.execute(it.last_update),
+                    rawAlt = 0.0,
+                    rawAccuracy = 0.0f
+                )
+            },
             friends = friends.map { friend ->
                 Friend(
                     username = friend.username,
@@ -321,7 +325,7 @@ class MapViewModel( //Rename to Main?
                         lat = friend.location.lat,
                         lon = friend.location.lon,
                         bearing = friend.location.bearing,
-                        alt = convertAltUseCase.execute(user.alt, friend.location.alt),
+                        alt = convertAltUseCase.execute(user?.alt, friend.location.alt),
                         accuracy = convertAccuracyUseCase.execute(friend.location.accuracy),
                         lastUpdateTime = friend.location.last_update.toString(),
                         lastUpdateAge = convertLastUpdateUseCase.execute(friend.location.last_update),
@@ -374,14 +378,7 @@ class MapViewModel( //Rename to Main?
         val friends: List<FriendLocalData> = emptyList(),
         val userMessage: String = "",
         val userMessageField: String = "",
-        val user: LocationData = LocationData(
-            lat = 0.0,
-            lon = 0.0,
-            bearing = 0.0f,
-            alt = 0.0,
-            accuracy = 0.0f,
-            last_update = Instant.DISTANT_PAST,
-        ),
+        val user: LocationData? = null
     )
 
     data class ViewState(
@@ -389,7 +386,7 @@ class MapViewModel( //Rename to Main?
         val permissions: Map<String, Boolean>,
         val screenState: ScreenState,
         val mapSettings: MapSettings,
-        val user: Location,
+        val user: Location?,
         val friends: List<Friend>,
         val userMessage: String,
         val userMessageField: String,

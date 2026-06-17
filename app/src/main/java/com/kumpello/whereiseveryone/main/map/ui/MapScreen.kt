@@ -39,7 +39,7 @@ import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
 import kotlinx.coroutines.flow.SharedFlow
 
 @Composable
-fun MapScreen( //TODO: Add compass pointing to friend
+fun MapScreen( //TODO: Add compass pointing to friend, add friends nearby
     navController: NavController,
     viewModel: MapViewModel = viewModel()
 ) {

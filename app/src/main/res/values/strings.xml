@@ -33,4 +33,5 @@
     <string name="friends">Friends</string>
     <string name="your_friends_nick">Your friends nick</string>
     <string name="your_message">Your message</string>
+    <string name="notification_subtext">This is service sharing location to your friends in WhereIsEveryone app</string>
 </resources>

@@ -8,7 +8,7 @@ class UpdateStatusUseCase(
     private val statusRepository: StatusRepository,
     private val getCurrentAuthTokenUseCase: GetCurrentAuthTokenUseCase
 ) {
-    fun execute(status: String): CodeResponse {
+    suspend fun execute(status: String): CodeResponse {
         return statusRepository.updateStatus(
             token = getCurrentAuthTokenUseCase.execute().toString(),
             status = status

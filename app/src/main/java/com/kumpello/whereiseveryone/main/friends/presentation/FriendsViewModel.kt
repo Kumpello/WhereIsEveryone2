@@ -64,14 +64,16 @@ class FriendsViewModel(
             locationService.observeLocation().collect { location ->
                 state.update {
                     it.copy(
-                        userLocation = LocationData(
-                            lat = location.latitude,
-                            lon = location.longitude,
-                            bearing = location.bearing,
-                            alt = location.altitude,
-                            accuracy = location.accuracy,
-                            last_update = Clock.System.now()
-                        )
+                        userLocation = location?.let {
+                            LocationData(
+                                lat = it.latitude,
+                                lon = it.longitude,
+                                bearing = it.bearing,
+                                alt = it.altitude,
+                                accuracy = it.accuracy,
+                                last_update = Clock.System.now()
+                            )
+                        }
                     )
                 }
             }
@@ -261,7 +263,7 @@ class FriendsViewModel(
                         lat = friend.location.lat,
                         lon = friend.location.lon,
                         bearing = friend.location.bearing,
-                        alt = convertAltUseCase.execute(userLocation.alt, friend.location.alt),
+                        alt = convertAltUseCase.execute(userLocation?.alt, friend.location.alt),
                         rawAlt = friend.location.alt,
                         accuracy = convertAccuracyUseCase.execute(friend.location.accuracy),
                         rawAccuracy = friend.location.accuracy,
@@ -306,14 +308,7 @@ class FriendsViewModel(
         val addFriendNick: String = "",
         val deleteFriendDialogState: DeleteFriendDialogState = DeleteFriendDialogState.Closed,
         val selectedFriend: Friend? = null,
-        val userLocation: LocationData = LocationData(
-            lat = 0.0,
-            lon = 0.0,
-            bearing = 0.0f,
-            alt = 0.0,
-            accuracy = 0.0f,
-            last_update = Instant.DISTANT_PAST
-        ),
+        val userLocation: LocationData? = null,
     )
 
     data class ViewState(

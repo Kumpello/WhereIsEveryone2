@@ -8,8 +8,8 @@ class FriendsRepositoryImpl(
     private val friendsApi: FriendsApi
 ) : FriendsRepository {
 
-    override fun getFriends(token: String): FriendsResponse {
-        val response = friendsApi.getFriends("Bearer $token").execute()
+    override suspend fun getFriends(token: String): FriendsResponse {
+        val response = friendsApi.getFriends("Bearer $token")
         return when {
             response.isSuccessful -> FriendsResponse.FriendsData(
                 response.body() ?: emptyList()

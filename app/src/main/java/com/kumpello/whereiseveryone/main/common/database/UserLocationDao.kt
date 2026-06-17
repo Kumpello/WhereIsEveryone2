@@ -11,5 +11,5 @@ interface UserLocationDao {
     suspend fun getUserLocation(): UserLocationEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertUserLocation(userLocation: UserLocationEntity)
+    suspend fun updateUserLocation(userLocation: UserLocationEntity)
 }

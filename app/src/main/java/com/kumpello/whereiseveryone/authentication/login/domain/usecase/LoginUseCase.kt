@@ -3,8 +3,6 @@ package com.kumpello.whereiseveryone.authentication.login.domain.usecase
 import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
 import com.kumpello.whereiseveryone.common.domain.repository.AuthenticationRepository
 import com.kumpello.whereiseveryone.common.domain.ucecase.SaveKeyUseCase
-import com.kumpello.whereiseveryone.common.entity.AuthResponseWithParams
-import com.kumpello.whereiseveryone.common.entity.Response
 import com.kumpello.whereiseveryone.common.model.AuthResponse
 
 class LoginUseCase(
@@ -12,7 +10,7 @@ class LoginUseCase(
     private val saveKeyUseCase: SaveKeyUseCase,
 ) {
 
-    fun execute(
+    suspend fun execute(
         username: String,
         password: String
     ): Response {
@@ -27,7 +25,7 @@ class LoginUseCase(
         }
     }
 
-    private fun login(username: String, password: String): AuthResponseWithParams {
+    private suspend fun login(username: String, password: String): AuthResponseWithParams {
         return AuthResponseWithParams(
             username = username,
             password = password,
@@ -38,21 +36,22 @@ class LoginUseCase(
         )
     }
 
-    private fun saveUserData(response: AuthResponseWithParams): Response {
-        return when (response.authResponse) {
-            is AuthResponse.AuthData -> {
-                saveKeyUseCase.saveValue(WhereIsEveryoneApplication.USER_ID_KEY, response.authResponse.id)
-                saveKeyUseCase.saveValue(WhereIsEveryoneApplication.USER_NAME_KEY, response.username)
-                saveKeyUseCase.saveValue(WhereIsEveryoneApplication.AUTH_TOKEN_KEY, response.authResponse.token)
-                saveKeyUseCase.saveValue(WhereIsEveryoneApplication.AUTH_REFRESH_TOKEN_KEY, response.authResponse.refresh_token)
-
-                Response.Success
-            }
-
-            is AuthResponse.ErrorData -> {
-
-                Response.Error
-            }
+    private fun saveUserData(responseWithParams: AuthResponseWithParams) {
+        if (responseWithParams.authResponse is AuthResponse.AuthData) {
+            saveKeyUseCase.saveValue(WhereIsEveryoneApplication.AUTH_TOKEN_KEY, responseWithParams.authResponse.token)
+            saveKeyUseCase.saveValue(WhereIsEveryoneApplication.AUTH_REFRESH_TOKEN_KEY, responseWithParams.authResponse.refresh_token)
+            saveKeyUseCase.saveValue(WhereIsEveryoneApplication.USER_NAME_KEY, responseWithParams.username)
         }
     }
+
+    sealed class Response {
+        data object Success : Response()
+        data object Error : Response()
+    }
+
+    private data class AuthResponseWithParams(
+        val username: String,
+        val password: String,
+        val authResponse: AuthResponse
+    )
 }

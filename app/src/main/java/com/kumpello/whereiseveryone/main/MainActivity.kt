@@ -146,19 +146,11 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
 
     private fun getPermissionsLauncher(): ActivityResultLauncher<Array<String>> {
         return registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissionsResult ->
-            if (permissionsResult.containsKey(ACCESS_BACKGROUND_LOCATION)) {
-                if (permissionsResult[ACCESS_BACKGROUND_LOCATION] == true) {
-                    //TODO: ?
-                } else {
-                    //TODO: Action when user deny permissions
-                }
+            if (!permissionsResult.containsValue(false)) {
+                initializeLocationServices()
+                requestBackgroundPermission(permissionsLauncher)
             } else {
-                if (!permissionsResult.containsValue(false)) {
-                    initializeLocationServices()
-                    requestBackgroundPermission(permissionsLauncher)
-                } else {
-                    //TODO: Action when user deny permissions
-                }
+                //TODO: Action when user deny permissions
             }
             mapViewModel.setPermissions(this)
         }

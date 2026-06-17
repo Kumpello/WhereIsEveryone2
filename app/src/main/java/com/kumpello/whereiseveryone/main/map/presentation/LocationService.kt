@@ -1,7 +1,6 @@
 package com.kumpello.whereiseveryone.main.map.presentation
 
 import android.location.Location
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
 interface LocationService {
@@ -10,7 +9,7 @@ interface LocationService {
 
     fun stopLocationService()
 
-    fun observeLocation() : StateFlow<Location>
+    fun observeLocation() : StateFlow<Location?>
 
     fun changeUpdateType(updateType: UpdateType)
 

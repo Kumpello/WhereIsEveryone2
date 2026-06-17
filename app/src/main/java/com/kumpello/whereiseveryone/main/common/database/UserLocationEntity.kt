@@ -11,5 +11,5 @@ data class UserLocationEntity(
     val bearing: Float?,
     val altitude: Double?,
     val accuracy: Float?,
-    val lastUpdate: String
+    val lastUpdate: Long
 )

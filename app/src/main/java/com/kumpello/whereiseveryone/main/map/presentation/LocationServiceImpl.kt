@@ -12,9 +12,9 @@ import android.content.pm.ServiceInfo
 import android.location.Location
 import android.os.Binder
 import android.os.Build
+import android.os.Handler
 import android.os.HandlerThread
 import android.os.IBinder
-import android.os.Looper
 import android.os.Process
 import android.os.SystemClock
 import androidx.core.app.NotificationCompat
@@ -34,69 +34,103 @@ import com.kumpello.whereiseveryone.main.common.domain.usecase.SendLocationUseCa
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import timber.log.Timber
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Instant
 
-//TODO Refactor and Cleanup this shitshow
-class LocationServiceImpl(
-    //private val fusedLocationClient: FusedLocationProviderClient,
-    //private val fusedOrientationClient: FusedOrientationProviderClient
-) : Service(), LocationService {
+class LocationServiceImpl : Service(), LocationService {
     private val fusedLocationClient: FusedLocationProviderClient by inject()
     private val userLocationDao: UserLocationDao by inject()
+    private val sendLocationUseCase: SendLocationUseCase by inject()
 
-    private val state = MutableStateFlow(State())
-    private val exposedState = state.asStateFlow() //TODO: Change "exposed" to something else
-    private val locationFlow = MutableStateFlow(
-        Location("fused").apply {
-            latitude = 0.0
-            longitude = 0.0
-            bearing = 0f
-            altitude = 0.0
-            accuracy = 0f
-            time = Clock.System.now().toEpochMilliseconds()
-        }
+    private val locationSendChannel = Channel<Location>(
+        capacity = Channel.CONFLATED
     )
+    private val state = MutableStateFlow(State())
+    private val exposedState = state.asStateFlow()
+    private val locationFlow = MutableStateFlow<Location?>(null)
     private val exposedLocationFlow = locationFlow.asStateFlow()
 
     private val binder: IBinder = LocationBinder()
     private val channelID = "WhereIsEveryone"
     private val job = SupervisorJob()
     private val scope = CoroutineScope(Dispatchers.IO + job)
-    private val sendLocationUseCase: SendLocationUseCase by inject()
+
+    private val serviceThread = HandlerThread("LocationThread", Process.THREAD_PRIORITY_BACKGROUND).apply {
+        start()
+    }
+    private val handler = Handler(serviceThread.looper)
 
     override fun onCreate() {
         Timber.d("LocationService onCreate")
         super.onCreate()
+        LocationServiceImpl.state.value = true
         scope.launch {
-            val lastLocation = getLastLocation()
-            if (lastLocation != null)
-                locationFlow.emit(lastLocation)
-            }
-        startService()
+            getLastLocation()?.let { locationFlow.emit(it) }
+        }
+        startLocationSender()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Timber.d("LocationService onStartCommand")
 
         startService()
-        // If we get killed, after returning from here, restart
         return START_STICKY
+    }
+
+    private fun startLocationSender() {
+        scope.launch {
+            while (isActive) {
+                // Wait for a new location update
+                val location = locationSendChannel.receive()
+
+                // Process and send the location
+                val now = Clock.System.now()
+                userLocationDao.updateUserLocation(
+                    UserLocationEntity(
+                        latitude = location.latitude,
+                        longitude = location.longitude,
+                        bearing = location.bearing,
+                        altitude = location.altitude,
+                        accuracy = location.accuracy,
+                        lastUpdate = now.toEpochMilliseconds()
+                    )
+                )
+                sendLocation(
+                    location,
+                    now
+                )
+
+                // Enforce at least 5 seconds delay before the next potential send
+                delay(5_000.milliseconds)
+            }
+        }
     }
 
     private fun startService() {
         Timber.d("LocationService checking permissions")
-        checkPermissions()
+        if (!checkPermissions()) {
+            stopSelf()
+            return
+        }
+        
+        if (state.value.isLocationUpdatesStarted) {
+            Timber.d("LocationService already running")
+            return
+        }
+        
         Timber.d("LocationService starting")
 
-        //val input = intent.getStringExtra(STATUS_PARAM)
         val manager = getSystemService(NotificationManager::class.java)
         createNotificationChannel(manager)
         val notificationIntent = Intent(this, MainActivity::class.java)
@@ -105,13 +139,11 @@ class LocationServiceImpl(
             420, notificationIntent, PendingIntent.FLAG_IMMUTABLE
         )
 
-        //TODO: Add icons and logo
         val notification: Notification = NotificationCompat.Builder(this, channelID)
             .setContentTitle(getText(R.string.notification_title))
             .setContentText(getString(R.string.click_here_to_go_to_map))
-            //.setSubText(getString(R.string.click_here_to_go_to_map))
+            .setSubText(getString(R.string.notification_subtext))
             .setSmallIcon(R.drawable.ic_share_location)
-            //.setTicker(getText(R.string.ticker_text))
             .setContentIntent(pendingIntent)
             .build()
 
@@ -121,15 +153,10 @@ class LocationServiceImpl(
             startForeground(420, notification)
         }
 
-        HandlerThread("ServiceStartArguments", Process.THREAD_PRIORITY_BACKGROUND).apply {
-            start()
-            startLocationUpdates(updateType = exposedState.value.updateType)
-        }
-
-        scope.launch { LocationServiceImpl.state.emit(true) }
+        startLocationUpdates(updateType = exposedState.value.updateType)
     }
 
-    private fun checkPermissions() {
+    private fun checkPermissions(): Boolean {
         val backgroundPermission =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 ContextCompat.checkSelfPermission(
@@ -144,22 +171,19 @@ class LocationServiceImpl(
         val coarseLocationPermission =
             ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
 
-        if (
-            backgroundPermission == PackageManager.PERMISSION_DENIED
-            || fineLocationPermission == PackageManager.PERMISSION_DENIED
-            || coarseLocationPermission == PackageManager.PERMISSION_DENIED
-        ) {
-            // TODO: Consider informing user or updating your app UI if visible.
-            stopSelf()
-            return
-        }
+        return backgroundPermission == PackageManager.PERMISSION_DENIED
+                && fineLocationPermission == PackageManager.PERMISSION_DENIED
+                && coarseLocationPermission == PackageManager.PERMISSION_DENIED
     }
 
     override fun onDestroy() {
         Timber.d("LocationService stopping")
+        stopUpdates()
+        LocationServiceImpl.state.value = false
+        locationSendChannel.close()
+        job.cancel()
+        serviceThread.quitSafely()
         super.onDestroy()
-
-        scope.launch { LocationServiceImpl.state.emit(false) }
     }
 
     inner class LocationBinder : Binder() {
@@ -182,21 +206,11 @@ class LocationServiceImpl(
 
     private val locationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
-            for (location in locationResult.locations) {
+            locationResult.lastLocation?.let { location ->
                 scope.launch {
                     Timber.d("Emiting location")
                     locationFlow.emit(location)
-                    userLocationDao.insertUserLocation(
-                        UserLocationEntity(
-                            latitude = location.latitude,
-                            longitude = location.longitude,
-                            bearing = location.bearing,
-                            altitude = location.altitude,
-                            accuracy = location.accuracy,
-                            lastUpdate = Clock.System.now().toString()
-                        )
-                    )
-                    sendLocation(location, Clock.System.now())
+                    locationSendChannel.send(location)
                 }
             }
         }
@@ -217,21 +231,26 @@ class LocationServiceImpl(
     }
 
     private fun startLocationUpdates(updateType: LocationService.UpdateType) {
-        if (state.value.updateLocation) {
-            try {
-                Timber.d("Trying to send location")
-                fusedLocationClient.requestLocationUpdates(
-                    when (updateType) {
-                        LocationService.UpdateType.Background -> getBackgroundRequest()
-                        LocationService.UpdateType.Foreground -> getForegroundRequest()
-                    },
-                    locationCallback,
-                    Looper.getMainLooper()
+        if (state.value.isLocationUpdatesStarted) return
+
+        try {
+            Timber.d("Trying to send location")
+            fusedLocationClient.requestLocationUpdates(
+                when (updateType) {
+                    LocationService.UpdateType.Background -> getBackgroundRequest()
+                    LocationService.UpdateType.Foreground -> getForegroundRequest()
+                },
+                locationCallback,
+                handler.looper
+            )
+            state.update {
+                it.copy(
+                    isLocationUpdatesStarted = true
                 )
-            } catch (exception: SecurityException) {
-                SystemClock.sleep(15000)
-                Timber.e(exception.toString())
             }
+        } catch (exception: SecurityException) {
+            SystemClock.sleep(15000)
+            Timber.e(exception.toString())
         }
     }
 
@@ -239,44 +258,44 @@ class LocationServiceImpl(
         fusedLocationClient.removeLocationUpdates(locationCallback)
         state.update {
             it.copy(
-                updateLocation = false
+                isLocationUpdatesStarted = false
             )
         }
     }
 
-    private fun sendLocation(location: Location, lastUpdate: Instant) {
-        scope.launch {
-            runCatching {
-                val response = sendLocationUseCase.execute(
-                    longitude = location.longitude,
-                    latitude = location.latitude,
-                    bearing = location.bearing,
-                    altitude = location.altitude,
-                    accuracy = location.accuracy,
-                    lastUpdate = lastUpdate
-                )
-                when (response) {
-                    is CodeResponse.ErrorData -> {
-                        Timber.d(response.toString())
-                    }
-                    CodeResponse.SuccessNoContent -> {
-                        Timber.d(response.toString())
-                    }
+    private suspend fun sendLocation(location: Location, lastUpdate: Instant) {
+        runCatching {
+            Timber.d("Sending location")
+            val response = sendLocationUseCase.execute(
+                longitude = location.longitude,
+                latitude = location.latitude,
+                bearing = location.bearing,
+                altitude = location.altitude,
+                accuracy = location.accuracy,
+                lastUpdate = lastUpdate
+            )
+            when (response) {
+                is CodeResponse.ErrorData -> {
+                    Timber.d(response.toString())
                 }
-            }.onFailure { error ->
-                Timber.d(error) //TODO: Send to UI if error
+                CodeResponse.SuccessNoContent -> {
+                    Timber.d(response.toString())
+                }
             }
+        }.onFailure { error ->
+            Timber.d(error) //TODO: Send to UI if error
         }
     }
 
     private fun getForegroundRequest() =
-        LocationRequest //TODO: Get settings directly LocationRequestSettings as extension, or soome other better way
+        LocationRequest
             .Builder(state.value.foregroundSettings.interval)
             .setGranularity(GRANULARITY_FINE)
             .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
             .setWaitForAccurateLocation(true)
             .setMaxUpdateAgeMillis(state.value.foregroundSettings.maxAge)
             .setMinUpdateIntervalMillis(state.value.foregroundSettings.minInterval)
+            .setMaxUpdateDelayMillis(state.value.foregroundSettings.maxDelay)
             .build().also {
                 state.update {
                     it.copy(
@@ -292,6 +311,7 @@ class LocationServiceImpl(
         .setWaitForAccurateLocation(true)
         .setMaxUpdateAgeMillis(state.value.backgroundSettings.maxAge)
         .setMinUpdateIntervalMillis(state.value.backgroundSettings.minInterval)
+        .setMaxUpdateDelayMillis(state.value.backgroundSettings.maxDelay)
         .build().also {
             state.update {
                 it.copy(
@@ -313,7 +333,7 @@ class LocationServiceImpl(
     override fun changeBackgroundUpdateInterval(interval: Long) {
         state.update {
             it.copy(
-                foregroundSettings = state.value.foregroundSettings.copy(
+                backgroundSettings = state.value.backgroundSettings.copy(
                     interval = interval
                 )
             )
@@ -325,7 +345,7 @@ class LocationServiceImpl(
         stopSelf()
     }
 
-    override fun observeLocation(): StateFlow<Location> {
+    override fun observeLocation(): StateFlow<Location?> {
         return exposedLocationFlow
     }
 
@@ -337,7 +357,7 @@ class LocationServiceImpl(
                 bearing = entity.bearing ?: 0f
                 altitude = entity.altitude ?: 0.0
                 accuracy = entity.accuracy ?: 0f
-                time = Instant.parse(entity.lastUpdate).toEpochMilliseconds()
+                time = entity.lastUpdate
             }
         }
     }
@@ -355,7 +375,7 @@ class LocationServiceImpl(
             maxDelay = 1_800_000L, // 30min
             maxAge = 300_000L // 5min
         ),
-        val updateLocation: Boolean = true,
+        val isLocationUpdatesStarted: Boolean = false,
         val updateType: LocationService.UpdateType = LocationService.UpdateType.Foreground
     ) {
         data class LocationRequestSettings(
@@ -366,7 +386,7 @@ class LocationServiceImpl(
         )
     }
 
-    companion object { //TODO: Lift to interface
+    companion object {
         private val state: MutableStateFlow<Boolean> = MutableStateFlow(false)
         val stateFlow: StateFlow<Boolean> = state.asStateFlow()
     }

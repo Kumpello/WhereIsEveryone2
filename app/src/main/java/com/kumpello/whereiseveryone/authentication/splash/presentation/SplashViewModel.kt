@@ -6,7 +6,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kumpello.whereiseveryone.common.domain.ucecase.GetCurrentAuthTokenUseCase
 import com.kumpello.whereiseveryone.common.domain.ucecase.RefreshTokenUseCase
-import com.kumpello.whereiseveryone.common.entity.Response
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -33,14 +32,14 @@ class SplashViewModel(
     private val _action = MutableSharedFlow<Action>()
     val action: SharedFlow<Action> = _action.asSharedFlow()
 
-    private fun isUserLogged() : Boolean {
+    private suspend fun isUserLogged() : Boolean {
         val authKey = getCurrentAuthTokenUseCase.execute()
         if (authKey.isNullOrEmpty()) return false
 
         val result = refreshTokenUseCase.execute()
         return when (result) {
-            Response.Success -> true
-            Response.Error -> false
+            RefreshTokenUseCase.Response.Success -> true
+            RefreshTokenUseCase.Response.Error -> false
         }
     }
 

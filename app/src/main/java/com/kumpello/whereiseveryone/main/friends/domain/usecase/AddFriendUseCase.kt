@@ -8,7 +8,7 @@ class AddFriendUseCase(
     private val friendRepository: FriendRepository,
     private val getCurrentAuthTokenUseCase: GetCurrentAuthTokenUseCase
 ) {
-    fun execute(username: String): CodeResponse {
+    suspend fun execute(username: String): CodeResponse {
         return friendRepository.addFriend(
             token = getCurrentAuthTokenUseCase.execute().toString(),
             username = username

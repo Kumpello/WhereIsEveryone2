@@ -52,7 +52,7 @@ fun Map(
     modifier: Modifier = Modifier,
     state: MapSettings,
     actions: SharedFlow<MapViewModel.Action>,
-    userLocation: Location,
+    userLocation: Location?,
     friendsPositions: List<Friend>,
     event: (MapViewModel.Event) -> Unit,
 ) {

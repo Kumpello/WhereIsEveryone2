@@ -9,7 +9,7 @@ class SendLocationUseCase(
     private val locationRepository: LocationRepository,
     private val getCurrentAuthTokenUseCase: GetCurrentAuthTokenUseCase
 ) {
-    fun execute(
+    suspend fun execute(
         longitude: Double,
         latitude: Double,
         bearing: Float,

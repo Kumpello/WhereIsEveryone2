@@ -11,8 +11,8 @@ class AuthenticationRepositoryImpl(
     private val authApi: AuthApi
 ) : AuthenticationRepository {
 
-    override fun signUp(username: String, password: String): AuthResponse {
-        val authResponse = authApi.signUp(SignUpRequest(username, password)).execute()
+    override suspend fun signUp(username: String, password: String): AuthResponse {
+        val authResponse = authApi.signUp(SignUpRequest(username, password))
 
         return when {
             authResponse.isSuccessful -> authResponse.body()!!
@@ -28,8 +28,8 @@ class AuthenticationRepositoryImpl(
         }
     }
 
-    override fun logIn(username: String, password: String): AuthResponse {
-        val authResponse = authApi.login(LogInRequest(username, password)).execute()
+    override suspend fun logIn(username: String, password: String): AuthResponse {
+        val authResponse = authApi.login(LogInRequest(username, password))
         Timber.d(authResponse.message())
 
         return when {
@@ -46,8 +46,8 @@ class AuthenticationRepositoryImpl(
         }
     }
 
-    override fun refreshToken(refreshToken: String): AuthResponse {
-        val authResponse = authApi.refresh(RefreshRequest(refreshToken)).execute()
+    override suspend fun refreshToken(refreshToken: String): AuthResponse {
+        val authResponse = authApi.refresh(RefreshRequest(refreshToken))
         Timber.d(authResponse.message())
 
         return when {

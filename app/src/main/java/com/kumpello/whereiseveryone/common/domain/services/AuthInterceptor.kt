@@ -3,7 +3,7 @@ package com.kumpello.whereiseveryone.common.domain.services
 import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
 import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
 import com.kumpello.whereiseveryone.common.domain.ucecase.RefreshTokenUseCase
-import com.kumpello.whereiseveryone.common.entity.Response.Success
+import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.Response
 
@@ -48,8 +48,8 @@ class AuthInterceptor(
 
                 val refreshToken = getKeyUseCase.getValue(WhereIsEveryoneApplication.AUTH_REFRESH_TOKEN_KEY)
                 if (refreshToken != null) {
-                    val authData = refreshTokenUseCase.execute()
-                    if (authData == Success) {
+                    val authData = runBlocking { refreshTokenUseCase.execute() }
+                    if (authData == RefreshTokenUseCase.Response.Success) {
                         val authToken = getKeyUseCase.getValue(WhereIsEveryoneApplication.AUTH_TOKEN_KEY)
                         response.close()
                         return chain.proceed(

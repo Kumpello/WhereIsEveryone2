@@ -8,7 +8,7 @@ class GetFriendsDataUseCase(
     private val friendsRepository: FriendsRepository,
     private val getCurrentAuthTokenUseCase: GetCurrentAuthTokenUseCase
 ) {
-    fun execute(): FriendsResponse {
+    suspend fun execute(): FriendsResponse {
         return friendsRepository.getFriends(
             token = getCurrentAuthTokenUseCase.execute().toString()
         )

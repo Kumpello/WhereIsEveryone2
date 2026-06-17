@@ -4,7 +4,7 @@ import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
 import kotlin.time.Instant
 
 sealed interface LocationRepository {
-    fun sendPosition(
+    suspend fun sendPosition(
         token: String,
         longitude: Double,
         latitude: Double,

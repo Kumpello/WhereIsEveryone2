@@ -6,7 +6,6 @@ import com.kumpello.whereiseveryone.authentication.common.domain.usecase.Validat
 import com.kumpello.whereiseveryone.authentication.signUp.domain.model.PasswordValidationState
 import com.kumpello.whereiseveryone.authentication.signUp.domain.usecase.SignUpUseCase
 import com.kumpello.whereiseveryone.authentication.signUp.domain.usecase.ValidatePasswordUseCase
-import com.kumpello.whereiseveryone.common.entity.Response
 import com.kumpello.whereiseveryone.common.entity.ScreenState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -49,8 +48,8 @@ class SignUpViewModel(
                 )
 
                 when (response) {
-                    Response.Success -> onSignUpSuccess()
-                    Response.Error -> onSignUpError(null)
+                    SignUpUseCase.Response.Success -> onSignUpSuccess()
+                    SignUpUseCase.Response.Error -> onSignUpError(null)
                 }
             }.onFailure { error ->
                 onSignUpError(error)

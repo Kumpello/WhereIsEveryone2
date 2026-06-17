@@ -10,7 +10,7 @@ class LocationRepositoryImpl(
     private val locationApi: LocationApi
 ) : LocationRepository {
 
-    override fun sendPosition(
+    override suspend fun sendPosition(
         token: String,
         longitude: Double,
         latitude: Double,
@@ -28,7 +28,7 @@ class LocationRepositoryImpl(
                 accuracy = accuracy,
                 lastUpdate = lastUpdate
             )
-        ).execute()
+        )
         return when {
             response.isSuccessful -> CodeResponse.SuccessNoContent
 

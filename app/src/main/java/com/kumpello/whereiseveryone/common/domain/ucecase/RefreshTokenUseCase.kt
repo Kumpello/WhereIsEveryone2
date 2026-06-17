@@ -2,7 +2,6 @@ package com.kumpello.whereiseveryone.common.domain.ucecase
 
 import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
 import com.kumpello.whereiseveryone.common.domain.repository.AuthenticationRepository
-import com.kumpello.whereiseveryone.common.entity.Response
 import com.kumpello.whereiseveryone.common.model.AuthResponse
 
 class RefreshTokenUseCase(
@@ -11,7 +10,7 @@ class RefreshTokenUseCase(
     private val saveKeyUseCase: SaveKeyUseCase,
 ) {
 
-    fun execute(): Response {
+    suspend fun execute(): Response {
         val refreshToken = getCurrentRefreshToken.execute()
         if (refreshToken.isNullOrEmpty()) return Response.Error
 
@@ -38,5 +37,10 @@ class RefreshTokenUseCase(
                 Response.Error
             }
         }
+    }
+
+    sealed class Response {
+        data object Success : Response()
+        data object Error : Response()
     }
 }
