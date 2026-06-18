@@ -2,35 +2,16 @@ package com.kumpello.whereiseveryone.authentication.splash.presentation
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.kumpello.whereiseveryone.common.domain.ucecase.GetCurrentAuthTokenUseCase
 import com.kumpello.whereiseveryone.common.domain.ucecase.RefreshTokenUseCase
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
+import com.kumpello.whereiseveryone.common.presentation.BaseViewModel
 
 class SplashViewModel(
     private val getCurrentAuthTokenUseCase: GetCurrentAuthTokenUseCase,
     private val refreshTokenUseCase: RefreshTokenUseCase
-) : ViewModel() {
-    private var _state = MutableStateFlow(State())
-    val state: StateFlow<ViewState> = _state.map { state ->
-        state.toViewState()
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.Eagerly,
-        initialValue = _state.value.toViewState()
-    )
-
-    private val _action = MutableSharedFlow<Action>()
-    val action: SharedFlow<Action> = _action.asSharedFlow()
+) : BaseViewModel<SplashViewModel.State, SplashViewModel.ViewState, SplashViewModel.Command, SplashViewModel.Action>(
+    State()
+) {
 
     private suspend fun isUserLogged() : Boolean {
         val authKey = getCurrentAuthTokenUseCase.execute()
@@ -43,23 +24,20 @@ class SplashViewModel(
         }
     }
 
-    private fun navigateToNextDestination() {
-        viewModelScope.launch {
-            if (isUserLogged()) {
-                _action.emit(Action.NavigateMain)
-            } else {
-                _action.emit(Action.NavigateSignUp)
-            }
+    override fun reduce(state: State, event: Command): ReducerResult<State, Command, Action> {
+        return when (event) {
+            Command.NavigateToNextDestination -> state.toResult(
+                SideEffect.AsyncWork {
+                    Command.OnAuthChecked(isUserLogged())
+                }
+            )
+            is Command.OnAuthChecked -> state.toResult(
+                SideEffect.Effect(if (event.isLogged) Action.NavigateMain else Action.NavigateSignUp)
+            )
         }
     }
 
-    fun trigger(command: Command) {
-        when (command) {
-            Command.NavigateToNextDestination -> navigateToNextDestination()
-        }
-    }
-
-    private fun State.toViewState(): ViewState {
+    override fun State.toViewState(): ViewState {
         return ViewState(
             scale = scale,
         )
@@ -73,6 +51,7 @@ class SplashViewModel(
 
     sealed class Command {
         data object NavigateToNextDestination : Command()
+        data class OnAuthChecked(val isLogged: Boolean) : Command()
     }
 
     data class State(

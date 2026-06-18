@@ -88,7 +88,7 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
     override fun onStart() {
         super.onStart()
         if (!isLocationServiceBound
-            && !mapViewModel.viewState.value.permissions.containsValue(false)
+            && !mapViewModel.state.value.permissions.containsValue(false)
         ) {
             initializeLocationServices()
         }

@@ -44,7 +44,7 @@ fun LoginScreen(
     viewModel: LoginViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    val state by viewModel.viewState.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
 
     val keyboardVisible =

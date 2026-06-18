@@ -44,7 +44,7 @@ fun MapScreen( //TODO: Add compass pointing to friend, add friends nearby
     viewModel: MapViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    val state by viewModel.viewState.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.action.collect { action ->
@@ -62,13 +62,13 @@ fun MapScreen( //TODO: Add compass pointing to friend, add friends nearby
     }
 
     BackHandler(state.screenState != ScreenState.Map) {
-        viewModel.onEvent(MapViewModel.Event.BackToMap)
+        viewModel.trigger(MapViewModel.Event.BackToMap)
     }
 
     MapScreen(
         viewState = state,
         action = viewModel.action,
-        event = viewModel::onEvent
+        event = viewModel::trigger
     )
 }
 

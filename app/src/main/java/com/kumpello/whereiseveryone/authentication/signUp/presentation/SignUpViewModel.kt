@@ -1,106 +1,66 @@
 package com.kumpello.whereiseveryone.authentication.signUp.presentation
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.kumpello.whereiseveryone.authentication.common.domain.usecase.ValidateLoginInputUseCase
 import com.kumpello.whereiseveryone.authentication.signUp.domain.model.PasswordValidationState
 import com.kumpello.whereiseveryone.authentication.signUp.domain.usecase.SignUpUseCase
 import com.kumpello.whereiseveryone.authentication.signUp.domain.usecase.ValidatePasswordUseCase
 import com.kumpello.whereiseveryone.common.entity.ScreenState
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
+import com.kumpello.whereiseveryone.common.presentation.BaseViewModel
 import timber.log.Timber
 
 class SignUpViewModel(
     private val signUpUseCase: SignUpUseCase,
     private val validatePasswordUseCase: ValidatePasswordUseCase,
     private val validateLoginInputUseCase: ValidateLoginInputUseCase
-) : ViewModel() {
+) : BaseViewModel<SignUpViewModel.State, SignUpViewModel.ViewState, SignUpViewModel.Command, SignUpViewModel.Action>(
+    State()
+) {
 
-    private var _state = MutableStateFlow(State())
-    val state: StateFlow<ViewState> = _state.map { state ->
-        state.toViewState()
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.Eagerly,
-        initialValue = _state.value.toViewState()
-    )
+    override fun reduce(state: State, event: Command): ReducerResult<State, Command, Action> {
+        return when (event) {
+            Command.OnSignUpClick -> state.copy(isLoading = true).toResult(
+                SideEffect.AsyncWork {
+                    try {
+                        val response = signUpUseCase.execute(
+                            username = state.username,
+                            password = state.password
+                        )
 
-    private val _action = MutableSharedFlow<Action>()
-    val action: SharedFlow<Action> = _action.asSharedFlow()
-
-    private fun onSignUpClick() {
-        _state.update { it.copy(isLoading = true) }
-        viewModelScope.launch(Dispatchers.IO) {
-            runCatching {
-                val response = signUpUseCase.execute(
-                    username = _state.value.username,
-                    password = _state.value.password
-                )
-
-                when (response) {
-                    SignUpUseCase.Response.Success -> onSignUpSuccess()
-                    SignUpUseCase.Response.Error -> onSignUpError(null)
+                        when (response) {
+                            SignUpUseCase.Response.Success -> Command.OnSignUpResult(true)
+                            SignUpUseCase.Response.Error -> Command.OnSignUpResult(false)
+                        }
+                    } catch (e: Exception) {
+                        Command.OnSignUpResult(false, e)
+                    }
                 }
-            }.onFailure { error ->
-                onSignUpError(error)
+            )
+
+            is Command.OnSignUpResult -> {
+                val newState = state.copy(isLoading = false)
+                if (event.success) {
+                    Timber.d("SignUp succeeded!")
+                    newState.toResult(SideEffect.Effect(Action.NavigateMain))
+                } else {
+                    Timber.e("SignUp failed!")
+                    event.error?.let { Timber.e(it) }
+                    newState.toResult(SideEffect.Effect(Action.MakeToast("SignUp failed!")))
+                }
             }
-            _state.update { it.copy(isLoading = false) }
+
+            Command.NavigateLogin -> state.toResult(SideEffect.Effect(Action.NavigateLogin))
+
+            is Command.SetUsername -> state.copy(
+                username = validateLoginInputUseCase.execute(event.username)
+            ).toResult()
+
+            is Command.SetPassword -> state.copy(
+                password = event.password
+            ).toResult()
         }
     }
 
-    private suspend fun onSignUpSuccess() {
-        Timber.d("SignUp succeeded!")
-        _action.emit(Action.NavigateMain)
-    }
-
-    private suspend fun onSignUpError(throwable: Throwable?) {
-        Timber.e("SignUp failed!")
-        throwable.let { Timber.e(throwable) }
-        _action.emit(Action.MakeToast("SignUp failed!"))
-    }
-
-    private fun navigateLogin() {
-        viewModelScope.launch {
-            _action.emit(Action.NavigateLogin)
-        }
-    }
-
-    private fun setUsername(username: String) {
-        _state.update {
-            it.copy(
-                username = validateLoginInputUseCase.execute(username)
-            )
-        }
-    }
-
-    private fun setPassword(password: String) {
-        _state.update {
-            it.copy(
-                password = password
-            )
-        }
-    }
-
-    fun trigger(command: Command) {
-        when (command) {
-            Command.OnSignUpClick -> onSignUpClick()
-            Command.NavigateLogin -> navigateLogin()
-            is Command.SetUsername -> setUsername(command.username)
-            is Command.SetPassword -> setPassword(command.password)
-        }
-    }
-
-    private fun State.toViewState(): ViewState {
+    override fun State.toViewState(): ViewState {
         return ViewState(
             screenState = screenState,
             username = username,
@@ -121,6 +81,7 @@ class SignUpViewModel(
         data class SetUsername(val username: String) : Command()
         data class SetPassword(val password: String) : Command()
         data object NavigateLogin : Command()
+        data class OnSignUpResult(val success: Boolean, val error: Throwable? = null) : Command()
     }
 
     data class State(

@@ -1,108 +1,62 @@
 package com.kumpello.whereiseveryone.authentication.login.presentation
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.kumpello.whereiseveryone.authentication.common.domain.usecase.ValidateLoginInputUseCase
 import com.kumpello.whereiseveryone.authentication.login.domain.usecase.LoginUseCase
 import com.kumpello.whereiseveryone.common.entity.ScreenState
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
+import com.kumpello.whereiseveryone.common.presentation.BaseViewModel
 import timber.log.Timber
 
 class LoginViewModel(
     private val loginUseCase: LoginUseCase,
     private val validateLoginInputUseCase: ValidateLoginInputUseCase
-) : ViewModel() {
+) : BaseViewModel<LoginViewModel.State, LoginViewModel.ViewState, LoginViewModel.Command, LoginViewModel.Action>(
+    State()
+) {
 
-    private var state = MutableStateFlow(State())
-    val viewState: StateFlow<ViewState> =
-        state
-            .map { state ->
-                state.toViewState()
-            }.stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.Eagerly,
-                initialValue = state.value.toViewState()
-            )
-
-    private val _action = MutableSharedFlow<Action>()
-    val action: SharedFlow<Action> = _action.asSharedFlow()
-
-    private fun onLoginClick() {
-        login()
-    }
-
-    private fun login() {
-        state.update { it.copy(isLoading = true) }
-        viewModelScope.launch(Dispatchers.IO) {
-            runCatching {
-                val response = loginUseCase.execute(
-                    username = state.value.username,
-                    password = state.value.password
-                )
-                when (response) {
-                    LoginUseCase.Response.Success -> onLoginSuccess()
-                    LoginUseCase.Response.Error -> onLoginError(null)
+    override fun reduce(state: State, event: Command): ReducerResult<State, Command, Action> {
+        return when (event) {
+            Command.OnLoginClick -> state.copy(isLoading = true).toResult(
+                SideEffect.AsyncWork {
+                    try {
+                        val response = loginUseCase.execute(
+                            username = state.username,
+                            password = state.password
+                        )
+                        when (response) {
+                            LoginUseCase.Response.Success -> Command.OnLoginResult(true)
+                            LoginUseCase.Response.Error -> Command.OnLoginResult(false)
+                        }
+                    } catch (e: Exception) {
+                        Command.OnLoginResult(false, e)
+                    }
                 }
-            }.onFailure { error ->
-                onLoginError(error)
+            )
+
+            is Command.OnLoginResult -> {
+                val newState = state.copy(isLoading = false)
+                if (event.success) {
+                    Timber.d("Login succeeded!")
+                    newState.toResult(SideEffect.Effect(Action.NavigateMain))
+                } else {
+                    Timber.e("Login failed!")
+                    event.error?.let { Timber.e(it) }
+                    newState.toResult(SideEffect.Effect(Action.MakeToast("Login failed!")))
+                }
             }
-            state.update { it.copy(isLoading = false) }
+
+            Command.NavigateSignUp -> state.toResult(SideEffect.Effect(Action.NavigateSignUp))
+
+            is Command.SetUsername -> state.copy(
+                username = validateLoginInputUseCase.execute(event.username)
+            ).toResult()
+
+            is Command.SetPassword -> state.copy(
+                password = event.password
+            ).toResult()
         }
     }
 
-    private suspend fun onLoginSuccess() {
-        Timber.d("Login succeeded!")
-        _action.emit(Action.NavigateMain)
-    }
-
-    private suspend fun onLoginError(throwable: Throwable?) {
-        Timber.e("Login failed!")
-        throwable.let { Timber.e(throwable) }
-        _action.emit(Action.MakeToast("Login failed!"))
-    }
-
-    private fun navigateSignUp() {
-        viewModelScope.launch {
-            _action.emit(Action.NavigateSignUp)
-        }
-    }
-
-    private fun setUsername(username: String) {
-        state.update {
-            it.copy(
-                username = validateLoginInputUseCase.execute(username)
-            )
-        }
-    }
-
-    private fun setPassword(password: String) {
-        state.update {
-            it.copy(
-                password = password
-            )
-        }
-    }
-
-    fun trigger(command: Command) {
-        when (command) {
-            Command.OnLoginClick -> onLoginClick()
-            Command.NavigateSignUp -> navigateSignUp()
-            is Command.SetUsername -> setUsername(command.username)
-            is Command.SetPassword -> setPassword(command.password)
-        }
-    }
-
-    private fun State.toViewState(): ViewState {
+    override fun State.toViewState(): ViewState {
         return ViewState(
             screenState = screenState,
             username = username,
@@ -122,6 +76,7 @@ class LoginViewModel(
         data class SetUsername(val username: String) : Command()
         data class SetPassword(val password: String) : Command()
         data object NavigateSignUp : Command()
+        data class OnLoginResult(val success: Boolean, val error: Throwable? = null) : Command()
     }
 
     data class State(

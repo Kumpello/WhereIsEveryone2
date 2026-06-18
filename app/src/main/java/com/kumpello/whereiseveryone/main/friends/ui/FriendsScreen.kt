@@ -78,7 +78,7 @@ fun FriendsScreen(
     viewModel: FriendsViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    val state by viewModel.viewState.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val focusManager = LocalFocusManager.current
 
@@ -95,7 +95,7 @@ fun FriendsScreen(
             Lifecycle.State.STARTED
         ) {
             while (true) {
-                viewModel.checkFriends()
+                viewModel.trigger(FriendsViewModel.Command.CheckFriends)
 
                 delay(10.seconds)
             }
