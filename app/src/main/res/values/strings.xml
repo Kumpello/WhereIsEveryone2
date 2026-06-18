@@ -1,37 +1,50 @@
 <resources>
+    <!-- General App Information -->
     <string name="app_name">WhereIsEveryone</string>
+
+    <!-- Notification & Service -->
     <string name="notification_title">WhereIsEveryone</string>
     <string name="notification_message">Your location your now shared by WhereIsEveryone</string>
+    <string name="notification_subtext">This is service sharing location to your friends in WhereIsEveryone app</string>
     <string name="ticker_text">dupa</string>
+
+    <!-- Map & Markers -->
     <string name="user_marker">That\'s you!</string>
-    <string name="add_friend">Add Friend</string>
-    <string name="update_message">Update</string>
-    <string name="clear_message">Clear</string>
-    <string name="confirm">Confirm</string>
-    <string name="dismiss">Dismiss</string>
-    <string name="friend_added">Friend added!</string>
-    <string name="error_adding_friend">Error occurred during adding friend</string>
-    <string name="friend_deleted_successfully">Friend deleted successfully</string>
-    <string name="error_deleting_friend">Error occurred during deleting friend</string>
     <string name="click_here_to_go_to_map">Click here to go to map!</string>
+    <string name="your_message">Your message</string>
+    <string name="clear_message">Clear</string>
+    <string name="update_message">Update</string>
+    <string name="error_updating_message">Error updating message!</string>
+
+    <!-- Friends Management -->
+    <string name="friends">Friends</string>
+    <string name="incoming_requests">Incoming requests</string>
+    <string name="outgoing_requests">Outgoing requests</string>
+    <string name="add_friend">Add Friend</string>
+    <string name="your_friends_nick">Your friends nick</string>
+    <string name="friend_added">Friend added!</string>
+    <string name="friend_accepted">Friend accepted!</string>
+    <string name="friend_deleted_successfully">Friend deleted successfully</string>
+    <string name="rejected_successfully">Rejected successfully!</string>
+    <string name="error_adding_friend">Error occurred during adding friend</string>
+    <string name="error_getting_friends">Error getting friends!</string>
+    <string name="error_deleting_friend">Error occurred during deleting friend</string>
+    <string name="error_occurred_during_accepting_friend">Error occurred during accepting friend</string>
+    <string name="error_during_reject">Error during reject</string>
+
+    <!-- Authentication & Validation -->
     <string name="minimum_8_characters">Minimum 8 characters</string>
     <string name="minimum_1_special_character">Minimum 1 special character</string>
     <string name="minimum_1_capitalized_letter">Minimum 1 capitalized letter</string>
     <string name="no_whitespaces">No whitespaces</string>
-    <string name="deny">Deny</string>
-    <string name="allow">Allow</string>
+
+    <!-- Permissions -->
     <string name="permissions_message">This application requires permission to show notification and to get precise location in background to be able to share your location with friends, without it you will be only able to see your friends locations.</string>
-    <string name="error_getting_friends">Error getting friends!</string>
-    <string name="friend_accepted">Friend accepted!</string>
-    <string name="error_occurred_during_accepting_friend">Error occurred during accepting friend</string>
-    <string name="rejected_successfully">Rejected successfully!</string>
-    <string name="error_during_reject">Error during reject</string>
-    <string name="error_updating_message">Error updating message!</string>
+    <string name="allow">Allow</string>
+    <string name="deny">Deny</string>
+
+    <!-- Common UI Elements / Actions -->
+    <string name="confirm">Confirm</string>
+    <string name="dismiss">Dismiss</string>
     <string name="expand_colapse_icon">Expand/Colapse icon</string>
-    <string name="incoming_requests">Incoming requests</string>
-    <string name="outgoing_requests">Outgoing requests</string>
-    <string name="friends">Friends</string>
-    <string name="your_friends_nick">Your friends nick</string>
-    <string name="your_message">Your message</string>
-    <string name="notification_subtext">This is service sharing location to your friends in WhereIsEveryone app</string>
 </resources>
