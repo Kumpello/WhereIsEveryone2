@@ -5,6 +5,7 @@ import com.kumpello.whereiseveryone.common.presentation.BaseViewModel
 import com.kumpello.whereiseveryone.main.common.domain.usecase.WipeLocationUseCase
 import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceImpl
 import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceInterface
+import androidx.compose.runtime.Immutable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.InjectedParam
@@ -72,6 +73,7 @@ class SettingsViewModel(
         val locationServiceState: Boolean = true
     )
 
+    @Immutable
     data class ViewState(
         val isLocationServiceRunning: Boolean,
         val locationSwitchText: String,

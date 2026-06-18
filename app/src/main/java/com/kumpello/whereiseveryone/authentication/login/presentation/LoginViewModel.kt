@@ -3,7 +3,9 @@ package com.kumpello.whereiseveryone.authentication.login.presentation
 import com.kumpello.whereiseveryone.authentication.common.domain.usecase.ValidateLoginInputUseCase
 import com.kumpello.whereiseveryone.authentication.login.domain.usecase.LoginUseCase
 import com.kumpello.whereiseveryone.common.entity.ScreenState
+import com.kumpello.whereiseveryone.common.presentation.AsyncState
 import com.kumpello.whereiseveryone.common.presentation.BaseViewModel
+import androidx.compose.runtime.Immutable
 import timber.log.Timber
 
 class LoginViewModel(
@@ -15,7 +17,7 @@ class LoginViewModel(
 
     override fun reduce(state: State, event: Command): ReducerResult<State, Command, Action> {
         return when (event) {
-            Command.OnLoginClick -> state.copy(isLoading = true).toResult(
+            Command.OnLoginClick -> state.copy(loginState = AsyncState.Loading()).toResult(
                 SideEffect.AsyncWork {
                     try {
                         val response = loginUseCase.execute(
@@ -33,14 +35,15 @@ class LoginViewModel(
             )
 
             is Command.OnLoginResult -> {
-                val newState = state.copy(isLoading = false)
                 if (event.success) {
                     Timber.d("Login succeeded!")
-                    newState.toResult(SideEffect.Effect(Action.NavigateMain))
+                    state.copy(loginState = AsyncState.Success(Unit))
+                        .toResult(SideEffect.Effect(Action.NavigateMain))
                 } else {
                     Timber.e("Login failed!")
                     event.error?.let { Timber.e(it) }
-                    newState.toResult(SideEffect.Effect(Action.MakeToast("Login failed!")))
+                    state.copy(loginState = AsyncState.Error(event.error))
+                        .toResult(SideEffect.Effect(Action.MakeToast("Login failed!")))
                 }
             }
 
@@ -61,7 +64,7 @@ class LoginViewModel(
             screenState = screenState,
             username = username,
             password = password,
-            isLoading = isLoading
+            loginState = loginState
         )
     }
 
@@ -83,13 +86,14 @@ class LoginViewModel(
         val screenState: ScreenState = ScreenState.Map,
         val username: String = "",
         val password: String = "",
-        val isLoading: Boolean = false
+        val loginState: AsyncState<Unit> = AsyncState.Idle
     )
 
+    @Immutable
     data class ViewState(
         val screenState: ScreenState,
         val username: String,
         val password: String,
-        val isLoading: Boolean
+        val loginState: AsyncState<Unit>
     )
 }

@@ -1,5 +1,8 @@
 package com.kumpello.whereiseveryone.main.common.entity
 
+import androidx.compose.runtime.Immutable
+
+@Immutable
 data class Location(
     val lat: Double,
     val lon: Double,

@@ -33,7 +33,7 @@ import androidx.navigation.NavController
 import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.common.entity.ScreenState
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
-import com.kumpello.whereiseveryone.main.common.MainNavigation
+import com.kumpello.whereiseveryone.main.common.MainRoute
 import com.kumpello.whereiseveryone.main.common.ui.Notification
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
 import kotlinx.coroutines.flow.SharedFlow
@@ -49,8 +49,8 @@ fun MapScreen( //TODO: Add compass pointing to friend, add friends nearby
     LaunchedEffect(Unit) {
         viewModel.action.collect { action ->
             when (action) {
-                MapViewModel.Action.NavigateFriends -> navController.navigate(MainNavigation.Friends.route)
-                MapViewModel.Action.NavigateSettings -> navController.navigate(MainNavigation.Settings.route)
+                MapViewModel.Action.NavigateFriends -> navController.navigate(MainRoute.Friends)
+                MapViewModel.Action.NavigateSettings -> navController.navigate(MainRoute.Settings)
                 is MapViewModel.Action.Toast -> Toast.makeText(
                     context,
                     action.id,

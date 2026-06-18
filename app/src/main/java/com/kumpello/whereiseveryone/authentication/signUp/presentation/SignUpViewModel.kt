@@ -5,7 +5,9 @@ import com.kumpello.whereiseveryone.authentication.signUp.domain.model.PasswordV
 import com.kumpello.whereiseveryone.authentication.signUp.domain.usecase.SignUpUseCase
 import com.kumpello.whereiseveryone.authentication.signUp.domain.usecase.ValidatePasswordUseCase
 import com.kumpello.whereiseveryone.common.entity.ScreenState
+import com.kumpello.whereiseveryone.common.presentation.AsyncState
 import com.kumpello.whereiseveryone.common.presentation.BaseViewModel
+import androidx.compose.runtime.Immutable
 import timber.log.Timber
 
 class SignUpViewModel(
@@ -18,7 +20,7 @@ class SignUpViewModel(
 
     override fun reduce(state: State, event: Command): ReducerResult<State, Command, Action> {
         return when (event) {
-            Command.OnSignUpClick -> state.copy(isLoading = true).toResult(
+            Command.OnSignUpClick -> state.copy(signUpState = AsyncState.Loading()).toResult(
                 SideEffect.AsyncWork {
                     try {
                         val response = signUpUseCase.execute(
@@ -37,14 +39,15 @@ class SignUpViewModel(
             )
 
             is Command.OnSignUpResult -> {
-                val newState = state.copy(isLoading = false)
                 if (event.success) {
                     Timber.d("SignUp succeeded!")
-                    newState.toResult(SideEffect.Effect(Action.NavigateMain))
+                    state.copy(signUpState = AsyncState.Success(Unit))
+                        .toResult(SideEffect.Effect(Action.NavigateMain))
                 } else {
                     Timber.e("SignUp failed!")
                     event.error?.let { Timber.e(it) }
-                    newState.toResult(SideEffect.Effect(Action.MakeToast("SignUp failed!")))
+                    state.copy(signUpState = AsyncState.Error(event.error))
+                        .toResult(SideEffect.Effect(Action.MakeToast("SignUp failed!")))
                 }
             }
 
@@ -66,7 +69,7 @@ class SignUpViewModel(
             username = username,
             password = password,
             passwordState = validatePasswordUseCase.execute(password),
-            isLoading = isLoading
+            signUpState = signUpState
         )
     }
 
@@ -89,14 +92,15 @@ class SignUpViewModel(
         val username: String = "",
         val password: String = "",
         val passwordValidationState: PasswordValidationState = PasswordValidationState(),
-        val isLoading: Boolean = false
+        val signUpState: AsyncState<Unit> = AsyncState.Idle
     )
 
+    @Immutable
     data class ViewState(
         val screenState: ScreenState,
         val username: String,
         val password: String,
         val passwordState: PasswordValidationState,
-        val isLoading: Boolean
+        val signUpState: AsyncState<Unit>
     )
 }

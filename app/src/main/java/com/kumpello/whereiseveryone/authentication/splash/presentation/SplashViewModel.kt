@@ -5,6 +5,7 @@ import androidx.compose.animation.core.AnimationVector1D
 import com.kumpello.whereiseveryone.common.domain.ucecase.GetCurrentAuthTokenUseCase
 import com.kumpello.whereiseveryone.common.domain.ucecase.RefreshTokenUseCase
 import com.kumpello.whereiseveryone.common.presentation.BaseViewModel
+import androidx.compose.runtime.Immutable
 
 class SplashViewModel(
     private val getCurrentAuthTokenUseCase: GetCurrentAuthTokenUseCase,
@@ -58,6 +59,7 @@ class SplashViewModel(
         val scale : Animatable<Float, AnimationVector1D> = Animatable(0f)
     )
 
+    @Immutable
     data class ViewState(
         val scale : Animatable<Float, AnimationVector1D>
     )

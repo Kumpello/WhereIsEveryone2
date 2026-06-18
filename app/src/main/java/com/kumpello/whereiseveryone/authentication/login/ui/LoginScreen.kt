@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -29,10 +30,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.kumpello.whereiseveryone.authentication.common.AuthenticationNavigation
+import com.kumpello.whereiseveryone.authentication.common.AuthenticationRoute
 import com.kumpello.whereiseveryone.authentication.common.ui.TextField
 import com.kumpello.whereiseveryone.authentication.login.presentation.LoginViewModel
 import com.kumpello.whereiseveryone.common.entity.ScreenState
+import com.kumpello.whereiseveryone.common.presentation.AsyncState
 import com.kumpello.whereiseveryone.common.ui.entity.Button
 import com.kumpello.whereiseveryone.common.ui.entity.Logo
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
@@ -61,7 +63,7 @@ fun LoginScreen(
                     .show()
 
                 LoginViewModel.Action.NavigateMain -> context.startActivity(Intent(context, MainActivity::class.java))
-                LoginViewModel.Action.NavigateSignUp -> navController.navigate(AuthenticationNavigation.SignUp.route)
+                LoginViewModel.Action.NavigateSignUp -> navController.navigate(AuthenticationRoute.SignUp)
             }
         }
     }
@@ -80,11 +82,13 @@ fun LoginScreen(
     Column(
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(24.dp)
+        modifier = Modifier
+            .safeDrawingPadding()
+            .padding(horizontal = 24.dp, vertical = 4.dp)
     ) {
         Logo.Text(
             modifier = Modifier
-                .padding(vertical = 64.dp),
+                .padding(vertical = 4.dp),
             size = 35
         )
         Column(
@@ -124,7 +128,7 @@ fun LoginScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 40.dp),
-                enabled = !viewState.isLoading,
+                enabled = !viewState.loginState.isLoading,
                 text = "Login",
                 textSize = 26,
                 height = 50,
@@ -155,7 +159,7 @@ fun LoginPreview() {
                     screenState = ScreenState.Map,
                     username = "Janusz",
                     password = "dupadupadupa",
-                    isLoading = false
+                    loginState = AsyncState.Idle
                 )
             ) {}
         }
@@ -176,7 +180,7 @@ fun LoginPreviewDark() {
                     screenState = ScreenState.Map,
                     username = "Janusz",
                     password = "dupadupadupa",
-                    isLoading = false
+                    loginState = AsyncState.Idle
                 )
             ) {}
         }

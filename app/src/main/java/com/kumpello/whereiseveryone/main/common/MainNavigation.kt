@@ -3,11 +3,11 @@ package com.kumpello.whereiseveryone.main.common
 import kotlinx.serialization.Serializable
 
 @Serializable
-internal sealed class MainNavigation(val route: String) {
+internal sealed interface MainRoute {
     @Serializable
-    object Map : MainNavigation("map")
+    data object Map : MainRoute
     @Serializable
-    object Settings : MainNavigation("settings")
+    data object Settings : MainRoute
     @Serializable
-    object Friends : MainNavigation("friends")
+    data object Friends : MainRoute
 }

@@ -24,6 +24,7 @@ import com.kumpello.whereiseveryone.main.map.domain.model.FriendsResponse
 import com.kumpello.whereiseveryone.main.map.domain.usecase.GetPermissionsStatusUseCase
 import com.kumpello.whereiseveryone.main.map.domain.usecase.UpdateStatusUseCase
 import com.kumpello.whereiseveryone.main.map.entity.MapSettings
+import androidx.compose.runtime.Immutable
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import kotlin.time.Clock
@@ -255,6 +256,7 @@ class MapViewModel(
         val user: LocationData? = null
     )
 
+    @Immutable
     data class ViewState(
         val showPermissionNotification: Boolean,
         val permissions: Map<String, Boolean>,

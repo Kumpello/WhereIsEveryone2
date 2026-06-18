@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.isActive
 import timber.log.Timber
+import kotlin.time.Duration.Companion.milliseconds
 
 class FriendsManager(
     private val getFriendsDataUseCase: GetFriendsDataUseCase,
@@ -36,7 +37,7 @@ class FriendsManager(
                 Timber.e(it)
             }
 
-            delay(pollingInterval)
+            delay(pollingInterval.milliseconds)
         }
     }.flowOn(Dispatchers.IO)
 

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
 import com.kumpello.whereiseveryone.common.entity.ScreenState
+import com.kumpello.whereiseveryone.common.presentation.AsyncState
 import com.kumpello.whereiseveryone.common.presentation.BaseViewModel
 import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertAccuracyUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertAltUseCase
@@ -21,6 +22,7 @@ import com.kumpello.whereiseveryone.main.friends.domain.usecase.RejectFriendUseC
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.RemoveFriendUseCase
 import com.kumpello.whereiseveryone.main.map.domain.model.FriendsResponse
 import com.kumpello.whereiseveryone.main.map.presentation.LocationService
+import androidx.compose.runtime.Immutable
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.time.ZoneId
@@ -97,11 +99,11 @@ class FriendsViewModel(
             })
 
             is Command.OnFriendsLoaded -> state.copy(friends = event.friends).toResult()
-            is Command.OnError -> state.toResult(SideEffect.Effect(Action.Toast(event.id)))
+            is Command.OnError -> state.copy(actionState = AsyncState.Idle).toResult(SideEffect.Effect(Action.Toast(event.id)))
 
             is Command.SetAddFriendNick -> state.copy(addFriendNick = event.nick).toResult()
 
-            Command.AddFriend -> state.toResult(SideEffect.AsyncWork {
+            Command.AddFriend -> state.copy(actionState = AsyncState.Loading(message = "Adding friend...")).toResult(SideEffect.AsyncWork {
                 try {
                     when (val response = addFriendUseCase.execute(state.addFriendNick)) {
                         CodeResponse.SuccessNoContent -> {
@@ -118,7 +120,7 @@ class FriendsViewModel(
                 }
             })
 
-            is Command.DeleteFriend -> state.toResult(SideEffect.AsyncWork {
+            is Command.DeleteFriend -> state.copy(actionState = AsyncState.Loading(message = "Deleting friend...")).toResult(SideEffect.AsyncWork {
                 try {
                     when (val response = removeFriendUseCase.execute(event.nick)) {
                         CodeResponse.SuccessNoContent -> {
@@ -134,7 +136,7 @@ class FriendsViewModel(
                 }
             })
 
-            is Command.AcceptFriend -> state.toResult(SideEffect.AsyncWork {
+            is Command.AcceptFriend -> state.copy(actionState = AsyncState.Loading(message = "Accepting request...")).toResult(SideEffect.AsyncWork {
                 try {
                     when (val response = acceptFriendUseCase.execute(event.nick)) {
                         CodeResponse.SuccessNoContent -> {
@@ -150,7 +152,7 @@ class FriendsViewModel(
                 }
             })
 
-            is Command.RejectFriend -> state.toResult(SideEffect.AsyncWork {
+            is Command.RejectFriend -> state.copy(actionState = AsyncState.Loading(message = "Rejecting request...")).toResult(SideEffect.AsyncWork {
                 try {
                     when (val response = rejectFriendUseCase.execute(event.nick)) {
                         CodeResponse.SuccessNoContent -> {
@@ -166,7 +168,7 @@ class FriendsViewModel(
                 }
             })
 
-            is Command.OnActionSuccess -> state.toResult(
+            is Command.OnActionSuccess -> state.copy(actionState = AsyncState.Idle).toResult(
                 SideEffect.Effect(Action.Toast(event.messageId)),
                 SideEffect.InternalEvent(Command.CheckFriends)
             )
@@ -206,7 +208,8 @@ class FriendsViewModel(
             },
             addFriendNick = addFriendNick,
             deleteFriendDialogState = deleteFriendDialogState,
-            selectedFriend = selectedFriend
+            selectedFriend = selectedFriend,
+            actionState = actionState
         )
     }
 
@@ -246,13 +249,16 @@ class FriendsViewModel(
         val deleteFriendDialogState: DeleteFriendDialogState = DeleteFriendDialogState.Closed,
         val selectedFriend: Friend? = null,
         val userLocation: LocationData? = null,
+        val actionState: AsyncState<Unit> = AsyncState.Idle
     )
 
+    @Immutable
     data class ViewState(
         val friends: List<Friend>,
         val addFriendNick: String,
         val deleteFriendDialogState: DeleteFriendDialogState,
-        val selectedFriend: Friend?
+        val selectedFriend: Friend?,
+        val actionState: AsyncState<Unit>
     )
 
     sealed class DeleteFriendDialogState {

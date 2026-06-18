@@ -2,14 +2,18 @@ package com.kumpello.whereiseveryone.main.friends.ui
 
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -18,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -48,6 +53,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -56,6 +62,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.authentication.common.ui.TextField
+import com.kumpello.whereiseveryone.common.presentation.AsyncState
 import com.kumpello.whereiseveryone.common.ui.entity.Button
 import com.kumpello.whereiseveryone.common.ui.theme.Shapes
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
@@ -126,153 +133,190 @@ private fun FriendsScreen(
     viewState: FriendsViewModel.ViewState,
     trigger: (FriendsViewModel.Command) -> Unit,
 ) {
-    if (viewState.deleteFriendDialogState is DeleteFriendDialogState.Open) {
-        DeleteFriendDialog(
-            friend = viewState.deleteFriendDialogState.friend,
-            trigger = trigger
-        )
-    }
-    viewState.selectedFriend?.let { friend ->
-        FriendDetailsCard(
-            friend = friend,
-            onDismiss = { trigger(FriendsViewModel.Command.ClearSelectedFriend) }
-        )
-    }
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ) {
-        Column(
-            modifier = Modifier.padding(
-                vertical = 64.dp,
-                horizontal = 8.dp
-            ),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally,
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (viewState.deleteFriendDialogState is DeleteFriendDialogState.Open) {
+            DeleteFriendDialog(
+                friend = viewState.deleteFriendDialogState.friend,
+                trigger = trigger
+            )
+        }
+        viewState.selectedFriend?.let { friend ->
+            FriendDetailsCard(
+                friend = friend,
+                onDismiss = { trigger(FriendsViewModel.Command.ClearSelectedFriend) }
+            )
+        }
+
+        AnimatedVisibility(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .zIndex(100f),
+            visible = viewState.actionState is AsyncState.Loading,
+            enter = slideInVertically(initialOffsetY = { -it }),
+            exit = slideOutVertically(targetOffsetY = { -it })
         ) {
+            val message = (viewState.actionState as? AsyncState.Loading)?.let {
+                it.messageId?.let { id -> stringResource(id) } ?: it.message
+            } ?: ""
             Card(
                 modifier = Modifier
-                    .fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(
-                    defaultElevation = 8.dp,
+                    .padding(top = 16.dp)
+                    .fillMaxWidth(0.8f),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
                 ),
-                colors = CardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    disabledContainerColor = MaterialTheme.colorScheme.onErrorContainer,
-                    disabledContentColor = MaterialTheme.colorScheme.onError
-                ),
-                shape = Shapes.large,
+                shape = Shapes.medium,
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
-                Column(
+                Text(
                     modifier = Modifier
-                        .padding(10.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    TextField.Regular(
-                        label = stringResource(R.string.your_friends_nick),
-                        value = viewState.addFriendNick,
-                        labelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        colors =  TextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.surface,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                            unfocusedIndicatorColor = MaterialTheme.colorScheme.outline
-                        ),
-                        onValueChange = { nick ->
-                            trigger(FriendsViewModel.Command.SetAddFriendNick(nick))
-                        }
-                    )
-                    Spacer(Modifier.size(20.dp))
-                    Button.Animated(
-                        text = stringResource(R.string.add_friend),
-                        width = 250
-                    ) {
-                        trigger(FriendsViewModel.Command.AddFriend)
-                    }
-                }
-            }
-            val listTabItem = listOf(
-                FriendsTabItem(stringResource(R.string.friends), "FriendsTab"),
-                FriendsTabItem(stringResource(R.string.incoming_requests), "IncomingTab"),
-                FriendsTabItem(stringResource(R.string.outgoing_requests), "OutgoingTab")
-            )
-            var selectedTabItem by remember { mutableIntStateOf(0) }
-            val pagerState = rememberPagerState(initialPage = 0) { listTabItem.size }
-            val alphaTransitionOnTab by rememberInfiniteTransition().animateFloat(
-                initialValue = 0.4f,
-                targetValue = 1f,
-                animationSpec = infiniteRepeatable(
-                    tween(durationMillis = 1000, easing = LinearEasing),
-                    RepeatMode.Restart
+                        .padding(16.dp)
+                        .align(Alignment.CenterHorizontally),
+                    text = message,
+                    style = MaterialTheme.typography.bodyMedium
                 )
-            )
-
-            LaunchedEffect(pagerState.currentPage) {
-                selectedTabItem = pagerState.currentPage
             }
+        }
 
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
+        ) {
             Column(
                 modifier = Modifier
-                    .padding(top = 4.dp)
-                    .clip(Shapes.large)
-                    .fillMaxSize()
+                    .safeDrawingPadding()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                PrimaryTabRow(selectedTabItem) {
-                    listTabItem.forEachIndexed { index, tabItem ->
-                        Tab( //TODO Customize!
-                            selected = index == selectedTabItem,
-                            onClick = {
-                                selectedTabItem = index
-                            },
-                            text = {
-                                when (index) {
-                                    1 if viewState.friends.any { friend -> friend.state == FriendState.PENDING_INCOMING } -> {
-                                        Text(
-                                            modifier = Modifier.alpha(alphaTransitionOnTab),
-                                            text = tabItem.name
-                                        )
-                                    }
-                                    2 if viewState.friends.any { friend -> friend.state == FriendState.PENDING_OUTGOING } -> {
-                                        Text(
-                                            modifier = Modifier.alpha(alphaTransitionOnTab),
-                                            text = tabItem.name
-                                        )
-                                    }
-                                    else -> Text(
-                                        modifier = Modifier.alpha(0.85f),
-                                        text = tabItem.name
-                                    )
-                                }
-                            })
-                    }
-                }
-
-                HorizontalPager(
-                    modifier = Modifier.fillMaxSize(),
-                    state = pagerState,
-                    verticalAlignment = Alignment.Top
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(
+                        defaultElevation = 8.dp,
+                    ),
+                    colors = CardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        disabledContainerColor = MaterialTheme.colorScheme.onErrorContainer,
+                        disabledContentColor = MaterialTheme.colorScheme.onError
+                    ),
+                    shape = Shapes.large,
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .padding(10.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                    when (selectedTabItem) {
-                        0 -> FriendsCategory(
-                            friends = viewState.friends.filter { friend -> friend.state == FriendState.ACCEPTED },
-                            trigger = trigger
+                        TextField.Regular(
+                            label = stringResource(R.string.your_friends_nick),
+                            value = viewState.addFriendNick,
+                            labelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                unfocusedIndicatorColor = MaterialTheme.colorScheme.outline
+                            ),
+                            onValueChange = { nick ->
+                                trigger(FriendsViewModel.Command.SetAddFriendNick(nick))
+                            }
                         )
-
-                        1 -> FriendsCategory(
-                            friends = viewState.friends.filter { friend -> friend.state == FriendState.PENDING_INCOMING },
-                            trigger = trigger
-                        )
-
-                        2 -> FriendsCategory(
-                            friends = viewState.friends.filter { friend -> friend.state == FriendState.PENDING_OUTGOING },
-                            trigger = trigger
-                        )
-
+                        Spacer(Modifier.size(20.dp))
+                        Button.Animated(
+                            text = stringResource(R.string.add_friend),
+                            width = 250,
+                            enabled = !viewState.actionState.isLoading
+                        ) {
+                            trigger(FriendsViewModel.Command.AddFriend)
+                        }
                     }
                 }
+                val listTabItem = listOf(
+                    FriendsTabItem(stringResource(R.string.friends), "FriendsTab"),
+                    FriendsTabItem(stringResource(R.string.incoming_requests), "IncomingTab"),
+                    FriendsTabItem(stringResource(R.string.outgoing_requests), "OutgoingTab")
+                )
+                var selectedTabItem by remember { mutableIntStateOf(0) }
+                val pagerState = rememberPagerState(initialPage = 0) { listTabItem.size }
+                val alphaTransitionOnTab by rememberInfiniteTransition().animateFloat(
+                    initialValue = 0.4f,
+                    targetValue = 1f,
+                    animationSpec = infiniteRepeatable(
+                        tween(durationMillis = 1000, easing = LinearEasing),
+                        RepeatMode.Restart
+                    )
+                )
 
+                LaunchedEffect(pagerState.currentPage) {
+                    selectedTabItem = pagerState.currentPage
+                }
+
+                Column(
+                    modifier = Modifier
+                        .padding(top = 4.dp)
+                        .clip(Shapes.large)
+                        .fillMaxSize()
+                ) {
+                    PrimaryTabRow(selectedTabItem) {
+                        listTabItem.forEachIndexed { index, tabItem ->
+                            Tab( //TODO Customize!
+                                selected = index == selectedTabItem,
+                                onClick = {
+                                    selectedTabItem = index
+                                },
+                                text = {
+                                    when (index) {
+                                        1 if viewState.friends.any { friend -> friend.state == FriendState.PENDING_INCOMING } -> {
+                                            Text(
+                                                modifier = Modifier.alpha(alphaTransitionOnTab),
+                                                text = tabItem.name
+                                            )
+                                        }
+
+                                        2 if viewState.friends.any { friend -> friend.state == FriendState.PENDING_OUTGOING } -> {
+                                            Text(
+                                                modifier = Modifier.alpha(alphaTransitionOnTab),
+                                                text = tabItem.name
+                                            )
+                                        }
+
+                                        else -> Text(
+                                            modifier = Modifier.alpha(0.85f),
+                                            text = tabItem.name
+                                        )
+                                    }
+                                })
+                        }
+                    }
+
+                    HorizontalPager(
+                        modifier = Modifier.fillMaxSize(),
+                        state = pagerState,
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        when (selectedTabItem) {
+                            0 -> FriendsCategory(
+                                friends = viewState.friends.filter { friend -> friend.state == FriendState.ACCEPTED },
+                                trigger = trigger
+                            )
+
+                            1 -> FriendsCategory(
+                                friends = viewState.friends.filter { friend -> friend.state == FriendState.PENDING_INCOMING },
+                                trigger = trigger
+                            )
+
+                            2 -> FriendsCategory(
+                                friends = viewState.friends.filter { friend -> friend.state == FriendState.PENDING_OUTGOING },
+                                trigger = trigger
+                            )
+
+                        }
+                    }
+
+                }
             }
         }
     }
@@ -342,7 +386,8 @@ fun FriendsWithDetailsPreview() {
                         lastUpdateTime = "12:34:56 20.04.2137",
                         lastUpdateAge = LastUpdateAge.SOMEWHAT_NEW,
                     )
-                )
+                ),
+                actionState = AsyncState.Idle
             )
         ) {}
     }
@@ -389,7 +434,8 @@ fun FriendsWithDetailsPreviewDark() {
                         lastUpdateTime = "12:34:56 20.04.2137",
                         lastUpdateAge = LastUpdateAge.SOMEWHAT_NEW,
                     )
-                )
+                ),
+                actionState = AsyncState.Idle
             )
         ) {}
     }
@@ -453,7 +499,8 @@ fun FriendsPreview() {
                 ),
                 addFriendNick = "Papator2000",
                 deleteFriendDialogState = DeleteFriendDialogState.Closed,
-                selectedFriend = null
+                selectedFriend = null,
+                actionState = AsyncState.Idle
             )
         ) {}
     }
@@ -517,7 +564,8 @@ fun FriendsPreviewDark() {
                 ),
                 addFriendNick = "Papator2000",
                 deleteFriendDialogState = DeleteFriendDialogState.Closed,
-                selectedFriend = null
+                selectedFriend = null,
+                actionState = AsyncState.Idle
             )
         ) {}
     }

@@ -8,13 +8,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.kumpello.whereiseveryone.R
-import com.kumpello.whereiseveryone.authentication.common.AuthenticationNavigation
+import com.kumpello.whereiseveryone.authentication.common.AuthenticationRoute
 import com.kumpello.whereiseveryone.authentication.splash.presentation.SplashViewModel
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.MainActivity
@@ -44,9 +45,9 @@ fun SplashScreen(
                 )
 
                 SplashViewModel.Action.NavigateSignUp -> navController.navigate(
-                    AuthenticationNavigation.SignUp.route
+                    AuthenticationRoute.SignUp
                 ) {
-                    popUpTo(AuthenticationNavigation.Splash.route) { inclusive = true }
+                    popUpTo(AuthenticationRoute.Splash) { inclusive = true }
                 }
             }
         }
@@ -65,6 +66,7 @@ fun SplashScreen(modifier: Modifier = Modifier) {
         ) {
         Image(
             modifier = Modifier,
+            contentScale = ContentScale.FillHeight,
             painter = painterResource(id = R.drawable.im_splash_screen),
             contentDescription = "Splash screen",
         )

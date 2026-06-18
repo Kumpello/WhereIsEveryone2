@@ -3,11 +3,11 @@ package com.kumpello.whereiseveryone.authentication.common
 import kotlinx.serialization.Serializable
 
 @Serializable
-internal sealed class AuthenticationNavigation(val route: String) {
+internal sealed interface AuthenticationRoute {
     @Serializable
-    object Splash : AuthenticationNavigation("splash")
+    data object Splash : AuthenticationRoute
     @Serializable
-    object Login : AuthenticationNavigation("login")
+    data object Login : AuthenticationRoute
     @Serializable
-    object SignUp : AuthenticationNavigation("signup")
+    data object SignUp : AuthenticationRoute
 }

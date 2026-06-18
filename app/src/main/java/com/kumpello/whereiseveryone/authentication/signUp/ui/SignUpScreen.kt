@@ -6,6 +6,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +14,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -21,6 +28,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
@@ -31,11 +39,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.kumpello.whereiseveryone.R
-import com.kumpello.whereiseveryone.authentication.common.AuthenticationNavigation
+import com.kumpello.whereiseveryone.authentication.common.AuthenticationRoute
 import com.kumpello.whereiseveryone.authentication.common.ui.TextField
 import com.kumpello.whereiseveryone.authentication.signUp.domain.model.PasswordValidationState
 import com.kumpello.whereiseveryone.authentication.signUp.presentation.SignUpViewModel
 import com.kumpello.whereiseveryone.common.entity.ScreenState
+import com.kumpello.whereiseveryone.common.presentation.AsyncState
 import com.kumpello.whereiseveryone.common.ui.entity.Button
 import com.kumpello.whereiseveryone.common.ui.entity.Logo
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
@@ -60,22 +69,11 @@ fun SignUpScreen(
     LaunchedEffect(Unit) {
         viewModel.action.collect { action ->
             when (action) {
-                is SignUpViewModel.Action.MakeToast -> Toast.makeText(
-                    context,
-                    action.string,
-                    Toast.LENGTH_SHORT
-                )
+                is SignUpViewModel.Action.MakeToast -> Toast.makeText(context, action.string, Toast.LENGTH_SHORT)
                     .show()
 
-                SignUpViewModel.Action.NavigateMain -> context.startActivity(
-                    Intent(
-                        context,
-                        MainActivity::class.java
-                    )
-                )
-
-                SignUpViewModel.Action.NavigateLogin -> navController.navigate(
-                    AuthenticationNavigation.Login.route)
+                SignUpViewModel.Action.NavigateMain -> context.startActivity(Intent(context, MainActivity::class.java))
+                SignUpViewModel.Action.NavigateLogin -> navController.navigate(AuthenticationRoute.Login)
             }
         }
     }
@@ -94,11 +92,14 @@ fun SignUpScreen(
     Column(
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(24.dp)
+        modifier = Modifier
+            .safeDrawingPadding()
+            .padding(4.dp)
+            .padding(horizontal = 20.dp)
     ) {
         Logo.Text(
             modifier = Modifier
-                .padding(vertical = 64.dp),
+                .padding(vertical = 4.dp),
             size = 35
         )
         Column(
@@ -107,7 +108,6 @@ fun SignUpScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-
             Text(
                 text = "Sign up",
                 style = MaterialTheme.typography.headlineLarge
@@ -133,17 +133,17 @@ fun SignUpScreen(
                 }
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             Conditions(viewState)
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             Button.Animated(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 40.dp),
-                enabled = viewState.passwordState.successful && !viewState.isLoading,
+                enabled = viewState.passwordState.successful && !viewState.signUpState.isLoading,
                 text = "Sign up",
                 textSize = 26,
                 height = 50,
@@ -154,7 +154,7 @@ fun SignUpScreen(
             Button.Animated(
                 modifier = Modifier
                     .padding(horizontal = 40.dp),
-                text = "Login here",
+                text = "Log in here",
             ) { trigger(SignUpViewModel.Command.NavigateLogin) }
         }
     }
@@ -163,23 +163,44 @@ fun SignUpScreen(
 @Composable
 fun Conditions(viewState: SignUpViewModel.ViewState) {
     Column(
-        verticalArrangement = Arrangement.spacedBy(5.dp)
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.Start
     ) {
-        ConditionRow(
-            condition = stringResource(R.string.minimum_8_characters),
-            checked = viewState.passwordState.hasMinimum
+        ConditionItem(
+            checked = viewState.passwordState.hasMinimum,
+            condition = stringResource(R.string.minimum_8_characters)
         )
-        ConditionRow(
-            condition = stringResource(R.string.minimum_1_special_character),
-            checked = viewState.passwordState.hasSpecialCharacter
+        ConditionItem(
+            checked = viewState.passwordState.hasSpecialCharacter,
+            condition = stringResource(R.string.minimum_1_special_character)
         )
-        ConditionRow(
-            condition = stringResource(R.string.minimum_1_capitalized_letter),
-            checked = viewState.passwordState.hasCapitalizedLetter
+        ConditionItem(
+            checked = viewState.passwordState.hasCapitalizedLetter,
+            condition = stringResource(R.string.minimum_1_capitalized_letter)
         )
-        ConditionRow(
-            condition = stringResource(R.string.no_whitespaces),
-            checked = viewState.passwordState.noWhitespaces
+        ConditionItem(
+            checked = viewState.passwordState.noWhitespaces,
+            condition = stringResource(R.string.no_whitespaces)
+        )
+    }
+}
+
+@Composable
+fun ConditionItem(checked: Boolean, condition: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            modifier = Modifier.size(20.dp),
+            imageVector = if (checked) Icons.Default.Check else Icons.Default.Close,
+            contentDescription = "Condition",
+            tint = if (checked) Color.Green else Color.Red
+        )
+        Text(
+            modifier = Modifier.padding(start = 10.dp),
+            text = condition,
+            style = MaterialTheme.typography.bodySmall
         )
     }
 }
@@ -187,7 +208,7 @@ fun Conditions(viewState: SignUpViewModel.ViewState) {
 @Preview(showBackground = true)
 @Composable
 fun SignUpPreview() {
-    WhereIsEveryoneTheme {
+    WhereIsEveryoneTheme(false) {
         Surface(
             modifier = Modifier
                 .fillMaxSize()
@@ -198,8 +219,14 @@ fun SignUpPreview() {
                     screenState = ScreenState.Map,
                     username = "Janusz",
                     password = "dupadupadupa",
-                    passwordState = PasswordValidationState(),
-                    isLoading = false
+                    passwordState = PasswordValidationState(
+                        hasMinimum = true,
+                        hasSpecialCharacter = true,
+                        hasCapitalizedLetter = true,
+                        noWhitespaces = true,
+                        successful = true
+                    ),
+                    signUpState = AsyncState.Idle
                 )
             ) {}
         }
@@ -220,8 +247,14 @@ fun SignUpPreviewDark() {
                     screenState = ScreenState.Map,
                     username = "Janusz",
                     password = "dupadupadupa",
-                    passwordState = PasswordValidationState(),
-                    isLoading = false
+                    passwordState = PasswordValidationState(
+                        hasMinimum = true,
+                        hasSpecialCharacter = true,
+                        hasCapitalizedLetter = true,
+                        noWhitespaces = true,
+                        successful = true
+                    ),
+                    signUpState = AsyncState.Idle
                 )
             ) {}
         }

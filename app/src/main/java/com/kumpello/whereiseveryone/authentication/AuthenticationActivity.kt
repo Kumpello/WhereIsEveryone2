@@ -5,19 +5,17 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.kumpello.whereiseveryone.authentication.common.AuthenticationNavigation
+import com.kumpello.whereiseveryone.authentication.common.AuthenticationRoute
 import com.kumpello.whereiseveryone.authentication.login.presentation.LoginViewModel
 import com.kumpello.whereiseveryone.authentication.login.ui.LoginScreen
 import com.kumpello.whereiseveryone.authentication.signUp.presentation.SignUpViewModel
@@ -61,15 +59,15 @@ class AuthenticationActivity : ComponentActivity(), CoroutineScope by MainScope(
         ) {
             NavHost(
                 navController = navController,
-                startDestination = AuthenticationNavigation.Splash.route
+                startDestination = AuthenticationRoute.Splash
             ) {
-                composable(AuthenticationNavigation.Splash.route) {
+                composable<AuthenticationRoute.Splash> {
                     SplashScreen(navController = navController, viewModel = splashViewModel)
                 }
-                composable(AuthenticationNavigation.Login.route) {
+                composable<AuthenticationRoute.Login> {
                     LoginScreen(navController = navController, viewModel = loginViewModel)
                 }
-                composable(AuthenticationNavigation.SignUp.route) {
+                composable<AuthenticationRoute.SignUp> {
                     SignUpScreen(navController = navController, viewModel = signUpViewModel)
                 }
             }

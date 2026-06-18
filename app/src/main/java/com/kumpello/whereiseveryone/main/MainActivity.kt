@@ -23,7 +23,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
-import com.kumpello.whereiseveryone.main.common.MainNavigation
+import com.kumpello.whereiseveryone.main.common.MainRoute
 import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
 import com.kumpello.whereiseveryone.main.friends.ui.FriendsScreen
 import com.kumpello.whereiseveryone.main.map.presentation.LocationService
@@ -195,15 +195,15 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
         val navController = rememberNavController()
         NavHost(
             navController = navController,
-            startDestination = MainNavigation.Map.route
+            startDestination = MainRoute.Map
         ) {
-            composable(MainNavigation.Map.route) {
+            composable<MainRoute.Map> {
                 MapScreen(navController = navController, viewModel = mapViewModel)
             }
-            composable(MainNavigation.Friends.route) {
+            composable<MainRoute.Friends> {
                 FriendsScreen(navController = navController, viewModel = friendsViewModel)
             }
-            composable(MainNavigation.Settings.route) {
+            composable<MainRoute.Settings> {
                 SettingsScreen(navController = navController, viewModel = settingsViewModel)
             }
         }
