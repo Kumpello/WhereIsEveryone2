@@ -2,13 +2,9 @@ package com.kumpello.whereiseveryone.main.map.ui
 
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -16,7 +12,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,8 +30,10 @@ import com.kumpello.whereiseveryone.common.entity.ScreenState
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.common.MainRoute
 import com.kumpello.whereiseveryone.main.common.ui.Notification
+import com.kumpello.whereiseveryone.main.map.entity.MapSettings
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
-import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 
 @Composable
 fun MapScreen( //TODO: Add compass pointing to friend, add friends nearby
@@ -75,7 +72,7 @@ fun MapScreen( //TODO: Add compass pointing to friend, add friends nearby
 @Composable
 fun MapScreen(
     viewState: MapViewModel.ViewState,
-    action: SharedFlow<MapViewModel.Action>,
+    action: Flow<MapViewModel.Action>,
     event: (MapViewModel.Event) -> Unit,
 ) {
     Box {
@@ -90,51 +87,11 @@ fun MapScreen(
                 onDenyClick = { event(MapViewModel.Event.OnPermissionDeny) }
             )
         }
-        Row(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .safeDrawingPadding()
-                .padding(
-                    end = 8.dp
-                )
-                .zIndex(1000f),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            FloatingActionButton(
-                onClick = { event(MapViewModel.Event.NavigateMessage) },
-            ) {
-                Icon(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(4.dp),
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = "Message"
-                )
-            }
-            FloatingActionButton(
-                onClick = { event(MapViewModel.Event.NavigateFriends) },
-            ) {
-                Icon(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(4.dp),
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "Friends"
-                )
-            }
-            FloatingActionButton(
-                onClick = { event(MapViewModel.Event.NavigateSettings) },
-            ) {
-                Icon(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(4.dp),
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = "Settings"
-                )
-            }
-        }
-        Map(
+        TopControls(
+            modifier = Modifier.align(Alignment.TopEnd),
+            onEvent = event
+        )
+        MapContent(
             modifier = Modifier.align(Alignment.Center),
             state = viewState.mapSettings,
             actions = action,
@@ -149,68 +106,84 @@ fun MapScreen(
                     .align(Alignment.TopCenter)
                     .fillMaxWidth(0.9f),
                 viewState = viewState,
-                actions = action,
                 onDismiss = { event(MapViewModel.Event.BackToMap) },
                 trigger = event
             )
 
-            else -> {
-            //TODO
-            }
+            else -> Unit
         }
-        Row(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .safeDrawingPadding()
-                .padding(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            FloatingActionButton(
-                onClick = { event(MapViewModel.Event.ZoomOut) },
-            ) {
-                Icon(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(4.dp),
-                    imageVector = Icons.Default.KeyboardArrowUp,
-                    contentDescription = "Zoom out"
-                )
-            }
-            FloatingActionButton(
-                onClick = { event(MapViewModel.Event.ZoomIn) },
-            ) {
-                Icon(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(4.dp),
-                    imageVector = Icons.Default.KeyboardArrowDown,
-                    contentDescription = "Zoom in"
-                )
-            }
-            FloatingActionButton(
-                onClick = { event(MapViewModel.Event.CenterMap) },
-            ) {
-                Icon(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(4.dp),
-                    imageVector = Icons.Default.LocationOn,
-                    contentDescription = "Center"
-                )
-            }
-        }
+        BottomControls(
+            modifier = Modifier.align(Alignment.BottomEnd),
+            onEvent = event
+        )
+    }
+}
+
+@Composable
+private fun TopControls(
+    modifier: Modifier = Modifier,
+    onEvent: (MapViewModel.Event) -> Unit
+) {
+    ControlBar(modifier = modifier) {
+        ControlButton(
+            imageVector = Icons.Default.Edit,
+            contentDescription = "Message",
+            onClick = { onEvent(MapViewModel.Event.NavigateMessage) }
+        )
+        ControlButton(
+            imageVector = Icons.Default.Person,
+            contentDescription = "Friends",
+            onClick = { onEvent(MapViewModel.Event.NavigateFriends) }
+        )
+        ControlButton(
+            imageVector = Icons.Default.Settings,
+            contentDescription = "Settings",
+            onClick = { onEvent(MapViewModel.Event.NavigateSettings) }
+        )
+    }
+}
+
+@Composable
+private fun BottomControls(
+    modifier: Modifier = Modifier,
+    onEvent: (MapViewModel.Event) -> Unit
+) {
+    ControlBar(modifier = modifier) {
+        ControlButton(
+            imageVector = Icons.Default.KeyboardArrowUp,
+            contentDescription = "Zoom out",
+            onClick = { onEvent(MapViewModel.Event.ZoomOut) }
+        )
+        ControlButton(
+            imageVector = Icons.Default.KeyboardArrowDown,
+            contentDescription = "Zoom in",
+            onClick = { onEvent(MapViewModel.Event.ZoomIn) }
+        )
+        ControlButton(
+            imageVector = Icons.Default.LocationOn,
+            contentDescription = "Center",
+            onClick = { onEvent(MapViewModel.Event.CenterMap) }
+        )
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun MapScreenPreview() { //TODO Fix map preview, or maybe mock map somehow?
+fun MapScreenPreview() {
     WhereIsEveryoneTheme {
-/*        MapScreen(
-            navigator = rememberNavController(),
-            MapViewModel.ViewState(
+        MapScreen(
+            viewState = MapViewModel.ViewState(
+                showPermissionNotification = false,
+                permissions = emptyMap(),
                 screenState = ScreenState.Map,
-            )
-        ) {}*/
+                mapSettings = MapSettings(),
+                user = null,
+                friends = emptyList(),
+                userMessage = "Status message",
+                userMessageField = ""
+            ),
+            action = emptyFlow(),
+            event = {}
+        )
     }
 }

@@ -95,7 +95,7 @@ class MapViewModel(
                         state.copy(friends = friends).toResult()
                     }
                     is FriendsResponse.ErrorData -> {
-                        Timber.d(response.toString())
+                        Timber.tag(TAG).d(response.toString())
                         state.toResult(SideEffect.Effect(Action.Toast(R.string.error_getting_friends)))
                     }
                 }
@@ -132,25 +132,32 @@ class MapViewModel(
                             Event.OnMessageSent(message)
                         }
                         is CodeResponse.ErrorData -> {
-                            Timber.d("Error updating message!")
+                            Timber.tag(TAG).d("Error updating message!")
                             Event.OnMessageError(R.string.error_updating_message)
                         }
                     }
                 } catch (e: Exception) {
-                    Timber.d("Error updating message!\n%s", e.message.toString())
+                    Timber.tag(TAG).d("Error updating message!\n%s", e.message.toString())
                     Event.OnMessageError(R.string.error_updating_message)
                 }
             })
 
-            is Event.OnMessageSent -> state.copy(userMessage = event.message, userMessageField = "").toResult()
+            is Event.OnMessageSent -> {
+                Timber.tag(TAG).d("Message updated successfully: %s", event.message)
+                state.copy(userMessage = event.message, userMessageField = "").toResult()
+            }
             is Event.OnMessageError -> state.toResult(SideEffect.Effect(Action.Toast(event.errorId)))
 
             Event.ClearMessage -> state.copy(userMessageField = "").toResult(SideEffect.InternalEvent(Event.SendMessage))
 
-            Event.CenterMap -> state.toResult(SideEffect.Effect(Action.CenterMap(state.mapSettings.zoom)))
+            Event.CenterMap -> {
+                Timber.tag(TAG).d("Centering map, zoom: %s", state.mapSettings.zoom)
+                state.toResult(SideEffect.Effect(Action.CenterMap(state.mapSettings.zoom)))
+            }
 
             Event.ZoomIn -> {
                 val newZoom = state.mapSettings.zoom + 0.5
+                Timber.tag(TAG).d("Zooming in, new zoom: %s", newZoom)
                 state.copy(mapSettings = state.mapSettings.copy(zoom = newZoom)).toResult(
                     SideEffect.Effect(Action.Zoom(newZoom))
                 )
@@ -158,6 +165,7 @@ class MapViewModel(
 
             Event.ZoomOut -> {
                 val newZoom = state.mapSettings.zoom - 0.5
+                Timber.tag(TAG).d("Zooming out, new zoom: %s", newZoom)
                 state.copy(mapSettings = state.mapSettings.copy(zoom = newZoom)).toResult(
                     SideEffect.Effect(Action.Zoom(newZoom))
                 )
@@ -267,4 +275,8 @@ class MapViewModel(
         val userMessage: String,
         val userMessageField: String,
     )
+
+    companion object {
+        private const val TAG = "MAP_VM"
+    }
 }

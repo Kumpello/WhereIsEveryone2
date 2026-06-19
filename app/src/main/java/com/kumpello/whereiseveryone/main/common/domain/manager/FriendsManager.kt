@@ -24,21 +24,28 @@ class FriendsManager(
     fun observeFriends(): Flow<FriendsResponse> = flow {
         // Emit cached data first
         val initialEntities = friendDao.getFriends()
+        Timber.tag(TAG).d("Emitting %d cached friends", initialEntities.size)
         emit(FriendsResponse.FriendsData(initialEntities.map { it.toDomain() }))
 
         while (currentCoroutineContext().isActive) {
             runCatching {
+                Timber.tag(TAG).d("Polling for fresh friends data")
                 val response = getFriendsDataUseCase.execute()
                 if (response is FriendsResponse.FriendsData) {
+                    Timber.tag(TAG).d("Successfully fetched %d friends", response.positions.size)
                     friendDao.insertFriends(response.positions.map { it.toDatabaseEntity() })
                 }
                 emit(response)
             }.onFailure {
-                Timber.e(it)
+                Timber.tag(TAG).e("Error during friends polling: %s", it.message)
             }
 
             delay(pollingInterval.milliseconds)
         }
     }.flowOn(Dispatchers.IO)
+
+    companion object {
+        private const val TAG = "FRIENDS_MANAGER"
+    }
 
 }

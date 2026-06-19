@@ -2,13 +2,13 @@ package com.kumpello.whereiseveryone.common.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -25,8 +25,8 @@ abstract class BaseViewModel<S : Any, VS : Any, E : Any, Ef : Any>(
             initialValue = initialState.toViewState()
         )
 
-    private val _effect = MutableSharedFlow<Ef>()
-    val action: SharedFlow<Ef> = _effect.asSharedFlow()
+    private val _effect = Channel<Ef>()
+    val action: Flow<Ef> = _effect.receiveAsFlow()
 
     protected val currentState: S
         get() = _state.value
@@ -40,7 +40,7 @@ abstract class BaseViewModel<S : Any, VS : Any, E : Any, Ef : Any>(
     private fun handleSideEffect(sideEffect: SideEffect<E, Ef>) {
         when (sideEffect) {
             is SideEffect.Effect -> {
-                viewModelScope.launch { _effect.emit(sideEffect.effect) }
+                viewModelScope.launch { _effect.send(sideEffect.effect) }
             }
             is SideEffect.InternalEvent -> {
                 trigger(sideEffect.event)

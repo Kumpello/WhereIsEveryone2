@@ -14,10 +14,13 @@ class StatusRepositoryImpl(
             .updateStatus("Bearer $token", StatusRequest(status))
 
         return when {
-            response.isSuccessful -> CodeResponse.SuccessNoContent
+            response.isSuccessful -> {
+                Timber.tag(TAG).d("Status update successful")
+                CodeResponse.SuccessNoContent
+            }
 
             else -> {
-                Timber.e(response.errorBody().toString())
+                Timber.tag(TAG).e("Status update failed: %s", response.errorBody()?.string())
                 CodeResponse.ErrorData(
                     response.code(),
                     response.errorBody().toString(),
@@ -25,6 +28,10 @@ class StatusRepositoryImpl(
                 )
             }
         }
+    }
+
+    companion object {
+        private const val TAG = "STATUS_REPO"
     }
 
 }

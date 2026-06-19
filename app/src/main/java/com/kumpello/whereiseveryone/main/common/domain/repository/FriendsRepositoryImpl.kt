@@ -11,12 +11,15 @@ class FriendsRepositoryImpl(
     override suspend fun getFriends(token: String): FriendsResponse {
         val response = friendsApi.getFriends("Bearer $token")
         return when {
-            response.isSuccessful -> FriendsResponse.FriendsData(
-                response.body() ?: emptyList()
-            )
+            response.isSuccessful -> {
+                Timber.tag(TAG).d("Successfully fetched friends")
+                FriendsResponse.FriendsData(
+                    response.body() ?: emptyList()
+                )
+            }
 
             else -> {
-                Timber.e(response.errorBody().toString())
+                Timber.tag(TAG).e("Error fetching friends: %s", response.errorBody()?.string())
                 FriendsResponse.ErrorData(
                     response.code(),
                     response.errorBody().toString(),
@@ -24,6 +27,10 @@ class FriendsRepositoryImpl(
                 )
             }
         }
+    }
+
+    companion object {
+        private const val TAG = "FRIENDS_REPO"
     }
 
 }

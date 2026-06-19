@@ -72,7 +72,7 @@ class LocationServiceImpl : Service(), LocationService {
     private val handler = Handler(serviceThread.looper)
 
     override fun onCreate() {
-        Timber.d("LocationService onCreate")
+        Timber.tag(TAG).d("LocationService onCreate")
         super.onCreate()
         LocationServiceImpl.state.value = true
         scope.launch {
@@ -82,7 +82,7 @@ class LocationServiceImpl : Service(), LocationService {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Timber.d("LocationService onStartCommand")
+        Timber.tag(TAG).d("LocationService onStartCommand")
 
         startService()
         return START_STICKY
@@ -118,18 +118,19 @@ class LocationServiceImpl : Service(), LocationService {
     }
 
     private fun startService() {
-        Timber.d("LocationService checking permissions")
+        Timber.tag(TAG).d("LocationService checking permissions")
         if (!checkPermissions()) {
+            Timber.tag(TAG).e("Missing permissions to start LocationService")
             stopSelf()
             return
         }
         
         if (state.value.isLocationUpdatesStarted) {
-            Timber.d("LocationService already running")
+            Timber.tag(TAG).d("LocationService already running")
             return
         }
         
-        Timber.d("LocationService starting")
+        Timber.tag(TAG).d("LocationService starting")
 
         val manager = getSystemService(NotificationManager::class.java)
         createNotificationChannel(manager)
@@ -171,13 +172,13 @@ class LocationServiceImpl : Service(), LocationService {
         val coarseLocationPermission =
             ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
 
-        return backgroundPermission == PackageManager.PERMISSION_DENIED
-                && fineLocationPermission == PackageManager.PERMISSION_DENIED
-                && coarseLocationPermission == PackageManager.PERMISSION_DENIED
+        return backgroundPermission == PackageManager.PERMISSION_GRANTED
+                || fineLocationPermission == PackageManager.PERMISSION_GRANTED
+                || coarseLocationPermission == PackageManager.PERMISSION_GRANTED
     }
 
     override fun onDestroy() {
-        Timber.d("LocationService stopping")
+        Timber.tag(TAG).d("LocationService stopping")
         stopUpdates()
         LocationServiceImpl.state.value = false
         locationSendChannel.close()
@@ -208,7 +209,7 @@ class LocationServiceImpl : Service(), LocationService {
         override fun onLocationResult(locationResult: LocationResult) {
             locationResult.lastLocation?.let { location ->
                 scope.launch {
-                    Timber.d("Emiting location")
+                    Timber.tag(TAG).d("Emitting location: %s, %s", location.latitude, location.longitude)
                     locationFlow.emit(location)
                     locationSendChannel.send(location)
                 }
@@ -217,6 +218,7 @@ class LocationServiceImpl : Service(), LocationService {
     }
 
     override fun changeUpdateType(updateType: LocationService.UpdateType) {
+        Timber.tag(TAG).d("Changing update type to: %s", updateType)
         when (updateType) {
             LocationService.UpdateType.Background -> {
                 stopUpdates()
@@ -234,7 +236,7 @@ class LocationServiceImpl : Service(), LocationService {
         if (state.value.isLocationUpdatesStarted) return
 
         try {
-            Timber.d("Trying to send location")
+            Timber.tag(TAG).d("Starting location updates, type: %s", updateType)
             fusedLocationClient.requestLocationUpdates(
                 when (updateType) {
                     LocationService.UpdateType.Background -> getBackgroundRequest()
@@ -250,11 +252,12 @@ class LocationServiceImpl : Service(), LocationService {
             }
         } catch (exception: SecurityException) {
             SystemClock.sleep(15000)
-            Timber.e(exception.toString())
+            Timber.tag(TAG).e("SecurityException during location updates: %s", exception.toString())
         }
     }
 
     private fun stopUpdates() {
+        Timber.tag(TAG).d("Stopping location updates")
         fusedLocationClient.removeLocationUpdates(locationCallback)
         state.update {
             it.copy(
@@ -265,7 +268,7 @@ class LocationServiceImpl : Service(), LocationService {
 
     private suspend fun sendLocation(location: Location, lastUpdate: Instant) {
         runCatching {
-            Timber.d("Sending location")
+            Timber.tag(TAG).d("Sending location to backend")
             val response = sendLocationUseCase.execute(
                 longitude = location.longitude,
                 latitude = location.latitude,
@@ -276,14 +279,14 @@ class LocationServiceImpl : Service(), LocationService {
             )
             when (response) {
                 is CodeResponse.ErrorData -> {
-                    Timber.d(response.toString())
+                    Timber.tag(TAG).e("Error sending location: %s", response.toString())
                 }
                 CodeResponse.SuccessNoContent -> {
-                    Timber.d(response.toString())
+                    Timber.tag(TAG).d("Location sent successfully")
                 }
             }
         }.onFailure { error ->
-            Timber.d(error) //TODO: Send to UI if error
+            Timber.tag(TAG).e("Exception sending location: %s", error.message)
         }
     }
 
@@ -321,6 +324,7 @@ class LocationServiceImpl : Service(), LocationService {
         }
 
     override fun changeForegroundUpdateInterval(interval: Long) {
+        Timber.tag(TAG).d("Changing foreground interval to: %s", interval)
         state.update {
             it.copy(
                 foregroundSettings = state.value.foregroundSettings.copy(
@@ -331,6 +335,7 @@ class LocationServiceImpl : Service(), LocationService {
     }
 
     override fun changeBackgroundUpdateInterval(interval: Long) {
+        Timber.tag(TAG).d("Changing background interval to: %s", interval)
         state.update {
             it.copy(
                 backgroundSettings = state.value.backgroundSettings.copy(
@@ -341,6 +346,7 @@ class LocationServiceImpl : Service(), LocationService {
     }
 
     override fun stopLocationService() {
+        Timber.tag(TAG).d("Stopping location service manually")
         stopUpdates()
         stopSelf()
     }
@@ -389,6 +395,7 @@ class LocationServiceImpl : Service(), LocationService {
     companion object {
         private val state: MutableStateFlow<Boolean> = MutableStateFlow(false)
         val stateFlow: StateFlow<Boolean> = state.asStateFlow()
+        private const val TAG = "LOCATION_SERVICE"
     }
 
 }

@@ -30,10 +30,13 @@ class LocationRepositoryImpl(
             )
         )
         return when {
-            response.isSuccessful -> CodeResponse.SuccessNoContent
+            response.isSuccessful -> {
+                Timber.tag(TAG).d("Location sent successfully")
+                CodeResponse.SuccessNoContent
+            }
 
             else -> {
-                Timber.e(response.errorBody().toString())
+                Timber.tag(TAG).e("Error sending location: %s", response.errorBody()?.string())
                 CodeResponse.ErrorData(
                     response.code(),
                     response.errorBody().toString(),
@@ -41,6 +44,10 @@ class LocationRepositoryImpl(
                 )
             }
         }
+    }
+
+    companion object {
+        private const val TAG = "LOCATION_REPO"
     }
 
 }

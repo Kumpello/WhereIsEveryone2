@@ -40,12 +40,12 @@ class SignUpViewModel(
 
             is Command.OnSignUpResult -> {
                 if (event.success) {
-                    Timber.d("SignUp succeeded!")
+                    Timber.tag(TAG).d("SignUp succeeded!")
                     state.copy(signUpState = AsyncState.Success(Unit))
                         .toResult(SideEffect.Effect(Action.NavigateMain))
                 } else {
-                    Timber.e("SignUp failed!")
-                    event.error?.let { Timber.e(it) }
+                    Timber.tag(TAG).e("SignUp failed!")
+                    event.error?.let { Timber.tag(TAG).e(it) }
                     state.copy(signUpState = AsyncState.Error(event.error))
                         .toResult(SideEffect.Effect(Action.MakeToast("SignUp failed!")))
                 }
@@ -103,4 +103,8 @@ class SignUpViewModel(
         val passwordState: PasswordValidationState,
         val signUpState: AsyncState<Unit>
     )
+
+    companion object {
+        private const val TAG = "SIGN_UP_VM"
+    }
 }

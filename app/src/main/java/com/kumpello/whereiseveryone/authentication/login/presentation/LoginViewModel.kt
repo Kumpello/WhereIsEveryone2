@@ -36,12 +36,12 @@ class LoginViewModel(
 
             is Command.OnLoginResult -> {
                 if (event.success) {
-                    Timber.d("Login succeeded!")
+                    Timber.tag(TAG).d("Login succeeded!")
                     state.copy(loginState = AsyncState.Success(Unit))
                         .toResult(SideEffect.Effect(Action.NavigateMain))
                 } else {
-                    Timber.e("Login failed!")
-                    event.error?.let { Timber.e(it) }
+                    Timber.tag(TAG).e("Login failed!")
+                    event.error?.let { Timber.tag(TAG).e(it) }
                     state.copy(loginState = AsyncState.Error(event.error))
                         .toResult(SideEffect.Effect(Action.MakeToast("Login failed!")))
                 }
@@ -96,4 +96,8 @@ class LoginViewModel(
         val password: String,
         val loginState: AsyncState<Unit>
     )
+
+    companion object {
+        private const val TAG = "LOGIN_VM"
+    }
 }

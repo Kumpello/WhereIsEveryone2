@@ -6,6 +6,7 @@ import com.kumpello.whereiseveryone.common.domain.ucecase.GetCurrentAuthTokenUse
 import com.kumpello.whereiseveryone.common.domain.ucecase.RefreshTokenUseCase
 import com.kumpello.whereiseveryone.common.presentation.BaseViewModel
 import androidx.compose.runtime.Immutable
+import timber.log.Timber
 
 class SplashViewModel(
     private val getCurrentAuthTokenUseCase: GetCurrentAuthTokenUseCase,
@@ -27,14 +28,21 @@ class SplashViewModel(
 
     override fun reduce(state: State, event: Command): ReducerResult<State, Command, Action> {
         return when (event) {
-            Command.NavigateToNextDestination -> state.toResult(
-                SideEffect.AsyncWork {
-                    Command.OnAuthChecked(isUserLogged())
-                }
-            )
-            is Command.OnAuthChecked -> state.toResult(
-                SideEffect.Effect(if (event.isLogged) Action.NavigateMain else Action.NavigateSignUp)
-            )
+            Command.NavigateToNextDestination -> {
+                Timber.tag(TAG).d("Navigating to next destination from Splash")
+                state.toResult(
+                    SideEffect.AsyncWork {
+                        Command.OnAuthChecked(isUserLogged())
+                    }
+                )
+            }
+
+            is Command.OnAuthChecked -> {
+                Timber.tag(TAG).d("Auth checked: logged in = %s", event.isLogged)
+                state.toResult(
+                    SideEffect.Effect(if (event.isLogged) Action.NavigateMain else Action.NavigateSignUp)
+                )
+            }
         }
     }
 
@@ -63,5 +71,9 @@ class SplashViewModel(
     data class ViewState(
         val scale : Animatable<Float, AnimationVector1D>
     )
+
+    companion object {
+        private const val TAG = "SPLASH_VM"
+    }
 
 }

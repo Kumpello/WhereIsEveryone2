@@ -9,6 +9,7 @@ import androidx.compose.runtime.Immutable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.InjectedParam
+import timber.log.Timber
 
 class SettingsViewModel(
     @InjectedParam private val locationServiceInterface: LocationServiceInterface,
@@ -27,15 +28,24 @@ class SettingsViewModel(
 
     override fun reduce(state: State, event: Command): ReducerResult<State, Command, Action> {
         return when (event) {
-            is Command.OnLocationServiceStateUpdate -> state.copy(locationServiceState = event.isRunning).toResult()
-            Command.ClearData -> state.toResult(SideEffect.AsyncWork {
-                runCatching {
-                    wipeLocationUseCase.execute()
-                }
-                // No event to return for now, maybe OnDataCleared in the future
-                Command.OnDataCleared
-            })
+            is Command.OnLocationServiceStateUpdate -> {
+                Timber.tag(TAG).d("Location service state updated: %s", event.isRunning)
+                state.copy(locationServiceState = event.isRunning).toResult()
+            }
+
+            Command.ClearData -> {
+                Timber.tag(TAG).d("Clearing user location data")
+                state.toResult(SideEffect.AsyncWork {
+                    runCatching {
+                        wipeLocationUseCase.execute()
+                    }
+                    // No event to return for now, maybe OnDataCleared in the future
+                    Command.OnDataCleared
+                })
+            }
+
             Command.SwitchLocationServiceState -> {
+                Timber.tag(TAG).d("Switching location service state, current: %s", state.locationServiceState)
                 if (state.locationServiceState) {
                     locationServiceInterface.stopLocationService()
                 } else {
@@ -43,7 +53,11 @@ class SettingsViewModel(
                 }
                 state.toResult()
             }
-            Command.OnDataCleared -> state.toResult()
+
+            Command.OnDataCleared -> {
+                Timber.tag(TAG).d("User data cleared successfully")
+                state.toResult()
+            }
         }
     }
 
@@ -79,4 +93,8 @@ class SettingsViewModel(
         val locationSwitchText: String,
         val deleteLocationData: String,
     )
+
+    companion object {
+        private const val TAG = "SETTINGS_VM"
+    }
 }

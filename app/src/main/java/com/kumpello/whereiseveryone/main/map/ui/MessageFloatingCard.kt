@@ -29,15 +29,12 @@ import com.kumpello.whereiseveryone.main.common.entity.Location
 import com.kumpello.whereiseveryone.main.common.ui.FloatingCard
 import com.kumpello.whereiseveryone.main.map.entity.MapSettings
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
 
 
 @Composable
 fun MessageFloatingCard(
     modifier: Modifier = Modifier,
     viewState: MapViewModel.ViewState,
-    actions: SharedFlow<MapViewModel.Action>,
     trigger: (MapViewModel.Event) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -120,7 +117,7 @@ fun MessagePreview() {
                 permissions = emptyMap(),
                 showPermissionNotification = false
 
-            ), actions = MutableSharedFlow(), trigger = {}, onDismiss = {}
+            ), trigger = {}, onDismiss = {}
         )
     }
 }

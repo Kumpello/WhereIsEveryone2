@@ -37,7 +37,7 @@ class EncryptedDataStoreRepository(private val context: Context) {
             val decoded = Base64.decode(encryptedValue, Base64.NO_WRAP)
             String(aead.decrypt(decoded, null))
         } catch (e: Exception) {
-            Timber.e(e.toString())
+            Timber.tag(TAG).e("Decryption failed: %s", e.message)
             null
         }
     }
@@ -47,5 +47,6 @@ class EncryptedDataStoreRepository(private val context: Context) {
         private const val KEYSET_NAME = "master_keyset"
         private const val PREF_FILE_NAME = "master_key_preference"
         private const val MASTER_KEY_URI = "android-keystore://master_key"
+        private const val TAG = "DATA_STORE_REPO"
     }
 }

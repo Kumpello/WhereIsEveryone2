@@ -66,107 +66,127 @@ class FriendsViewModel(
     override fun reduce(state: State, event: Command): ReducerResult<State, Command, Action> {
         return when (event) {
             is Command.OnLocationUpdate -> state.copy(userLocation = event.location).toResult()
-            Command.CheckFriends -> state.toResult(SideEffect.AsyncWork {
-                try {
-                    when (val friends = getFriendsDataUseCase.execute()) {
-                        is FriendsResponse.FriendsData -> {
-                            val friendList = friends.positions.map { friendData ->
-                                FriendLocalData(
-                                    username = friendData.username,
-                                    status = friendData.status,
-                                    state = friendData.state.toFriendState(),
-                                    location = LocationData(
-                                        lat = friendData.location.latitude,
-                                        lon = friendData.location.longitude,
-                                        bearing = friendData.location.bearing,
-                                        alt = friendData.location.altitude,
-                                        accuracy = friendData.location.accuracy,
-                                        last_update = Instant.parse(friendData.location.last_update)
+            is Command.CheckFriends -> {
+                Timber.tag(TAG).d("Checking friends")
+                state.toResult(SideEffect.AsyncWork {
+                    try {
+                        when (val friends = getFriendsDataUseCase.execute()) {
+                            is FriendsResponse.FriendsData -> {
+                                val friendList = friends.positions.map { friendData ->
+                                    FriendLocalData(
+                                        username = friendData.username,
+                                        status = friendData.status,
+                                        state = friendData.state.toFriendState(),
+                                        location = LocationData(
+                                            lat = friendData.location.latitude,
+                                            lon = friendData.location.longitude,
+                                            bearing = friendData.location.bearing,
+                                            alt = friendData.location.altitude,
+                                            accuracy = friendData.location.accuracy,
+                                            last_update = Instant.parse(friendData.location.last_update)
+                                        )
                                     )
-                                )
+                                }
+                                Command.OnFriendsLoaded(friendList)
                             }
-                            Command.OnFriendsLoaded(friendList)
+
+                            is FriendsResponse.ErrorData -> {
+                                Timber.tag(TAG).d("Error getting friends!\n%s", friends)
+                                Command.OnError(R.string.error_getting_friends)
+                            }
                         }
-                        is FriendsResponse.ErrorData -> {
-                            Timber.d("Error getting friends!\n%s", friends)
-                            Command.OnError(R.string.error_getting_friends)
-                        }
+                    } catch (e: Exception) {
+                        Timber.tag(TAG).d("Error getting friends!\n%s", e.message.toString())
+                        Command.OnError(R.string.error_getting_friends)
                     }
-                } catch (e: Exception) {
-                    Timber.d("Error getting friends!\n%s", e.message.toString())
-                    Command.OnError(R.string.error_getting_friends)
-                }
-            })
+                })
+            }
 
             is Command.OnFriendsLoaded -> state.copy(friends = event.friends).toResult()
             is Command.OnError -> state.copy(actionState = AsyncState.Idle).toResult(SideEffect.Effect(Action.Toast(event.id)))
 
             is Command.SetAddFriendNick -> state.copy(addFriendNick = event.nick).toResult()
 
-            Command.AddFriend -> state.copy(actionState = AsyncState.Loading(message = "Adding friend...")).toResult(SideEffect.AsyncWork {
-                try {
-                    when (val response = addFriendUseCase.execute(state.addFriendNick)) {
-                        CodeResponse.SuccessNoContent -> {
-                            Command.OnActionSuccess(R.string.friend_added)
-                        }
-                        is CodeResponse.ErrorData -> {
-                            Timber.e(response.toString())
-                            Command.OnError(R.string.error_adding_friend)
-                        }
-                    }
-                } catch (e: Exception) {
-                    Timber.e("Error adding friend!\n%s", e.toString())
-                    Command.OnError(R.string.error_adding_friend)
-                }
-            })
+            Command.AddFriend -> {
+                Timber.tag(TAG).d("Adding friend: %s", state.addFriendNick)
+                state.copy(actionState = AsyncState.Loading(message = "Adding friend...")).toResult(SideEffect.AsyncWork {
+                    try {
+                        when (val response = addFriendUseCase.execute(state.addFriendNick)) {
+                            CodeResponse.SuccessNoContent -> {
+                                Command.OnActionSuccess(R.string.friend_added)
+                            }
 
-            is Command.DeleteFriend -> state.copy(actionState = AsyncState.Loading(message = "Deleting friend...")).toResult(SideEffect.AsyncWork {
-                try {
-                    when (val response = removeFriendUseCase.execute(event.nick)) {
-                        CodeResponse.SuccessNoContent -> {
-                            Command.OnActionSuccess(R.string.friend_deleted_successfully)
+                            is CodeResponse.ErrorData -> {
+                                Timber.tag(TAG).e(response.toString())
+                                Command.OnError(R.string.error_adding_friend)
+                            }
                         }
-                        is CodeResponse.ErrorData -> {
-                            Command.OnError(R.string.error_deleting_friend)
-                        }
+                    } catch (e: Exception) {
+                        Timber.tag(TAG).e("Error adding friend!\n%s", e.toString())
+                        Command.OnError(R.string.error_adding_friend)
                     }
-                } catch (e: Exception) {
-                    Timber.d("Error deleting friend!\n%s", e.message.toString())
-                    Command.OnError(R.string.error_deleting_friend)
-                }
-            })
+                })
+            }
 
-            is Command.AcceptFriend -> state.copy(actionState = AsyncState.Loading(message = "Accepting request...")).toResult(SideEffect.AsyncWork {
-                try {
-                    when (val response = acceptFriendUseCase.execute(event.nick)) {
-                        CodeResponse.SuccessNoContent -> {
-                            Command.OnActionSuccess(R.string.friend_accepted)
-                        }
-                        is CodeResponse.ErrorData -> {
-                            Command.OnError(R.string.error_occurred_during_accepting_friend)
-                        }
-                    }
-                } catch (e: Exception) {
-                    Timber.d("Error accepting friend!\n%s", e.message.toString())
-                    Command.OnError(R.string.error_occurred_during_accepting_friend)
-                }
-            })
+            is Command.DeleteFriend -> {
+                Timber.tag(TAG).d("Deleting friend: %s", event.nick)
+                state.copy(actionState = AsyncState.Loading(message = "Deleting friend...")).toResult(SideEffect.AsyncWork {
+                    try {
+                        when (val response = removeFriendUseCase.execute(event.nick)) {
+                            CodeResponse.SuccessNoContent -> {
+                                Command.OnActionSuccess(R.string.friend_deleted_successfully)
+                            }
 
-            is Command.RejectFriend -> state.copy(actionState = AsyncState.Loading(message = "Rejecting request...")).toResult(SideEffect.AsyncWork {
-                try {
-                    when (val response = rejectFriendUseCase.execute(event.nick)) {
-                        CodeResponse.SuccessNoContent -> {
-                            Command.OnActionSuccess(R.string.rejected_successfully)
+                            is CodeResponse.ErrorData -> {
+                                Command.OnError(R.string.error_deleting_friend)
+                            }
                         }
-                        is CodeResponse.ErrorData -> {
-                            Command.OnError(R.string.error_during_reject)
-                        }
+                    } catch (e: Exception) {
+                        Timber.tag(TAG).d("Error deleting friend!\n%s", e.message.toString())
+                        Command.OnError(R.string.error_deleting_friend)
                     }
-                } catch (e: Exception) {
-                    Timber.d("Error rejecting friend!\n%s", e.message.toString())
-                    Command.OnError(R.string.error_during_reject)
-                }
-            })
+                })
+            }
+
+            is Command.AcceptFriend -> {
+                Timber.tag(TAG).d("Accepting friend: %s", event.nick)
+                state.copy(actionState = AsyncState.Loading(message = "Accepting request...")).toResult(SideEffect.AsyncWork {
+                    try {
+                        when (val response = acceptFriendUseCase.execute(event.nick)) {
+                            CodeResponse.SuccessNoContent -> {
+                                Command.OnActionSuccess(R.string.friend_accepted)
+                            }
+
+                            is CodeResponse.ErrorData -> {
+                                Command.OnError(R.string.error_occurred_during_accepting_friend)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Timber.tag(TAG).d("Error accepting friend!\n%s", e.message.toString())
+                        Command.OnError(R.string.error_occurred_during_accepting_friend)
+                    }
+                })
+            }
+
+            is Command.RejectFriend -> {
+                Timber.tag(TAG).d("Rejecting friend: %s", event.nick)
+                state.copy(actionState = AsyncState.Loading(message = "Rejecting request...")).toResult(SideEffect.AsyncWork {
+                    try {
+                        when (val response = rejectFriendUseCase.execute(event.nick)) {
+                            CodeResponse.SuccessNoContent -> {
+                                Command.OnActionSuccess(R.string.rejected_successfully)
+                            }
+
+                            is CodeResponse.ErrorData -> {
+                                Command.OnError(R.string.error_during_reject)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Timber.tag(TAG).d("Error rejecting friend!\n%s", e.message.toString())
+                        Command.OnError(R.string.error_during_reject)
+                    }
+                })
+            }
 
             is Command.OnActionSuccess -> state.copy(actionState = AsyncState.Idle).toResult(
                 SideEffect.Effect(Action.Toast(event.messageId)),
@@ -264,5 +284,9 @@ class FriendsViewModel(
     sealed class DeleteFriendDialogState {
         data class Open(val friend: Friend): DeleteFriendDialogState()
         data object Closed: DeleteFriendDialogState()
+    }
+
+    companion object {
+        private const val TAG = "FRIENDS_VM"
     }
 }

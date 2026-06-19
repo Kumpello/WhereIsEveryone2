@@ -15,10 +15,13 @@ class AuthenticationRepositoryImpl(
         val authResponse = authApi.signUp(SignUpRequest(username, password))
 
         return when {
-            authResponse.isSuccessful -> authResponse.body()!!
+            authResponse.isSuccessful -> {
+                Timber.tag(TAG).d("SignUp successful for user: %s", username)
+                authResponse.body()!!
+            }
 
             else -> {
-                Timber.e(authResponse.errorBody().toString())
+                Timber.tag(TAG).e("SignUp failed: %s", authResponse.errorBody()?.string())
                 AuthResponse.ErrorData(
                     authResponse.code(),
                     authResponse.errorBody().toString(),
@@ -30,13 +33,15 @@ class AuthenticationRepositoryImpl(
 
     override suspend fun logIn(username: String, password: String): AuthResponse {
         val authResponse = authApi.login(LogInRequest(username, password))
-        Timber.d(authResponse.message())
 
         return when {
-            authResponse.isSuccessful -> authResponse.body()!!
+            authResponse.isSuccessful -> {
+                Timber.tag(TAG).d("Login successful for user: %s", username)
+                authResponse.body()!!
+            }
 
             else -> {
-                Timber.e(authResponse.errorBody().toString())
+                Timber.tag(TAG).e("Login failed: %s", authResponse.errorBody()?.string())
                 AuthResponse.ErrorData(
                     authResponse.code(),
                     authResponse.errorBody().toString(),
@@ -48,13 +53,15 @@ class AuthenticationRepositoryImpl(
 
     override suspend fun refreshToken(refreshToken: String): AuthResponse {
         val authResponse = authApi.refresh(RefreshRequest(refreshToken))
-        Timber.d(authResponse.message())
 
         return when {
-            authResponse.isSuccessful -> authResponse.body()!!
+            authResponse.isSuccessful -> {
+                Timber.tag(TAG).d("Token refresh successful")
+                authResponse.body()!!
+            }
 
             else -> {
-                Timber.e(authResponse.errorBody().toString())
+                Timber.tag(TAG).e("Token refresh failed: %s", authResponse.errorBody()?.string())
                 AuthResponse.ErrorData(
                     authResponse.code(),
                     authResponse.errorBody().toString(),
@@ -62,6 +69,10 @@ class AuthenticationRepositoryImpl(
                 )
             }
         }
+    }
+
+    companion object {
+        private const val TAG = "AUTH_REPO"
     }
 
 }

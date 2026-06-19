@@ -44,8 +44,7 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
     private val friendsViewModel: FriendsViewModel by viewModel()
     private val settingsViewModel: SettingsViewModel by viewModel { parametersOf(this@MainActivity) }
 
-    private var locationService: LocationService? =
-        null //TODO: Create abstraction for service + bound status
+    private var locationService: LocationService? = null
     private var isLocationServiceBound: Boolean = false
 
     private lateinit var permissionsLauncher: ActivityResultLauncher<Array<String>>
@@ -123,7 +122,7 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
     }
 
     override fun stopLocationService() {
-        Timber.d("Stopping location service")
+        Timber.tag(TAG).d("Stopping location service")
         locationService?.stopLocationService()
         unbindLocationService()
     }
@@ -211,7 +210,7 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
 
     private val locationServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(className: ComponentName, iBinder: IBinder) {
-            Timber.d("LocationServiceConnection: connected to service.")
+            Timber.tag(TAG).d("LocationServiceConnection: connected to service.")
             val binder = iBinder as LocationServiceImpl.LocationBinder
             locationService = binder.service
             isLocationServiceBound = true
@@ -219,12 +218,13 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
         }
 
         override fun onServiceDisconnected(arg0: ComponentName) {
-            Timber.d("LocationServiceConnection: disconnected from service.")
+            Timber.tag(TAG).d("LocationServiceConnection: disconnected from service.")
             locationService = null
         }
     }
 
     companion object {
         const val STATUS_PARAM = "STATUS"
+        private const val TAG = "MAIN_ACTIVITY"
     }
 }

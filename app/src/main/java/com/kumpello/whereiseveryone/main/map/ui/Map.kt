@@ -2,15 +2,19 @@ package com.kumpello.whereiseveryone.main.map.ui
 
 import android.graphics.Bitmap
 import android.graphics.Color
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.unit.dp
 import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.main.common.entity.Friend
@@ -43,19 +47,31 @@ import com.mapbox.maps.plugin.locationcomponent.createDefault2DPuck
 import com.mapbox.maps.plugin.locationcomponent.location
 import com.mapbox.maps.plugin.viewport.data.DefaultViewportTransitionOptions
 import com.mapbox.maps.plugin.viewport.data.FollowPuckViewportStateOptions
-import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.Flow
 import timber.log.Timber
 
 @OptIn(MapboxExperimental::class)
 @Composable
-fun Map(
+fun MapContent(
     modifier: Modifier = Modifier,
     state: MapSettings,
-    actions: SharedFlow<MapViewModel.Action>,
+    actions: Flow<MapViewModel.Action>,
     userLocation: Location?,
     friendsPositions: List<Friend>,
     event: (MapViewModel.Event) -> Unit,
 ) {
+    if (LocalInspectionMode.current) {
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .background(androidx.compose.ui.graphics.Color.DarkGray),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(text = "Map Placeholder", color = androidx.compose.ui.graphics.Color.White)
+        }
+        return
+    }
+
     val mapViewportState = rememberMapViewportState {
         transitionToFollowPuckState(
             followPuckViewportStateOptions = FollowPuckViewportStateOptions.Builder()
@@ -86,7 +102,7 @@ fun Map(
                 }
 
                 is MapViewModel.Action.Zoom -> {
-                    Timber.d(action.zoom.toString())
+                    Timber.tag("MAP_UI").d("Zooming to: %s", action.zoom)
                     mapViewportState.transitionToFollowPuckState(
                         followPuckViewportStateOptions = FollowPuckViewportStateOptions.Builder()
                             .zoom(action.zoom).build(),
@@ -150,9 +166,6 @@ fun Map(
             )
         }
     ) {
-        //TODO: Use passed user location data!
-        //TODO: removal/change of logo
-        //TODO: Move UI here?
         MapEffect(Unit) { mapView ->
             mapView.location.updateSettings {
                 locationPuck = createDefault2DPuck(withBearing = true)
