@@ -115,8 +115,10 @@ fun MessagePreview() {
                 userMessage = "Where is everyone?",
                 userMessageField = "",
                 permissions = emptyMap(),
-                showPermissionNotification = false
-
+                showPermissionNotification = false,
+                selectedFriend = null,
+                navigatingFriend = null,
+                bearingToFriend = null
             ), trigger = {}, onDismiss = {}
         )
     }

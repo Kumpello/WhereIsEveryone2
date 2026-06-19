@@ -7,6 +7,7 @@ import com.kumpello.whereiseveryone.common.domain.repository.EncryptedDataStoreR
 import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
 import com.kumpello.whereiseveryone.common.domain.ucecase.GetNeededPermissionsUseCase
 import com.kumpello.whereiseveryone.common.domain.ucecase.SaveKeyUseCase
+import com.kumpello.whereiseveryone.main.common.domain.usecase.CalculateBearingUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertAccuracyUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertAltUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertLastUpdateUseCase
@@ -55,7 +56,8 @@ val mainModule = module {
             getPermissionsStatusUseCase = get(),
             convertAccuracyUseCase = get(),
             convertAltUseCase = get(),
-            convertLastUpdateUseCase = get()
+            convertLastUpdateUseCase = get(),
+            calculateBearingUseCase = get()
         )
     }
     viewModel { (locationServiceInterface: LocationServiceInterface) ->
@@ -101,4 +103,5 @@ val mainModule = module {
     single { ConvertAccuracyUseCase() }
     single { ConvertAltUseCase() }
     single { ConvertLastUpdateUseCase() }
+    single { CalculateBearingUseCase() }
 }

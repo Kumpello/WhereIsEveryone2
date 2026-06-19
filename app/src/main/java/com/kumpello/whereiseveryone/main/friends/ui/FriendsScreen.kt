@@ -143,7 +143,10 @@ private fun FriendsScreen(
         viewState.selectedFriend?.let { friend ->
             FriendDetailsCard(
                 friend = friend,
-                onDismiss = { trigger(FriendsViewModel.Command.ClearSelectedFriend) }
+                onDismiss = { trigger(FriendsViewModel.Command.ClearSelectedFriend) },
+                onNavigate = { _ ->
+                    trigger(FriendsViewModel.Command.ClearSelectedFriend)
+                }
             )
         }
 

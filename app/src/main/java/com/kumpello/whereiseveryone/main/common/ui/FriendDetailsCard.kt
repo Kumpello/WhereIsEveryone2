@@ -33,56 +33,82 @@ import com.kumpello.whereiseveryone.main.common.entity.Location
 @Composable
 fun FriendDetailsCard(
     friend: Friend,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onNavigate: (Friend) -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
-        Card(
+        FriendDetailsContent(
+            friend = friend,
+            onDismiss = onDismiss,
+            onNavigate = onNavigate
+        )
+    }
+}
+
+@Composable
+private fun FriendDetailsContent(
+    friend: Friend,
+    onDismiss: () -> Unit,
+    onNavigate: (Friend) -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        shape = Shapes.large,
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+    ) {
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            shape = Shapes.large,
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                .padding(16.dp)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
+            Text(
+                text = friend.username,
+                modifier = Modifier.basicMarquee(),
+                style = MaterialTheme.typography.headlineMedium,
+                maxLines = 1,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = friend.status,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+
+            DetailItem(label = "Latitude", value = friend.location.lat.toString())
+            DetailItem(label = "Longitude", value = friend.location.lon.toString())
+            DetailItem(label = "Bearing", value = friend.location.bearing?.let { "$it°" } ?: "Unknown")
+            DetailItem(
+                label = "Altitude",
+                value = "${friend.location.alt.name.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() }} (${friend.location.rawAlt ?: "N/A"}m)"
+            )
+            DetailItem(
+                label = "Accuracy",
+                value = "${friend.location.accuracy.name.lowercase().replaceFirstChar { it.uppercase() }} (${friend.location.rawAccuracy ?: "N/A"}m)"
+            )
+            DetailItem(label = "Last Update", value = friend.location.lastUpdateTime)
+            DetailItem(label = "Data Age", value = friend.location.lastUpdateAge.name.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() })
+
+            Spacer(modifier = Modifier.size(16.dp))
+            Row(
+                horizontalArrangement = Arrangement.SpaceAround,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = friend.username,
-                    modifier = Modifier.basicMarquee(),
-                    style = MaterialTheme.typography.headlineMedium,
-                    maxLines = 1,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = friend.status,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-
-                DetailItem(label = "Latitude", value = friend.location.lat.toString())
-                DetailItem(label = "Longitude", value = friend.location.lon.toString())
-                DetailItem(label = "Bearing", value = friend.location.bearing?.let { "$it°" } ?: "Unknown")
-                DetailItem(
-                    label = "Altitude",
-                    value = "${friend.location.alt.name.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() }} (${friend.location.rawAlt ?: "N/A"}m)"
-                )
-                DetailItem(
-                    label = "Accuracy",
-                    value = "${friend.location.accuracy.name.lowercase().replaceFirstChar { it.uppercase() }} (${friend.location.rawAccuracy ?: "N/A"}m)"
-                )
-                DetailItem(label = "Last Update", value = friend.location.lastUpdateTime)
-                DetailItem(label = "Data Age", value = friend.location.lastUpdateAge.name.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() })
-
-                Spacer(modifier = Modifier.size(16.dp))
                 Button.Animated(
                     text = "Close",
-                    width = 200
+                    width = 120
                 ) {
                     onDismiss()
+                }
+                Spacer(modifier = Modifier.size(8.dp))
+                Button.Animated(
+                    text = "Navigate!",
+                    width = 120
+                ) {
+                    onNavigate(friend)
                 }
             }
         }
@@ -113,7 +139,7 @@ fun DetailItem(label: String, value: String) {
 @Composable
 fun FriendDetailsPreview() {
     WhereIsEveryoneTheme {
-        FriendDetailsCard(
+        FriendDetailsContent(
             friend = Friend(
                 username = "JanuszAndrzejNowak",
                 status = "Doing something cool",
@@ -130,7 +156,8 @@ fun FriendDetailsPreview() {
                     lastUpdateAge = LastUpdateAge.FRESH
                 )
             ),
-            onDismiss = {}
+            onDismiss = {},
+            onNavigate = {}
         )
     }
 }

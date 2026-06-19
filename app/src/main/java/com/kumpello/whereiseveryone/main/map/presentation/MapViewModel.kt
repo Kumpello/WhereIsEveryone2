@@ -11,6 +11,7 @@ import com.kumpello.whereiseveryone.common.domain.ucecase.SaveKeyUseCase
 import com.kumpello.whereiseveryone.common.entity.ScreenState
 import com.kumpello.whereiseveryone.common.presentation.BaseViewModel
 import com.kumpello.whereiseveryone.main.common.domain.manager.FriendsManager
+import com.kumpello.whereiseveryone.main.common.domain.usecase.CalculateBearingUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertAccuracyUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertAltUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertLastUpdateUseCase
@@ -39,7 +40,8 @@ class MapViewModel(
     private val getPermissionsStatusUseCase: GetPermissionsStatusUseCase,
     private val convertAccuracyUseCase: ConvertAccuracyUseCase,
     private val convertAltUseCase: ConvertAltUseCase,
-    private val convertLastUpdateUseCase: ConvertLastUpdateUseCase
+    private val convertLastUpdateUseCase: ConvertLastUpdateUseCase,
+    private val calculateBearingUseCase: CalculateBearingUseCase
 ) : BaseViewModel<MapViewModel.State, MapViewModel.ViewState, MapViewModel.Event, MapViewModel.Action>(
     State()
 ) {
@@ -94,6 +96,7 @@ class MapViewModel(
                         }
                         state.copy(friends = friends).toResult()
                     }
+
                     is FriendsResponse.ErrorData -> {
                         Timber.tag(TAG).d(response.toString())
                         state.toResult(SideEffect.Effect(Action.Toast(R.string.error_getting_friends)))
@@ -131,6 +134,7 @@ class MapViewModel(
                             saveKeyUseCase.saveValue(WhereIsEveryoneApplication.USER_MESSAGE_KEY, message)
                             Event.OnMessageSent(message)
                         }
+
                         is CodeResponse.ErrorData -> {
                             Timber.tag(TAG).d("Error updating message!")
                             Event.OnMessageError(R.string.error_updating_message)
@@ -146,6 +150,7 @@ class MapViewModel(
                 Timber.tag(TAG).d("Message updated successfully: %s", event.message)
                 state.copy(userMessage = event.message, userMessageField = "").toResult()
             }
+
             is Event.OnMessageError -> state.toResult(SideEffect.Effect(Action.Toast(event.errorId)))
 
             Event.ClearMessage -> state.copy(userMessageField = "").toResult(SideEffect.InternalEvent(Event.SendMessage))
@@ -171,52 +176,73 @@ class MapViewModel(
                 )
             }
 
-            is Event.OnFriendClick -> TODO()
-            is Event.OnFriendLongClick -> TODO()
+            is Event.OnFriendClick -> state.copy(selectedFriend = event.friend).toResult()
+            is Event.OnFriendLongClick -> state.copy(selectedFriend = event.friend).toResult()
+            Event.DismissFriendDetails -> state.copy(selectedFriend = null).toResult()
+            is Event.NavigateToFriend -> state.copy(
+                navigatingFriend = event.friend,
+                selectedFriend = null
+            ).toResult()
+
+            Event.CancelNavigation -> state.copy(navigatingFriend = null).toResult()
         }
     }
 
     override fun State.toViewState(): ViewState {
-        return ViewState(
-            screenState = screenState,
-            mapSettings = mapSettings,
-            user = user?.let {
-                Location(
-                    lat = it.lat,
-                    lon = it.lon,
-                    bearing = it.bearing,
-                    alt = AltDifference.SOMEWHAT_SAME,
-                    accuracy = convertAccuracyUseCase.execute(it.accuracy),
-                    lastUpdateTime = it.last_update.toString(),
-                    lastUpdateAge = convertLastUpdateUseCase.execute(it.last_update),
+        val mappedUser = user?.let {
+            Location(
+                lat = it.lat,
+                lon = it.lon,
+                bearing = it.bearing,
+                alt = AltDifference.SOMEWHAT_SAME,
+                accuracy = convertAccuracyUseCase.execute(it.accuracy),
+                lastUpdateTime = it.last_update.toString(),
+                lastUpdateAge = convertLastUpdateUseCase.execute(it.last_update),
+                rawAlt = 0.0,
+                rawAccuracy = 0.0f
+            )
+        }
+        val mappedFriends = friends.map { friend ->
+            Friend(
+                username = friend.username,
+                status = friend.status,
+                state = friend.state,
+                location = Location(
+                    lat = friend.location.lat,
+                    lon = friend.location.lon,
+                    bearing = friend.location.bearing,
+                    alt = convertAltUseCase.execute(user?.alt, friend.location.alt),
+                    accuracy = convertAccuracyUseCase.execute(friend.location.accuracy),
+                    lastUpdateTime = friend.location.last_update.toString(),
+                    lastUpdateAge = convertLastUpdateUseCase.execute(friend.location.last_update),
                     rawAlt = 0.0,
                     rawAccuracy = 0.0f
                 )
-            },
-            friends = friends.map { friend ->
-                Friend(
-                    username = friend.username,
-                    status = friend.status,
-                    state = friend.state,
-                    location = Location(
-                        lat = friend.location.lat,
-                        lon = friend.location.lon,
-                        bearing = friend.location.bearing,
-                        alt = convertAltUseCase.execute(user?.alt, friend.location.alt),
-                        accuracy = convertAccuracyUseCase.execute(friend.location.accuracy),
-                        lastUpdateTime = friend.location.last_update.toString(),
-                        lastUpdateAge = convertLastUpdateUseCase.execute(friend.location.last_update),
-                        rawAlt = 0.0,
-                        rawAccuracy = 0.0f
-                    )
-                )
-            },
+            )
+        }
+        val bearing = if (mappedUser != null && navigatingFriend != null) {
+            calculateBearingUseCase.execute(
+                mappedUser.lat,
+                mappedUser.lon,
+                navigatingFriend.location.lat,
+                navigatingFriend.location.lon
+            )
+        } else null
+
+        return ViewState(
+            screenState = screenState,
+            mapSettings = mapSettings,
+            user = mappedUser,
+            friends = mappedFriends,
             userMessage = userMessage,
             userMessageField = userMessageField,
             showPermissionNotification = !permissionNotificationShown && permissionsState.containsValue(
                 false
             ),
-            permissions = permissionsState
+            permissions = permissionsState,
+            selectedFriend = selectedFriend,
+            navigatingFriend = navigatingFriend,
+            bearingToFriend = bearing
         )
     }
 
@@ -251,10 +277,15 @@ class MapViewModel(
         data object BackToMap : Event()
         data class OnFriendClick(val friend: Friend) : Event()
         data class OnFriendLongClick(val friend: Friend) : Event()
+        data object DismissFriendDetails : Event()
+        data class NavigateToFriend(val friend: Friend) : Event()
+        data object CancelNavigation : Event()
     }
 
     data class State(
         val permissionsState: Map<String, Boolean> = emptyMap(),
+        val selectedFriend: Friend? = null,
+        val navigatingFriend: Friend? = null,
         val permissionNotificationShown: Boolean = false,
         val screenState: ScreenState = ScreenState.Map,
         val mapSettings: MapSettings = MapSettings(),
@@ -267,6 +298,9 @@ class MapViewModel(
     @Immutable
     data class ViewState(
         val showPermissionNotification: Boolean,
+        val selectedFriend: Friend?,
+        val navigatingFriend: Friend?,
+        val bearingToFriend: Float?,
         val permissions: Map<String, Boolean>,
         val screenState: ScreenState,
         val mapSettings: MapSettings,

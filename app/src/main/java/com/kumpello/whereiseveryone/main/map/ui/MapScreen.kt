@@ -2,21 +2,35 @@ package com.kumpello.whereiseveryone.main.map.ui
 
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -27,8 +41,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.common.entity.ScreenState
+import com.kumpello.whereiseveryone.common.ui.theme.Shapes
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.common.MainRoute
+import com.kumpello.whereiseveryone.main.common.ui.FriendDetailsCard
 import com.kumpello.whereiseveryone.main.common.ui.Notification
 import com.kumpello.whereiseveryone.main.map.entity.MapSettings
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
@@ -52,7 +68,7 @@ fun MapScreen( //TODO: Add compass pointing to friend, add friends nearby
                     context,
                     action.id,
                     Toast.LENGTH_SHORT
-                )
+                ).show()
                 else -> Unit
             }
         }
@@ -76,6 +92,24 @@ fun MapScreen(
     event: (MapViewModel.Event) -> Unit,
 ) {
     Box {
+        if (viewState.selectedFriend != null) {
+            FriendDetailsCard(
+                friend = viewState.selectedFriend,
+                onDismiss = { event(MapViewModel.Event.DismissFriendDetails) },
+                onNavigate = { friend -> event(MapViewModel.Event.NavigateToFriend(friend)) }
+            )
+        }
+        if (viewState.navigatingFriend != null && viewState.bearingToFriend != null) {
+            NavigationCompass(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .safeDrawingPadding()
+                    .padding(16.dp),
+                bearing = viewState.bearingToFriend,
+                friendName = viewState.navigatingFriend.username,
+                onCancel = { event(MapViewModel.Event.CancelNavigation) }
+            )
+        }
         if (viewState.showPermissionNotification) {
             Notification(
                 modifier = Modifier
@@ -116,6 +150,56 @@ fun MapScreen(
             modifier = Modifier.align(Alignment.BottomEnd),
             onEvent = event
         )
+    }
+}
+
+@Composable
+private fun NavigationCompass(
+    modifier: Modifier = Modifier,
+    bearing: Float,
+    friendName: String,
+    onCancel: () -> Unit
+) {
+    Card(
+        modifier = modifier.zIndex(1001f),
+        shape = Shapes.medium,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f)
+        )
+    ) {
+        Row(
+            modifier = Modifier.padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.PlayArrow,
+                contentDescription = "Direction to $friendName",
+                modifier = Modifier
+                    .size(32.dp)
+                    .rotate(bearing - 90f), // PlayArrow points right (90 deg)
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Column {
+                Text(
+                    text = friendName,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "${bearing.toInt()}°",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            IconButton(onClick = onCancel, modifier = Modifier.size(24.dp)) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Cancel navigation",
+                    tint = MaterialTheme.colorScheme.error
+                )
+            }
+        }
     }
 }
 
@@ -180,7 +264,10 @@ fun MapScreenPreview() {
                 user = null,
                 friends = emptyList(),
                 userMessage = "Status message",
-                userMessageField = ""
+                userMessageField = "",
+                selectedFriend = null,
+                navigatingFriend = null,
+                bearingToFriend = null
             ),
             action = emptyFlow(),
             event = {}
