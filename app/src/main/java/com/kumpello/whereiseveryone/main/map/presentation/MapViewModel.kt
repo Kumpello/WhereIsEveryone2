@@ -106,6 +106,7 @@ class MapViewModel(
 
             Event.LoadUserMessage -> state.toResult(SideEffect.AsyncWork {
                 val message = getKeyUseCase.getValue(WhereIsEveryoneApplication.USER_MESSAGE_KEY).orEmpty()
+                Timber.tag(TAG).d("Loaded user message: %s", message)
                 Event.OnUserMessageLoaded(message)
             })
 
@@ -132,6 +133,7 @@ class MapViewModel(
                     when (updateStatusUseCase.execute(message)) {
                         is CodeResponse.SuccessNoContent -> {
                             saveKeyUseCase.saveValue(WhereIsEveryoneApplication.USER_MESSAGE_KEY, message)
+                            Timber.tag(TAG).d("Message saved to DataStore")
                             Event.OnMessageSent(message)
                         }
 

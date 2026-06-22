@@ -16,27 +16,21 @@ class RefreshTokenUseCase(
 
         val response = authenticationRepository.refreshToken(refreshToken)
 
-        saveUserData(response)
+        if (response is AuthResponse.AuthData) {
+            saveUserData(response)
+        }
         return when (response) {
             is AuthResponse.AuthData -> Response.Success
             is AuthResponse.ErrorData -> Response.Error
         }
     }
 
-    private fun saveUserData(response: AuthResponse): Response {
-        return when (response) {
-            is AuthResponse.AuthData -> {
-                saveKeyUseCase.saveValue(WhereIsEveryoneApplication.USER_ID_KEY, response.id)
-                saveKeyUseCase.saveValue(WhereIsEveryoneApplication.AUTH_TOKEN_KEY, response.token)
-                saveKeyUseCase.saveValue(WhereIsEveryoneApplication.AUTH_REFRESH_TOKEN_KEY, response.refresh_token)
+    private suspend fun saveUserData(response: AuthResponse.AuthData): Response {
+        saveKeyUseCase.saveValue(WhereIsEveryoneApplication.USER_ID_KEY, response.id)
+        saveKeyUseCase.saveValue(WhereIsEveryoneApplication.AUTH_TOKEN_KEY, response.token)
+        saveKeyUseCase.saveValue(WhereIsEveryoneApplication.AUTH_REFRESH_TOKEN_KEY, response.refresh_token)
 
-                Response.Success
-            }
-
-            is AuthResponse.ErrorData -> {
-                Response.Error
-            }
-        }
+        return Response.Success
     }
 
     sealed class Response {

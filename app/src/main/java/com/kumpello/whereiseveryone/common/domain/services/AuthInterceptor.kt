@@ -18,7 +18,7 @@ class AuthInterceptor(
         val isAuthRequest = originalRequest.url.encodedPath.contains("auth/")
 
         val requestWithToken = if (!isAuthRequest && originalRequest.header("Authorization") == null) {
-            val token = getKeyUseCase.getValue(WhereIsEveryoneApplication.AUTH_TOKEN_KEY)
+            val token = runBlocking { getKeyUseCase.getValue(WhereIsEveryoneApplication.AUTH_TOKEN_KEY) }
             if (token != null) {
                 originalRequest.newBuilder()
                     .header("Authorization", "Bearer $token")
@@ -34,7 +34,7 @@ class AuthInterceptor(
 
         if (response.code == 401 && !isAuthRequest) {
             synchronized(this) {
-                val currentToken = getKeyUseCase.getValue(WhereIsEveryoneApplication.AUTH_TOKEN_KEY)
+                val currentToken = runBlocking { getKeyUseCase.getValue(WhereIsEveryoneApplication.AUTH_TOKEN_KEY) }
                 val requestToken = requestWithToken.header("Authorization")?.removePrefix("Bearer ")
 
                 if (currentToken != null && currentToken != requestToken) {
@@ -46,11 +46,11 @@ class AuthInterceptor(
                     )
                 }
 
-                val refreshToken = getKeyUseCase.getValue(WhereIsEveryoneApplication.AUTH_REFRESH_TOKEN_KEY)
+                val refreshToken = runBlocking { getKeyUseCase.getValue(WhereIsEveryoneApplication.AUTH_REFRESH_TOKEN_KEY) }
                 if (refreshToken != null) {
                     val authData = runBlocking { refreshTokenUseCase.execute() }
                     if (authData == RefreshTokenUseCase.Response.Success) {
-                        val authToken = getKeyUseCase.getValue(WhereIsEveryoneApplication.AUTH_TOKEN_KEY)
+                        val authToken = runBlocking { getKeyUseCase.getValue(WhereIsEveryoneApplication.AUTH_TOKEN_KEY) }
                         response.close()
                         return chain.proceed(
                             requestWithToken.newBuilder()

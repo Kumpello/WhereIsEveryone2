@@ -5,7 +5,7 @@ import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
 class GetCurrentAuthTokenUseCase(
     private val getKeyUseCase: GetKeyUseCase
 ) {
-   fun execute() : String? {
+   suspend fun execute() : String? {
        return getKeyUseCase.getValue(WhereIsEveryoneApplication.AUTH_TOKEN_KEY)
    }
 }

@@ -17,12 +17,21 @@ class SplashViewModel(
 
     private suspend fun isUserLogged() : Boolean {
         val authKey = getCurrentAuthTokenUseCase.execute()
-        if (authKey.isNullOrEmpty()) return false
+        if (authKey.isNullOrEmpty()) {
+            Timber.tag(TAG).d("No auth token found, user is not logged in")
+            return false
+        }
 
         val result = refreshTokenUseCase.execute()
         return when (result) {
-            RefreshTokenUseCase.Response.Success -> true
-            RefreshTokenUseCase.Response.Error -> false
+            RefreshTokenUseCase.Response.Success -> {
+                Timber.tag(TAG).d("Token refresh successful, user is logged in")
+                true
+            }
+            RefreshTokenUseCase.Response.Error -> {
+                Timber.tag(TAG).d("Token refresh failed, user is not logged in")
+                false
+            }
         }
     }
 

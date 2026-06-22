@@ -18,7 +18,9 @@ class SignUpUseCase(
             username = username,
             password = password
         )
-        saveUserData(response)
+        if (response.authResponse is AuthResponse.AuthData) {
+            saveUserData(response)
+        }
         return when(response.authResponse) {
             is AuthResponse.AuthData -> Response.Success
             is AuthResponse.ErrorData -> Response.Error
@@ -36,7 +38,7 @@ class SignUpUseCase(
         )
     }
 
-    private fun saveUserData(responseWithParams: AuthResponseWithParams) {
+    private suspend fun saveUserData(responseWithParams: AuthResponseWithParams) {
         if (responseWithParams.authResponse is AuthResponse.AuthData) {
             saveKeyUseCase.saveValue(WhereIsEveryoneApplication.AUTH_TOKEN_KEY, responseWithParams.authResponse.token)
             saveKeyUseCase.saveValue(WhereIsEveryoneApplication.AUTH_REFRESH_TOKEN_KEY, responseWithParams.authResponse.refresh_token)

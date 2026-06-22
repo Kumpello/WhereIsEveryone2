@@ -52,7 +52,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 
 @Composable
-fun MapScreen( //TODO: Add compass pointing to friend, add friends nearby
+fun MapScreen( //TODO: Add friends nearby
     navController: NavController,
     viewModel: MapViewModel = viewModel()
 ) {

@@ -209,7 +209,7 @@ class LocationServiceImpl : Service(), LocationService {
         override fun onLocationResult(locationResult: LocationResult) {
             locationResult.lastLocation?.let { location ->
                 scope.launch {
-                    Timber.tag(TAG).d("Emitting location: %s, %s", location.latitude, location.longitude)
+                    Timber.tag(TAG).d("Emitting location update")
                     locationFlow.emit(location)
                     locationSendChannel.send(location)
                 }
