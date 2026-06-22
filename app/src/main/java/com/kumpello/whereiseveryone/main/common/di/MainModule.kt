@@ -8,6 +8,7 @@ import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
 import com.kumpello.whereiseveryone.common.domain.ucecase.GetNeededPermissionsUseCase
 import com.kumpello.whereiseveryone.common.domain.ucecase.SaveKeyUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.CalculateBearingUseCase
+import com.kumpello.whereiseveryone.main.common.domain.usecase.CalculateDistanceUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertAccuracyUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertAltUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertLastUpdateUseCase
@@ -57,7 +58,8 @@ val mainModule = module {
             convertAccuracyUseCase = get(),
             convertAltUseCase = get(),
             convertLastUpdateUseCase = get(),
-            calculateBearingUseCase = get()
+            calculateBearingUseCase = get(),
+            calculateDistanceUseCase = get()
         )
     }
     viewModel { (locationServiceInterface: LocationServiceInterface) ->
@@ -67,6 +69,7 @@ val mainModule = module {
         )
     }
     viewModel { FriendsViewModel(
+        get(),
         get(),
         get(),
         get(),
@@ -104,4 +107,5 @@ val mainModule = module {
     single { ConvertAltUseCase() }
     single { ConvertLastUpdateUseCase() }
     single { CalculateBearingUseCase() }
+    single { CalculateDistanceUseCase() }
 }

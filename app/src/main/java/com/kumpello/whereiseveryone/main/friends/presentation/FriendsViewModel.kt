@@ -5,8 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
 import com.kumpello.whereiseveryone.common.entity.ScreenState
+import com.kumpello.whereiseveryone.common.extension.formatDistance
 import com.kumpello.whereiseveryone.common.presentation.AsyncState
 import com.kumpello.whereiseveryone.common.presentation.BaseViewModel
+import com.kumpello.whereiseveryone.main.common.domain.usecase.CalculateDistanceUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertAccuracyUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertAltUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertLastUpdateUseCase
@@ -40,7 +42,8 @@ class FriendsViewModel(
     private val convertAccuracyUseCase: ConvertAccuracyUseCase,
     private val convertAltUseCase: ConvertAltUseCase,
     private val convertLastUpdateUseCase: ConvertLastUpdateUseCase,
-    private val locationService: LocationService
+    private val locationService: LocationService,
+    private val calculateDistanceUseCase: CalculateDistanceUseCase
 ) : BaseViewModel<FriendsViewModel.State, FriendsViewModel.ViewState, FriendsViewModel.Command, FriendsViewModel.Action>(
     State()
 ) {
@@ -66,7 +69,7 @@ class FriendsViewModel(
     override fun reduce(state: State, event: Command): ReducerResult<State, Command, Action> {
         return when (event) {
             is Command.OnLocationUpdate -> state.copy(userLocation = event.location).toResult()
-            is Command.CheckFriends -> {
+            Command.CheckFriends -> {
                 Timber.tag(TAG).d("Checking friends")
                 state.toResult(SideEffect.AsyncWork {
                     try {
@@ -207,25 +210,35 @@ class FriendsViewModel(
     }
 
     override fun State.toViewState(): ViewState {
-        return ViewState(
-            friends = friends.map { friend ->
-                Friend(
-                    username = friend.username,
-                    status = friend.status,
-                    state = friend.state,
-                    location = Location(
-                        lat = friend.location.lat,
-                        lon = friend.location.lon,
-                        bearing = friend.location.bearing,
-                        alt = convertAltUseCase.execute(userLocation?.alt, friend.location.alt),
-                        rawAlt = friend.location.alt,
-                        accuracy = convertAccuracyUseCase.execute(friend.location.accuracy),
-                        rawAccuracy = friend.location.accuracy,
-                        lastUpdateTime = formatLastUpdate(friend.location.last_update),
-                        lastUpdateAge = convertLastUpdateUseCase.execute(friend.location.last_update)
-                    )
+        val mappedFriends = friends.map { friend ->
+            val dist = userLocation?.let {
+                calculateDistanceUseCase.execute(
+                    it.lat, it.lon, it.alt,
+                    friend.location.lat, friend.location.lon, friend.location.alt
                 )
-            },
+            }
+            Friend(
+                username = friend.username,
+                status = friend.status,
+                state = friend.state,
+                location = Location(
+                    lat = friend.location.lat,
+                    lon = friend.location.lon,
+                    bearing = friend.location.bearing,
+                    alt = convertAltUseCase.execute(userLocation?.alt, friend.location.alt),
+                    rawAlt = friend.location.alt,
+                    accuracy = convertAccuracyUseCase.execute(friend.location.accuracy),
+                    rawAccuracy = friend.location.accuracy,
+                    lastUpdateTime = formatLastUpdate(friend.location.last_update),
+                    lastUpdateAge = convertLastUpdateUseCase.execute(friend.location.last_update)
+                ),
+                distance = dist,
+                formattedDistance = dist?.let { formatDistance(it) }
+            )
+        }.sortedBy { it.distance ?: Double.MAX_VALUE }
+
+        return ViewState(
+            friends = mappedFriends,
             addFriendNick = addFriendNick,
             deleteFriendDialogState = deleteFriendDialogState,
             selectedFriend = selectedFriend,

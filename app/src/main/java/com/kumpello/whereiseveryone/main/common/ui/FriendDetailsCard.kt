@@ -76,6 +76,14 @@ private fun FriendDetailsContent(
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            friend.formattedDistance?.let {
+                Text(
+                    text = "Distance: $it",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
+            }
             HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
             DetailItem(label = "Latitude", value = friend.location.lat.toString())
@@ -99,14 +107,14 @@ private fun FriendDetailsContent(
             ) {
                 Button.Animated(
                     text = "Close",
-                    width = 120
+                    width = 130
                 ) {
                     onDismiss()
                 }
                 Spacer(modifier = Modifier.size(8.dp))
                 Button.Animated(
                     text = "Navigate!",
-                    width = 120
+                    width = 130
                 ) {
                     onNavigate(friend)
                 }
@@ -144,6 +152,7 @@ fun FriendDetailsPreview() {
                 username = "JanuszAndrzejNowak",
                 status = "Doing something cool",
                 state = FriendState.ACCEPTED,
+                formattedDistance = "1.3km",
                 location = Location(
                     lat = 52.2297,
                     lon = 21.0122,

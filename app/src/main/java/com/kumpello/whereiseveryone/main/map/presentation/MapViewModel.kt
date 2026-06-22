@@ -12,7 +12,10 @@ import com.kumpello.whereiseveryone.common.entity.ScreenState
 import com.kumpello.whereiseveryone.common.presentation.BaseViewModel
 import com.kumpello.whereiseveryone.main.common.domain.manager.FriendsManager
 import com.kumpello.whereiseveryone.main.common.domain.usecase.CalculateBearingUseCase
+import com.kumpello.whereiseveryone.main.common.domain.usecase.CalculateDistanceUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertAccuracyUseCase
+import com.kumpello.whereiseveryone.common.extension.formatDistance
+import com.kumpello.whereiseveryone.common.presentation.AsyncState
 import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertAltUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertLastUpdateUseCase
 import com.kumpello.whereiseveryone.main.common.entity.AltDifference
@@ -41,7 +44,8 @@ class MapViewModel(
     private val convertAccuracyUseCase: ConvertAccuracyUseCase,
     private val convertAltUseCase: ConvertAltUseCase,
     private val convertLastUpdateUseCase: ConvertLastUpdateUseCase,
-    private val calculateBearingUseCase: CalculateBearingUseCase
+    private val calculateBearingUseCase: CalculateBearingUseCase,
+    private val calculateDistanceUseCase: CalculateDistanceUseCase
 ) : BaseViewModel<MapViewModel.State, MapViewModel.ViewState, MapViewModel.Event, MapViewModel.Action>(
     State()
 ) {
@@ -205,6 +209,12 @@ class MapViewModel(
             )
         }
         val mappedFriends = friends.map { friend ->
+            val dist = user?.let {
+                calculateDistanceUseCase.execute(
+                    it.lat, it.lon, it.alt,
+                    friend.location.lat, friend.location.lon, friend.location.alt
+                )
+            }
             Friend(
                 username = friend.username,
                 status = friend.status,
@@ -219,7 +229,9 @@ class MapViewModel(
                     lastUpdateAge = convertLastUpdateUseCase.execute(friend.location.last_update),
                     rawAlt = 0.0,
                     rawAccuracy = 0.0f
-                )
+                ),
+                distance = dist,
+                formattedDistance = dist?.let { formatDistance(it) }
             )
         }
         val bearing = if (mappedUser != null && navigatingFriend != null) {

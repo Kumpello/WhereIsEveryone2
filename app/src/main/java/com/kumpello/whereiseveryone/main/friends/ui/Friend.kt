@@ -2,6 +2,7 @@ package com.kumpello.whereiseveryone.main.friends.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -58,12 +59,20 @@ fun Friend(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                modifier = Modifier.padding(start = 8.dp),
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                fontSize = MaterialTheme.typography.headlineSmall.fontSize,
-                text = friend.username
-            ) //TODO: Add friend since, needs to be added on server
+            Column(modifier = Modifier.padding(start = 8.dp)) {
+                Text(
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    fontSize = MaterialTheme.typography.headlineSmall.fontSize,
+                    text = friend.username
+                )
+                friend.formattedDistance?.let {
+                    Text(
+                        text = it,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
             Row(
                 modifier = Modifier
                     .fillMaxSize()
