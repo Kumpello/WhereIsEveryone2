@@ -282,7 +282,8 @@ fun FriendsSymbolLayer(
                         )
 
                         iconHaloColor(
-                            Color.RED //TODO Change if precision is UNKNOWN, settle for some color scheme
+                            if (Expression.get("haloWidth").literalValue == (-1).toDouble()
+                                ) Color.GREEN else Color.RED
                         )
 
                         iconHaloWidth(

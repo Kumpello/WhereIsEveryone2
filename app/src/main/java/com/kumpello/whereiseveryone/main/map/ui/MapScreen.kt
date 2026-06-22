@@ -2,6 +2,13 @@ package com.kumpello.whereiseveryone.main.map.ui
 
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationEndReason
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -22,15 +28,17 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -44,12 +52,20 @@ import com.kumpello.whereiseveryone.common.entity.ScreenState
 import com.kumpello.whereiseveryone.common.ui.theme.Shapes
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.common.MainRoute
+import com.kumpello.whereiseveryone.main.common.entity.AccuracyLevel
+import com.kumpello.whereiseveryone.main.common.entity.AltDifference
+import com.kumpello.whereiseveryone.main.common.entity.Friend
+import com.kumpello.whereiseveryone.main.common.entity.FriendState
+import com.kumpello.whereiseveryone.main.common.entity.LastUpdateAge
+import com.kumpello.whereiseveryone.main.common.entity.Location
 import com.kumpello.whereiseveryone.main.common.ui.FriendDetailsCard
 import com.kumpello.whereiseveryone.main.common.ui.Notification
 import com.kumpello.whereiseveryone.main.map.entity.MapSettings
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.launch
 
 @Composable
 fun MapScreen(
@@ -104,7 +120,7 @@ fun MapScreen(
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .safeDrawingPadding()
-                    .padding(16.dp),
+                    .padding(8.dp),
                 bearing = viewState.bearingToFriend,
                 friendName = viewState.navigatingFriend.username,
                 onCancel = { event(MapViewModel.Event.CancelNavigation) }
@@ -160,9 +176,37 @@ private fun NavigationCompass(
     friendName: String,
     onCancel: () -> Unit
 ) {
+    val scale = remember { Animatable(1f) }
+
     Card(
-        modifier = modifier.zIndex(1001f),
-        shape = Shapes.medium,
+        modifier = modifier
+            .zIndex(1001f)
+            .scale(scale.value)
+            .pointerInput(Unit) {
+                coroutineScope {
+                    awaitEachGesture {
+                        awaitFirstDown()
+                        val animationJob = this@coroutineScope.launch {
+                            val result = scale.animateTo(
+                                targetValue = 0f,
+                                animationSpec = tween(durationMillis = 2000, easing = LinearEasing)
+                            )
+                            if (result.endReason == AnimationEndReason.Finished) {
+                                onCancel()
+                            }
+                        }
+                        waitForUpOrCancellation()
+                        animationJob.cancel()
+                        this@coroutineScope.launch {
+                            scale.animateTo(
+                                targetValue = 1f,
+                                animationSpec = tween(durationMillis = 300)
+                            )
+                        }
+                    }
+                }
+            },
+        shape = Shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f)
         )
@@ -173,11 +217,11 @@ private fun NavigationCompass(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Icon(
-                imageVector = Icons.Default.PlayArrow,
+                imageVector = Icons.Default.KeyboardArrowUp, //TODO: Change
                 contentDescription = "Direction to $friendName",
                 modifier = Modifier
                     .size(32.dp)
-                    .rotate(bearing - 90f), // PlayArrow points right (90 deg)
+                    .rotate(bearing),
                 tint = MaterialTheme.colorScheme.primary
             )
             Column {
@@ -190,13 +234,6 @@ private fun NavigationCompass(
                     text = "${bearing.toInt()}°",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            IconButton(onClick = onCancel, modifier = Modifier.size(24.dp)) {
-                Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = "Cancel navigation",
-                    tint = MaterialTheme.colorScheme.error
                 )
             }
         }
@@ -266,8 +303,23 @@ fun MapScreenPreview() {
                 userMessage = "Status message",
                 userMessageField = "",
                 selectedFriend = null,
-                navigatingFriend = null,
-                bearingToFriend = null
+                navigatingFriend = Friend(
+                    username = "Janusz",
+                    status = "Doing something",
+                    state = FriendState.ACCEPTED,
+                    location = Location(
+                        lat = 0.0,
+                        lon = 0.0,
+                        bearing = null,
+                        alt = AltDifference.SOMEWHAT_SAME,
+                        rawAlt = 0.0,
+                        accuracy = AccuracyLevel.HIGH,
+                        rawAccuracy = 5f,
+                        lastUpdateTime = "",
+                        lastUpdateAge = LastUpdateAge.FRESH
+                    )
+                ),
+                bearingToFriend = 45f
             ),
             action = emptyFlow(),
             event = {}
