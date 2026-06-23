@@ -41,12 +41,12 @@ import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
 fun Friend(
     modifier: Modifier = Modifier,
     friend: Friend,
-    trigger: (FriendsViewModel.Command) -> Unit,
+    trigger: (FriendsViewModel.Event) -> Unit,
 ) {
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clickable { trigger(FriendsViewModel.Command.SelectFriend(friend)) },
+            .clickable { trigger(FriendsViewModel.Event.SelectFriend(friend)) },
         colors = CardDefaults.cardColors().copy(
             containerColor = MaterialTheme.colorScheme.secondaryContainer
         ),
@@ -93,10 +93,10 @@ fun Friend(
 @Composable
 private fun AcceptedButtons(
     friend: Friend,
-    trigger: (FriendsViewModel.Command) -> Unit,
+    trigger: (FriendsViewModel.Event) -> Unit,
 ) {
     IconButton( //TODO: Add stop share location switch, needs work on server
-        onClick = { trigger(FriendsViewModel.Command.DeleteFriend(friend.username)) },
+        onClick = { trigger(FriendsViewModel.Event.DeleteFriend(friend.username)) },
         modifier = Modifier
             .height(50.dp)
     ) {
@@ -112,10 +112,10 @@ private fun AcceptedButtons(
 @Composable
 private fun PendingIncomingButtons(
     friend: Friend,
-    trigger: (FriendsViewModel.Command) -> Unit,
+    trigger: (FriendsViewModel.Event) -> Unit,
 ) {
     IconButton(
-        onClick = { trigger(FriendsViewModel.Command.AcceptFriend(friend.username)) },
+        onClick = { trigger(FriendsViewModel.Event.AcceptFriend(friend.username)) },
         modifier = Modifier
             .height(50.dp)
     ) {
@@ -127,7 +127,7 @@ private fun PendingIncomingButtons(
         )
     }
     IconButton(
-        onClick = { trigger(FriendsViewModel.Command.RejectFriend(friend.username)) },
+        onClick = { trigger(FriendsViewModel.Event.RejectFriend(friend.username)) },
         modifier = Modifier
             .height(50.dp)
     ) {
@@ -143,10 +143,10 @@ private fun PendingIncomingButtons(
 @Composable
 private fun PendingOutgoingButtons(
     friend: Friend,
-    trigger: (FriendsViewModel.Command) -> Unit,
+    trigger: (FriendsViewModel.Event) -> Unit,
 ) {
     IconButton(
-        onClick = { trigger(FriendsViewModel.Command.RejectFriend(friend.username)) },
+        onClick = { trigger(FriendsViewModel.Event.RejectFriend(friend.username)) },
         modifier = Modifier
             .height(50.dp)
     ) {

@@ -46,6 +46,27 @@ class LocationRepositoryImpl(
         }
     }
 
+    override suspend fun wipeLocation(token: String): CodeResponse {
+        val response = locationApi.wipeLocation(
+            "Bearer $token"
+        )
+        return when {
+            response.isSuccessful -> {
+                Timber.tag(TAG).d("Location wiped successfully")
+                CodeResponse.SuccessNoContent
+            }
+
+            else -> {
+                Timber.tag(TAG).e("Error wiping location: %s", response.errorBody()?.string())
+                CodeResponse.ErrorData(
+                    response.code(),
+                    response.errorBody().toString(),
+                    response.message()
+                )
+            }
+        }
+    }
+
     companion object {
         private const val TAG = "LOCATION_REPO"
     }

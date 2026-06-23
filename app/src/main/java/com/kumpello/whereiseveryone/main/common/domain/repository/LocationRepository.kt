@@ -13,4 +13,8 @@ sealed interface LocationRepository {
         accuracy: Float,
         lastUpdate: Instant
     ): CodeResponse
+
+    suspend fun wipeLocation(
+        token: String
+    ): CodeResponse
 }

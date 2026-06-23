@@ -10,4 +10,7 @@ import retrofit2.http.Header
 interface LocationApi {
     @HTTP(method = "PUT", path = "me/location", hasBody = true)
     suspend fun sendLocation(@Header("Authorization") token:String, @Body requestData: LocationRequest): Response<ResponseBody>
+
+    @HTTP(method = "DELETE", path = "me/location", hasBody = false)
+    suspend fun wipeLocation(@Header("Authorization") token:String): Response<ResponseBody>
 }

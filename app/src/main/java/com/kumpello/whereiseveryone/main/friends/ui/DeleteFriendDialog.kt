@@ -17,21 +17,21 @@ import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
 @Composable
 fun DeleteFriendDialog(
     friend: Friend,
-    trigger: (FriendsViewModel.Command) -> Unit,
+    trigger: (FriendsViewModel.Event) -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = {
             // Dismiss the dialog when the user clicks outside the dialog or on the back button.
             // If you want to disable that functionality, simply leave this block empty.
-            trigger(FriendsViewModel.Command.CloseDeleteFriendDialog)
+            trigger(FriendsViewModel.Event.CloseDeleteFriendDialog)
         },
         confirmButton = {
             TextButton(
                 onClick = {
                     // perform the confirm action and
                     // close the dialog
-                    trigger(FriendsViewModel.Command.DeleteFriend(friend.username))
-                    trigger(FriendsViewModel.Command.CloseDeleteFriendDialog)
+                    trigger(FriendsViewModel.Event.DeleteFriend(friend.username))
+                    trigger(FriendsViewModel.Event.CloseDeleteFriendDialog)
                 }
             ) {
                 Text(text = stringResource(R.string.confirm))
@@ -41,7 +41,7 @@ fun DeleteFriendDialog(
             TextButton(
                 onClick = {
                     // close the dialog
-                    trigger(FriendsViewModel.Command.CloseDeleteFriendDialog)
+                    trigger(FriendsViewModel.Event.CloseDeleteFriendDialog)
                 }
             ) {
                 Text(text = stringResource(R.string.dismiss))

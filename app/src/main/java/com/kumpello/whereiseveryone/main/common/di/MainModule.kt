@@ -92,7 +92,7 @@ val mainModule = module {
     single { GetPermissionsStatusUseCase(get()) }
     single { GetNeededPermissionsUseCase() }
     single { RefreshTokenUseCase(get(), get(), get()) }
-    single { WipeLocationUseCase() }
+    single { WipeLocationUseCase(get(), get()) }
     single { GetCurrentAuthTokenUseCase(get()) }
     single { GetCurrentRefreshTokenUseCase(get()) }
     single { SaveKeyUseCase(get()) }

@@ -47,4 +47,9 @@
     <string name="confirm">Confirm</string>
     <string name="dismiss">Dismiss</string>
     <string name="expand_colapse_icon">Expand/Colapse icon</string>
+    <string name="location_wiped_correctly_sharing_stoped">Location wiped correctly, sharing stoped!</string>
+    <string name="error_wiping_location">Error wiping location!</string>
+    <string name="settings_stop_sharing_location">Stop sharing location</string>
+    <string name="settings_start_sharing_location">Start sharing location</string>
+    <string name="settings_delete_location_data">Delete your location data</string>
 </resources>

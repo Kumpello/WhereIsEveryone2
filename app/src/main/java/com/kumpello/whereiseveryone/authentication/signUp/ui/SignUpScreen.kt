@@ -87,7 +87,7 @@ fun SignUpScreen(
 @Composable
 fun SignUpScreen(
     viewState: SignUpViewModel.ViewState,
-    trigger: (SignUpViewModel.Command) -> Unit,
+    trigger: (SignUpViewModel.Event) -> Unit,
 ) {
     Column(
         verticalArrangement = Arrangement.Top,
@@ -119,7 +119,7 @@ fun SignUpScreen(
                 label = "Username",
                 value = viewState.username,
                 onValueChange = { value ->
-                    trigger(SignUpViewModel.Command.SetUsername(value))
+                    trigger(SignUpViewModel.Event.SetUsername(value))
                 }
             )
 
@@ -129,7 +129,7 @@ fun SignUpScreen(
                 label = "Password",
                 value = viewState.password,
                 onValueChange = { password ->
-                    trigger(SignUpViewModel.Command.SetPassword(password))
+                    trigger(SignUpViewModel.Event.SetPassword(password))
                 }
             )
 
@@ -147,7 +147,7 @@ fun SignUpScreen(
                 text = "Sign up",
                 textSize = 26,
                 height = 50,
-            ) { trigger(SignUpViewModel.Command.OnSignUpClick) }
+            ) { trigger(SignUpViewModel.Event.OnSignUpClick) }
 
             Spacer(modifier = Modifier.height(20.dp))
 
@@ -155,7 +155,7 @@ fun SignUpScreen(
                 modifier = Modifier
                     .padding(horizontal = 40.dp),
                 text = "Log in here",
-            ) { trigger(SignUpViewModel.Command.NavigateLogin) }
+            ) { trigger(SignUpViewModel.Event.NavigateLogin) }
         }
     }
 }

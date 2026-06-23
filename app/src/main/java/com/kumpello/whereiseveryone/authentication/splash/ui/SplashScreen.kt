@@ -31,7 +31,7 @@ fun SplashScreen(
 
     LaunchedEffect(Unit) {
         delay(2000.milliseconds)
-        viewModel.trigger(SplashViewModel.Command.NavigateToNextDestination)
+        viewModel.trigger(SplashViewModel.Event.NavigateToNextDestination)
     }
 
     LaunchedEffect(Unit) {

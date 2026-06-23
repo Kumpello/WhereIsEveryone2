@@ -14,13 +14,13 @@ class SignUpViewModel(
     private val signUpUseCase: SignUpUseCase,
     private val validatePasswordUseCase: ValidatePasswordUseCase,
     private val validateLoginInputUseCase: ValidateLoginInputUseCase
-) : BaseViewModel<SignUpViewModel.State, SignUpViewModel.ViewState, SignUpViewModel.Command, SignUpViewModel.Action>(
+) : BaseViewModel<SignUpViewModel.State, SignUpViewModel.ViewState, SignUpViewModel.Event, SignUpViewModel.Action>(
     State()
 ) {
 
-    override fun reduce(state: State, event: Command): ReducerResult<State, Command, Action> {
+    override fun reduce(state: State, event: Event): ReducerResult<State, Event, Action> {
         return when (event) {
-            Command.OnSignUpClick -> state.copy(signUpState = AsyncState.Loading()).toResult(
+            Event.OnSignUpClick -> state.copy(signUpState = AsyncState.Loading()).toResult(
                 SideEffect.AsyncWork {
                     try {
                         val response = signUpUseCase.execute(
@@ -29,16 +29,16 @@ class SignUpViewModel(
                         )
 
                         when (response) {
-                            SignUpUseCase.Response.Success -> Command.OnSignUpResult(true)
-                            SignUpUseCase.Response.Error -> Command.OnSignUpResult(false)
+                            SignUpUseCase.Response.Success -> Event.OnSignUpResult(true)
+                            SignUpUseCase.Response.Error -> Event.OnSignUpResult(false)
                         }
                     } catch (e: Exception) {
-                        Command.OnSignUpResult(false, e)
+                        Event.OnSignUpResult(false, e)
                     }
                 }
             )
 
-            is Command.OnSignUpResult -> {
+            is Event.OnSignUpResult -> {
                 if (event.success) {
                     Timber.tag(TAG).d("SignUp succeeded!")
                     state.copy(signUpState = AsyncState.Success(Unit))
@@ -51,13 +51,13 @@ class SignUpViewModel(
                 }
             }
 
-            Command.NavigateLogin -> state.toResult(SideEffect.Effect(Action.NavigateLogin))
+            Event.NavigateLogin -> state.toResult(SideEffect.Effect(Action.NavigateLogin))
 
-            is Command.SetUsername -> state.copy(
+            is Event.SetUsername -> state.copy(
                 username = validateLoginInputUseCase.execute(event.username)
             ).toResult()
 
-            is Command.SetPassword -> state.copy(
+            is Event.SetPassword -> state.copy(
                 password = event.password
             ).toResult()
         }
@@ -79,12 +79,12 @@ class SignUpViewModel(
         data object NavigateLogin : Action()
     }
 
-    sealed class Command {
-        data object OnSignUpClick : Command()
-        data class SetUsername(val username: String) : Command()
-        data class SetPassword(val password: String) : Command()
-        data object NavigateLogin : Command()
-        data class OnSignUpResult(val success: Boolean, val error: Throwable? = null) : Command()
+    sealed class Event {
+        data object OnSignUpClick : Event()
+        data class SetUsername(val username: String) : Event()
+        data class SetPassword(val password: String) : Event()
+        data object NavigateLogin : Event()
+        data class OnSignUpResult(val success: Boolean, val error: Throwable? = null) : Event()
     }
 
     data class State(

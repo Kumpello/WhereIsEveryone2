@@ -102,7 +102,7 @@ fun FriendsScreen(
             Lifecycle.State.STARTED
         ) {
             while (true) {
-                viewModel.trigger(FriendsViewModel.Command.CheckFriends)
+                viewModel.trigger(FriendsViewModel.Event.CheckFriends)
 
                 delay(10.seconds)
             }
@@ -131,7 +131,7 @@ fun FriendsScreen(
 @Composable
 private fun FriendsScreen(
     viewState: FriendsViewModel.ViewState,
-    trigger: (FriendsViewModel.Command) -> Unit,
+    trigger: (FriendsViewModel.Event) -> Unit,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         if (viewState.deleteFriendDialogState is DeleteFriendDialogState.Open) {
@@ -143,9 +143,9 @@ private fun FriendsScreen(
         viewState.selectedFriend?.let { friend ->
             FriendDetailsCard(
                 friend = friend,
-                onDismiss = { trigger(FriendsViewModel.Command.ClearSelectedFriend) },
+                onDismiss = { trigger(FriendsViewModel.Event.ClearSelectedFriend) },
                 onNavigate = { _ ->
-                    trigger(FriendsViewModel.Command.ClearSelectedFriend)
+                    trigger(FriendsViewModel.Event.ClearSelectedFriend)
                 }
             )
         }
@@ -224,7 +224,7 @@ private fun FriendsScreen(
                                 unfocusedIndicatorColor = MaterialTheme.colorScheme.outline
                             ),
                             onValueChange = { nick ->
-                                trigger(FriendsViewModel.Command.SetAddFriendNick(nick))
+                                trigger(FriendsViewModel.Event.SetAddFriendNick(nick))
                             }
                         )
                         Spacer(Modifier.size(20.dp))
@@ -233,7 +233,7 @@ private fun FriendsScreen(
                             width = 250,
                             enabled = !viewState.actionState.isLoading
                         ) {
-                            trigger(FriendsViewModel.Command.AddFriend)
+                            trigger(FriendsViewModel.Event.AddFriend)
                         }
                     }
                 }
@@ -329,7 +329,7 @@ private fun FriendsScreen(
 private fun FriendsCategory(
     modifier: Modifier = Modifier,
     friends: List<Friend>,
-    trigger: (FriendsViewModel.Command) -> Unit,
+    trigger: (FriendsViewModel.Event) -> Unit,
 ) {
     LazyColumn(
         modifier = modifier

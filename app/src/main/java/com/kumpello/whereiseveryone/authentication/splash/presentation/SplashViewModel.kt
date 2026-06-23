@@ -11,7 +11,7 @@ import timber.log.Timber
 class SplashViewModel(
     private val getCurrentAuthTokenUseCase: GetCurrentAuthTokenUseCase,
     private val refreshTokenUseCase: RefreshTokenUseCase
-) : BaseViewModel<SplashViewModel.State, SplashViewModel.ViewState, SplashViewModel.Command, SplashViewModel.Action>(
+) : BaseViewModel<SplashViewModel.State, SplashViewModel.ViewState, SplashViewModel.Event, SplashViewModel.Action>(
     State()
 ) {
 
@@ -35,18 +35,18 @@ class SplashViewModel(
         }
     }
 
-    override fun reduce(state: State, event: Command): ReducerResult<State, Command, Action> {
+    override fun reduce(state: State, event: Event): ReducerResult<State, Event, Action> {
         return when (event) {
-            Command.NavigateToNextDestination -> {
+            Event.NavigateToNextDestination -> {
                 Timber.tag(TAG).d("Navigating to next destination from Splash")
                 state.toResult(
                     SideEffect.AsyncWork {
-                        Command.OnAuthChecked(isUserLogged())
+                        Event.OnAuthChecked(isUserLogged())
                     }
                 )
             }
 
-            is Command.OnAuthChecked -> {
+            is Event.OnAuthChecked -> {
                 Timber.tag(TAG).d("Auth checked: logged in = %s", event.isLogged)
                 state.toResult(
                     SideEffect.Effect(if (event.isLogged) Action.NavigateMain else Action.NavigateSignUp)
@@ -67,9 +67,9 @@ class SplashViewModel(
 
     }
 
-    sealed class Command {
-        data object NavigateToNextDestination : Command()
-        data class OnAuthChecked(val isLogged: Boolean) : Command()
+    sealed class Event {
+        data object NavigateToNextDestination : Event()
+        data class OnAuthChecked(val isLogged: Boolean) : Event()
     }
 
     data class State(

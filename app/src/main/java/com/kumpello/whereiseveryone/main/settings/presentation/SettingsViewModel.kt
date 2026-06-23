@@ -1,14 +1,19 @@
 package com.kumpello.whereiseveryone.main.settings.presentation
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.viewModelScope
 import com.kumpello.whereiseveryone.common.presentation.BaseViewModel
 import com.kumpello.whereiseveryone.main.common.domain.usecase.WipeLocationUseCase
 import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceImpl
 import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceInterface
 import androidx.compose.runtime.Immutable
+import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
+import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
 import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
 import com.kumpello.whereiseveryone.common.domain.ucecase.SaveKeyUseCase
+import com.kumpello.whereiseveryone.common.presentation.BaseViewModel.SideEffect.*
+import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel.Event.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.InjectedParam
@@ -19,43 +24,59 @@ class SettingsViewModel(
     private val wipeLocationUseCase: WipeLocationUseCase,
     private val saveKeyUseCase: SaveKeyUseCase,
     private val getKeyUseCase: GetKeyUseCase
-) : BaseViewModel<SettingsViewModel.State, SettingsViewModel.ViewState, SettingsViewModel.Command, SettingsViewModel.Action>(
+) : BaseViewModel<SettingsViewModel.State, SettingsViewModel.ViewState, SettingsViewModel.Event, SettingsViewModel.Action>(
     State()
 ) {
 
     init {
         viewModelScope.launch(Dispatchers.Main) {
             LocationServiceImpl.stateFlow.collect { state ->
-                trigger(Command.OnLocationServiceStateUpdate(state))
+                trigger(OnLocationServiceStateUpdate(state))
             }
         }
         viewModelScope.launch(Dispatchers.IO) {
             val isEnabled = getKeyUseCase.getValue(WhereIsEveryoneApplication.LOCATION_SHARING_ENABLED_KEY)
                 ?.toBoolean() ?: true
-            trigger(Command.OnLocationServiceStateUpdate(isEnabled))
+            trigger(OnLocationServiceStateUpdate(isEnabled))
         }
     }
 
-    override fun reduce(state: State, event: Command): ReducerResult<State, Command, Action> {
+    override fun reduce(state: State, event: Event): ReducerResult<State, Event, Action> {
         return when (event) {
-            is Command.OnLocationServiceStateUpdate -> {
+            is OnLocationServiceStateUpdate -> {
                 Timber.tag(TAG).d("Location service state updated: %s", event.isRunning)
                 state.copy(locationServiceState = event.isRunning).toResult()
             }
 
-            Command.ClearData -> {
+            ClearData -> {
                 Timber.tag(TAG).d("Clearing user location data and stopping service")
-                state.toResult(SideEffect.AsyncWork {
-                    runCatching {
-                        wipeLocationUseCase.execute()
+                state.toResult(AsyncWork {
+                    try {
+                        Timber.tag(TAG).d("Sending wipe location request to backend")
+                        when (val response = wipeLocationUseCase.execute()) {
+                            is CodeResponse.ErrorData -> {
+                                Timber.tag(TAG).e("Error wiping location: %s", response.toString())
+                                Toast(R.string.error_wiping_location)
+                            }
+
+                            CodeResponse.SuccessNoContent -> {
+                                Timber.tag(TAG).d("Location wiped successfully")
+                                locationServiceInterface.stopLocationService()
+                                saveKeyUseCase.saveValue(
+                                    WhereIsEveryoneApplication.LOCATION_SHARING_ENABLED_KEY,
+                                    "false"
+                                )
+                                OnDataCleared
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Timber.tag(TAG).e("Exception when wiping location: %s", e.message)
+                        Toast(R.string.error_wiping_location)
                     }
-                    locationServiceInterface.stopLocationService()
-                    saveKeyUseCase.saveValue(WhereIsEveryoneApplication.LOCATION_SHARING_ENABLED_KEY, "false")
-                    Command.OnDataCleared
                 })
             }
 
-            Command.SwitchLocationServiceState -> {
+            SwitchLocationServiceState -> {
                 val newState = !state.locationServiceState
                 Timber.tag(TAG).d("Switching location service state, new state: %s", newState)
                 if (state.locationServiceState) {
@@ -63,54 +84,62 @@ class SettingsViewModel(
                 } else {
                     locationServiceInterface.startLocationService()
                 }
-                state.toResult(SideEffect.AsyncWork {
-                    saveKeyUseCase.saveValue(WhereIsEveryoneApplication.LOCATION_SHARING_ENABLED_KEY, newState.toString())
+                state.toResult(AsyncWork {
+                    saveKeyUseCase.saveValue(
+                        WhereIsEveryoneApplication.LOCATION_SHARING_ENABLED_KEY,
+                        newState.toString()
+                    )
                     // We don't need to return a command here because LocationServiceImpl.stateFlow will trigger update
-                    Command.NoOp
+                    NoOp
                 })
             }
 
-            Command.OnDataCleared -> {
+            OnDataCleared -> {
                 Timber.tag(TAG).d("User data cleared successfully")
-                state.toResult()
+                state.toResult(InternalEvent(Toast(R.string.location_wiped_correctly_sharing_stoped)))
             }
 
-            Command.NoOp -> state.toResult()
+            is Toast -> state.toResult(Effect(Action.Toast(event.stringId)))
+
+            NoOp -> state.toResult()
         }
     }
 
     override fun State.toViewState(): ViewState {
         return ViewState(
             isLocationServiceRunning = locationServiceState,
-            locationSwitchText = when(locationServiceState) {
-                true -> "Stop sharing location"
-                false -> "Start sharing location"
+            locationSwitchTextId = if (locationServiceState) {
+                R.string.settings_stop_sharing_location
+            } else {
+                R.string.settings_start_sharing_location
             },
-            deleteLocationData = "Delete your location data"
+            deleteLocationDataId = R.string.settings_delete_location_data
         )
     }
 
     sealed class Action {
         data object BackToMap : Action()
+        data class Toast(@param:StringRes val id: Int) : Action()
     }
 
-    sealed class Command {
-        data class OnLocationServiceStateUpdate(val isRunning: Boolean) : Command()
-        data object ClearData : Command()
-        data object SwitchLocationServiceState : Command()
-        data object OnDataCleared : Command()
-        data object NoOp : Command()
+    sealed class Event {
+        data class OnLocationServiceStateUpdate(val isRunning: Boolean) : Event()
+        data object ClearData : Event()
+        data object SwitchLocationServiceState : Event()
+        data object OnDataCleared : Event()
+        data class Toast(@param:StringRes val stringId: Int) : Event()
+        data object NoOp : Event()
     }
 
     data class State(
-        val locationServiceState: Boolean = true
+        val locationServiceState: Boolean = true,
     )
 
     @Immutable
     data class ViewState(
         val isLocationServiceRunning: Boolean,
-        val locationSwitchText: String,
-        val deleteLocationData: String,
+        @param:StringRes val locationSwitchTextId: Int,
+        @param:StringRes val deleteLocationDataId: Int,
     )
 
     companion object {
