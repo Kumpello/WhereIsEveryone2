@@ -6,6 +6,9 @@ import com.kumpello.whereiseveryone.main.common.domain.usecase.WipeLocationUseCa
 import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceImpl
 import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceInterface
 import androidx.compose.runtime.Immutable
+import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
+import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
+import com.kumpello.whereiseveryone.common.domain.ucecase.SaveKeyUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.InjectedParam
@@ -13,7 +16,9 @@ import timber.log.Timber
 
 class SettingsViewModel(
     @InjectedParam private val locationServiceInterface: LocationServiceInterface,
-    private val wipeLocationUseCase: WipeLocationUseCase
+    private val wipeLocationUseCase: WipeLocationUseCase,
+    private val saveKeyUseCase: SaveKeyUseCase,
+    private val getKeyUseCase: GetKeyUseCase
 ) : BaseViewModel<SettingsViewModel.State, SettingsViewModel.ViewState, SettingsViewModel.Command, SettingsViewModel.Action>(
     State()
 ) {
@@ -23,6 +28,11 @@ class SettingsViewModel(
             LocationServiceImpl.stateFlow.collect { state ->
                 trigger(Command.OnLocationServiceStateUpdate(state))
             }
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            val isEnabled = getKeyUseCase.getValue(WhereIsEveryoneApplication.LOCATION_SHARING_ENABLED_KEY)
+                ?.toBoolean() ?: true
+            trigger(Command.OnLocationServiceStateUpdate(isEnabled))
         }
     }
 
@@ -34,30 +44,38 @@ class SettingsViewModel(
             }
 
             Command.ClearData -> {
-                Timber.tag(TAG).d("Clearing user location data")
+                Timber.tag(TAG).d("Clearing user location data and stopping service")
                 state.toResult(SideEffect.AsyncWork {
                     runCatching {
                         wipeLocationUseCase.execute()
                     }
-                    // No event to return for now, maybe OnDataCleared in the future
+                    locationServiceInterface.stopLocationService()
+                    saveKeyUseCase.saveValue(WhereIsEveryoneApplication.LOCATION_SHARING_ENABLED_KEY, "false")
                     Command.OnDataCleared
                 })
             }
 
             Command.SwitchLocationServiceState -> {
-                Timber.tag(TAG).d("Switching location service state, current: %s", state.locationServiceState)
+                val newState = !state.locationServiceState
+                Timber.tag(TAG).d("Switching location service state, new state: %s", newState)
                 if (state.locationServiceState) {
                     locationServiceInterface.stopLocationService()
                 } else {
                     locationServiceInterface.startLocationService()
                 }
-                state.toResult()
+                state.toResult(SideEffect.AsyncWork {
+                    saveKeyUseCase.saveValue(WhereIsEveryoneApplication.LOCATION_SHARING_ENABLED_KEY, newState.toString())
+                    // We don't need to return a command here because LocationServiceImpl.stateFlow will trigger update
+                    Command.NoOp
+                })
             }
 
             Command.OnDataCleared -> {
                 Timber.tag(TAG).d("User data cleared successfully")
                 state.toResult()
             }
+
+            Command.NoOp -> state.toResult()
         }
     }
 
@@ -81,6 +99,7 @@ class SettingsViewModel(
         data object ClearData : Command()
         data object SwitchLocationServiceState : Command()
         data object OnDataCleared : Command()
+        data object NoOp : Command()
     }
 
     data class State(

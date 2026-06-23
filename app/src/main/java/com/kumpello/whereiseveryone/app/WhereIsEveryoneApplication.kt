@@ -38,6 +38,7 @@ class WhereIsEveryoneApplication : Application() {
         const val FRIENDS_KEY = "friends"
         const val LATITUDE_KEY = "lat"
         const val LONGITUDE_KEY = "lng"
+        const val LOCATION_SHARING_ENABLED_KEY = "location_sharing_enabled"
     }
 
 }

@@ -65,7 +65,9 @@ val mainModule = module {
     viewModel { (locationServiceInterface: LocationServiceInterface) ->
         SettingsViewModel(
             locationServiceInterface = locationServiceInterface,
-            wipeLocationUseCase = get()
+            wipeLocationUseCase = get(),
+            saveKeyUseCase = get(),
+            getKeyUseCase = get()
         )
     }
     viewModel { FriendsViewModel(

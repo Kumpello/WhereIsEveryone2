@@ -34,6 +34,9 @@ import com.kumpello.whereiseveryone.main.map.ui.MapScreen
 import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel
 import com.kumpello.whereiseveryone.main.settings.ui.SettingsScreen
 import kotlinx.coroutines.launch
+import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
+import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
+import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
 import timber.log.Timber
@@ -43,6 +46,8 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
     private val mapViewModel: MapViewModel by viewModel()
     private val friendsViewModel: FriendsViewModel by viewModel()
     private val settingsViewModel: SettingsViewModel by viewModel { parametersOf(this@MainActivity) }
+
+    private val getKeyUseCase: GetKeyUseCase by inject()
 
     private var locationService: LocationService? = null
     private var isLocationServiceBound: Boolean = false
@@ -75,7 +80,13 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
                         permissionsLauncher,
                         action.permissions
                     ) {
-                        initializeLocationServices()
+                        lifecycleScope.launch {
+                            val isEnabled = getKeyUseCase.getValue(WhereIsEveryoneApplication.LOCATION_SHARING_ENABLED_KEY)
+                                ?.toBoolean() ?: true
+                            if (isEnabled) {
+                                initializeLocationServices()
+                            }
+                        }
                     }
 
                     else -> Unit
@@ -86,10 +97,16 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
 
     override fun onStart() {
         super.onStart()
-        if (!isLocationServiceBound
-            && !mapViewModel.state.value.permissions.containsValue(false)
-        ) {
-            initializeLocationServices()
+        lifecycleScope.launch {
+            val isEnabled = getKeyUseCase.getValue(WhereIsEveryoneApplication.LOCATION_SHARING_ENABLED_KEY)
+                ?.toBoolean() ?: true
+
+            if (!isLocationServiceBound
+                && !mapViewModel.state.value.permissions.containsValue(false)
+                && isEnabled
+            ) {
+                initializeLocationServices()
+            }
         }
     }
 
