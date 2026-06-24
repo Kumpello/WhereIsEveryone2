@@ -2,9 +2,11 @@ package com.kumpello.whereiseveryone.main.common.ui
 
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -20,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.kumpello.whereiseveryone.common.ui.entity.Button
 import com.kumpello.whereiseveryone.common.ui.theme.Shapes
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
@@ -36,12 +39,20 @@ fun FriendDetailsCard(
     onDismiss: () -> Unit,
     onNavigate: (Friend) -> Unit
 ) {
-    Dialog(onDismissRequest = onDismiss) {
-        FriendDetailsContent(
-            friend = friend,
-            onDismiss = onDismiss,
-            onNavigate = onNavigate
-        )
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            FriendDetailsContent(
+                friend = friend,
+                onDismiss = onDismiss,
+                onNavigate = onNavigate
+            )
+        }
     }
 }
 
