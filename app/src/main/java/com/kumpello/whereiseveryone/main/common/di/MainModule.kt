@@ -22,7 +22,9 @@ import com.kumpello.whereiseveryone.main.friends.domain.usecase.AcceptFriendUseC
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.AddFriendUseCase
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.RejectFriendUseCase
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.RemoveFriendUseCase
+import com.kumpello.whereiseveryone.main.friends.presentation.AddFriendViewModel
 import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
+import com.kumpello.whereiseveryone.main.friends.presentation.ShareProfileViewModel
 import com.kumpello.whereiseveryone.main.map.domain.usecase.GetPermissionsStatusUseCase
 import com.kumpello.whereiseveryone.main.map.domain.usecase.UpdateStatusUseCase
 import androidx.room.Room
@@ -77,10 +79,10 @@ val mainModule = module {
         get(),
         get(),
         get(),
-        get(),
-        get(),
         get()
     ) }
+    viewModel { AddFriendViewModel(get()) }
+    viewModel { ShareProfileViewModel(get()) }
     single<LocationService> {
         LocationServiceImpl()
     }

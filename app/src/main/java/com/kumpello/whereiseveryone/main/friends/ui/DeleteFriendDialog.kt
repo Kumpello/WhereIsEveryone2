@@ -51,7 +51,7 @@ fun DeleteFriendDialog(
             Text(text = "Confirmation")
         },
         text = {
-            Text(text = "Are you sure you want to delete $friend.nick from your friends?")
+            Text(text = "Are you sure you want to delete ${friend.username} from your friends?")
         },
         modifier = Modifier
             .fillMaxWidth()

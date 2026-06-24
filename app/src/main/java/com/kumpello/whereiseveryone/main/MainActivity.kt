@@ -31,7 +31,8 @@ import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
 import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.common.MainRoute
-import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
+import com.kumpello.whereiseveryone.main.friends.presentation.AddFriendViewModel
+import com.kumpello.whereiseveryone.main.friends.presentation.ShareProfileViewModel
 import com.kumpello.whereiseveryone.main.friends.ui.FriendsScreen
 import com.kumpello.whereiseveryone.main.map.presentation.LocationService
 import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceImpl
@@ -49,7 +50,8 @@ import timber.log.Timber
 class MainActivity : ComponentActivity(), LocationServiceInterface {
 
     private val mapViewModel: MapViewModel by viewModel()
-    private val friendsViewModel: FriendsViewModel by viewModel()
+    private val addFriendViewModel: AddFriendViewModel by viewModel()
+    private val shareProfileViewModel: ShareProfileViewModel by viewModel()
     private val settingsViewModel: SettingsViewModel by viewModel { parametersOf(this@MainActivity) }
 
     private val getKeyUseCase: GetKeyUseCase by inject()
@@ -88,11 +90,9 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
         handleIntent(intent)
 
         lifecycleScope.launch {
-            friendsViewModel.action.collect { action ->
+            shareProfileViewModel.action.collect { action ->
                 when (action) {
-                    is FriendsViewModel.Action.TriggerNfcSharing -> {
-                        if (action.username == null) return@collect
-
+                    is ShareProfileViewModel.Action.TriggerNfcSharing -> {
                         val uri = "whereiseveryone://addfriend/${action.username}"
                         val message = NdefMessage(
                             arrayOf(
@@ -158,7 +158,7 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
     private fun handleIntent(intent: Intent?) {
         intent?.data?.let { uri ->
             if (uri.scheme == "whereiseveryone" && uri.host == "addfriend") {
-                friendsViewModel.trigger(FriendsViewModel.Event.OnUriReceived(uri))
+                addFriendViewModel.trigger(AddFriendViewModel.Event.OnUriReceived(uri))
             }
         }
     }
@@ -288,7 +288,7 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
                 MapScreen(navController = navController, viewModel = mapViewModel)
             }
             composable<MainRoute.Friends> {
-                FriendsScreen(navController = navController, viewModel = friendsViewModel)
+                FriendsScreen(navController = navController)
             }
             composable<MainRoute.Settings> {
                 SettingsScreen(navController = navController, viewModel = settingsViewModel)
