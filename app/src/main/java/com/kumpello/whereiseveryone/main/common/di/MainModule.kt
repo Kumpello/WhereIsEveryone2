@@ -12,7 +12,10 @@ import com.kumpello.whereiseveryone.main.common.domain.usecase.CalculateDistance
 import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertAccuracyUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertAltUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertLastUpdateUseCase
+import com.kumpello.whereiseveryone.main.common.domain.usecase.FormatLastUpdateUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.GetFriendsDataUseCase
+import com.kumpello.whereiseveryone.main.common.domain.usecase.MapFriendUseCase
+import com.kumpello.whereiseveryone.main.common.domain.usecase.MapLocationUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.SendLocationUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.WipeLocationUseCase
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.AcceptFriendUseCase
@@ -55,11 +58,9 @@ val mainModule = module {
             saveKeyUseCase = get(),
             updateStatusUseCase = get(),
             getPermissionsStatusUseCase = get(),
-            convertAccuracyUseCase = get(),
-            convertAltUseCase = get(),
-            convertLastUpdateUseCase = get(),
+            mapLocationUseCase = get(),
+            mapFriendUseCase = get(),
             calculateBearingUseCase = get(),
-            calculateDistanceUseCase = get()
         )
     }
     viewModel { (locationServiceInterface: LocationServiceInterface) ->
@@ -71,9 +72,6 @@ val mainModule = module {
         )
     }
     viewModel { FriendsViewModel(
-        get(),
-        get(),
-        get(),
         get(),
         get(),
         get(),
@@ -109,6 +107,9 @@ val mainModule = module {
     single { ConvertAccuracyUseCase() }
     single { ConvertAltUseCase() }
     single { ConvertLastUpdateUseCase() }
+    single { FormatLastUpdateUseCase() }
+    single { MapLocationUseCase(get(), get(), get()) }
+    single { MapFriendUseCase(get(), get(), get(), get(), get()) }
     single { CalculateBearingUseCase() }
     single { CalculateDistanceUseCase() }
 }

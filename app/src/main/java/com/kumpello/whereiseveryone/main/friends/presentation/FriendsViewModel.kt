@@ -1,23 +1,19 @@
 package com.kumpello.whereiseveryone.main.friends.presentation
 
 import androidx.annotation.StringRes
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.viewModelScope
 import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
 import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
 import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
 import com.kumpello.whereiseveryone.common.entity.ScreenState
-import com.kumpello.whereiseveryone.common.extension.formatDistance
 import com.kumpello.whereiseveryone.common.presentation.AsyncState
 import com.kumpello.whereiseveryone.common.presentation.BaseViewModel
-import com.kumpello.whereiseveryone.main.common.domain.usecase.CalculateDistanceUseCase
-import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertAccuracyUseCase
-import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertAltUseCase
-import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertLastUpdateUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.GetFriendsDataUseCase
+import com.kumpello.whereiseveryone.main.common.domain.usecase.MapFriendUseCase
 import com.kumpello.whereiseveryone.main.common.entity.Friend
 import com.kumpello.whereiseveryone.main.common.entity.FriendLocalData
-import com.kumpello.whereiseveryone.main.common.entity.Location
 import com.kumpello.whereiseveryone.main.common.entity.LocationData
 import com.kumpello.whereiseveryone.main.common.entity.toFriendState
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.AcceptFriendUseCase
@@ -26,14 +22,10 @@ import com.kumpello.whereiseveryone.main.friends.domain.usecase.RejectFriendUseC
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.RemoveFriendUseCase
 import com.kumpello.whereiseveryone.main.map.domain.model.FriendsResponse
 import com.kumpello.whereiseveryone.main.map.presentation.LocationService
-import androidx.compose.runtime.Immutable
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import kotlin.time.Clock
 import kotlin.time.Instant
-import java.time.Instant as JavaInstant
 
 class FriendsViewModel(
     private val addFriendUseCase: AddFriendUseCase,
@@ -41,12 +33,9 @@ class FriendsViewModel(
     private val getFriendsDataUseCase: GetFriendsDataUseCase,
     private val acceptFriendUseCase: AcceptFriendUseCase,
     private val rejectFriendUseCase: RejectFriendUseCase,
-    private val convertAccuracyUseCase: ConvertAccuracyUseCase,
-    private val convertAltUseCase: ConvertAltUseCase,
-    private val convertLastUpdateUseCase: ConvertLastUpdateUseCase,
     private val locationService: LocationService,
-    private val calculateDistanceUseCase: CalculateDistanceUseCase,
-    private val getKeyUseCase: GetKeyUseCase
+    private val getKeyUseCase: GetKeyUseCase,
+    private val mapFriendUseCase: MapFriendUseCase
 ) : BaseViewModel<FriendsViewModel.State, FriendsViewModel.ViewState, FriendsViewModel.Event, FriendsViewModel.Action>(
     State()
 ) {
@@ -232,30 +221,7 @@ class FriendsViewModel(
 
     override fun State.toViewState(): ViewState {
         val mappedFriends = friends.map { friend ->
-            val dist = userLocation?.let {
-                calculateDistanceUseCase.execute(
-                    it.lat, it.lon, it.alt,
-                    friend.location.lat, friend.location.lon, friend.location.alt
-                )
-            }
-            Friend(
-                username = friend.username,
-                status = friend.status,
-                state = friend.state,
-                location = Location(
-                    lat = friend.location.lat,
-                    lon = friend.location.lon,
-                    bearing = friend.location.bearing,
-                    alt = convertAltUseCase.execute(userLocation?.alt, friend.location.alt),
-                    rawAlt = friend.location.alt,
-                    accuracy = convertAccuracyUseCase.execute(friend.location.accuracy),
-                    rawAccuracy = friend.location.accuracy,
-                    lastUpdateTime = formatLastUpdate(friend.location.last_update),
-                    lastUpdateAge = convertLastUpdateUseCase.execute(friend.location.last_update)
-                ),
-                distance = dist,
-                formattedDistance = dist?.let { formatDistance(it) }
-            )
+            mapFriendUseCase.execute(friend, userLocation)
         }.sortedBy { it.distance ?: Double.MAX_VALUE }
 
         return ViewState(
@@ -266,14 +232,8 @@ class FriendsViewModel(
             actionState = actionState,
             isShareDialogOpen = isShareDialogOpen,
             username = username,
+            friendUsername = friendUsername
         )
-    }
-
-    private fun formatLastUpdate(instant: Instant): String {
-        val javaInstant = JavaInstant.parse(instant.toString())
-        val formatter = DateTimeFormatter.ofPattern("HH:mm:ss dd.MM.yyyy")
-            .withZone(ZoneId.systemDefault())
-        return formatter.format(javaInstant)
     }
 
     sealed class Action {
@@ -316,6 +276,7 @@ class FriendsViewModel(
         val actionState: AsyncState<Unit> = AsyncState.Idle,
         val isShareDialogOpen: Boolean = false,
         val username: String = "",
+        val friendUsername: String = ""
     )
 
     @Immutable
@@ -327,6 +288,7 @@ class FriendsViewModel(
         val actionState: AsyncState<Unit>,
         val isShareDialogOpen: Boolean,
         val username: String,
+        val friendUsername: String
     )
 
     sealed class DeleteFriendDialogState {

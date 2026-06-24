@@ -2,6 +2,7 @@ package com.kumpello.whereiseveryone.main.map.presentation
 
 import android.content.Context
 import androidx.annotation.StringRes
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.viewModelScope
 import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
@@ -12,13 +13,8 @@ import com.kumpello.whereiseveryone.common.entity.ScreenState
 import com.kumpello.whereiseveryone.common.presentation.BaseViewModel
 import com.kumpello.whereiseveryone.main.common.domain.manager.FriendsManager
 import com.kumpello.whereiseveryone.main.common.domain.usecase.CalculateBearingUseCase
-import com.kumpello.whereiseveryone.main.common.domain.usecase.CalculateDistanceUseCase
-import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertAccuracyUseCase
-import com.kumpello.whereiseveryone.common.extension.formatDistance
-import com.kumpello.whereiseveryone.common.presentation.AsyncState
-import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertAltUseCase
-import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertLastUpdateUseCase
-import com.kumpello.whereiseveryone.main.common.entity.AltDifference
+import com.kumpello.whereiseveryone.main.common.domain.usecase.MapFriendUseCase
+import com.kumpello.whereiseveryone.main.common.domain.usecase.MapLocationUseCase
 import com.kumpello.whereiseveryone.main.common.entity.Friend
 import com.kumpello.whereiseveryone.main.common.entity.FriendLocalData
 import com.kumpello.whereiseveryone.main.common.entity.Location
@@ -28,7 +24,6 @@ import com.kumpello.whereiseveryone.main.map.domain.model.FriendsResponse
 import com.kumpello.whereiseveryone.main.map.domain.usecase.GetPermissionsStatusUseCase
 import com.kumpello.whereiseveryone.main.map.domain.usecase.UpdateStatusUseCase
 import com.kumpello.whereiseveryone.main.map.entity.MapSettings
-import androidx.compose.runtime.Immutable
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import kotlin.time.Clock
@@ -41,11 +36,9 @@ class MapViewModel(
     private val getKeyUseCase: GetKeyUseCase,
     private val updateStatusUseCase: UpdateStatusUseCase,
     private val getPermissionsStatusUseCase: GetPermissionsStatusUseCase,
-    private val convertAccuracyUseCase: ConvertAccuracyUseCase,
-    private val convertAltUseCase: ConvertAltUseCase,
-    private val convertLastUpdateUseCase: ConvertLastUpdateUseCase,
+    private val mapLocationUseCase: MapLocationUseCase,
+    private val mapFriendUseCase: MapFriendUseCase,
     private val calculateBearingUseCase: CalculateBearingUseCase,
-    private val calculateDistanceUseCase: CalculateDistanceUseCase
 ) : BaseViewModel<MapViewModel.State, MapViewModel.ViewState, MapViewModel.Event, MapViewModel.Action>(
     State()
 ) {
@@ -195,44 +188,9 @@ class MapViewModel(
     }
 
     override fun State.toViewState(): ViewState {
-        val mappedUser = user?.let {
-            Location(
-                lat = it.lat,
-                lon = it.lon,
-                bearing = it.bearing,
-                alt = AltDifference.SOMEWHAT_SAME,
-                accuracy = convertAccuracyUseCase.execute(it.accuracy),
-                lastUpdateTime = it.last_update.toString(),
-                lastUpdateAge = convertLastUpdateUseCase.execute(it.last_update),
-                rawAlt = 0.0,
-                rawAccuracy = 0.0f
-            )
-        }
+        val mappedUser = user?.let { mapLocationUseCase.execute(it) }
         val mappedFriends = friends.map { friend ->
-            val dist = user?.let {
-                calculateDistanceUseCase.execute(
-                    it.lat, it.lon, it.alt,
-                    friend.location.lat, friend.location.lon, friend.location.alt
-                )
-            }
-            Friend(
-                username = friend.username,
-                status = friend.status,
-                state = friend.state,
-                location = Location(
-                    lat = friend.location.lat,
-                    lon = friend.location.lon,
-                    bearing = friend.location.bearing,
-                    alt = convertAltUseCase.execute(user?.alt, friend.location.alt),
-                    accuracy = convertAccuracyUseCase.execute(friend.location.accuracy),
-                    lastUpdateTime = friend.location.last_update.toString(),
-                    lastUpdateAge = convertLastUpdateUseCase.execute(friend.location.last_update),
-                    rawAlt = 0.0,
-                    rawAccuracy = 0.0f
-                ),
-                distance = dist,
-                formattedDistance = dist?.let { formatDistance(it) }
-            )
+            mapFriendUseCase.execute(friend, user)
         }
         val bearing = if (mappedUser != null && navigatingFriend != null) {
             calculateBearingUseCase.execute(
