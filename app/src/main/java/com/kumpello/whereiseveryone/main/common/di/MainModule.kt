@@ -35,7 +35,9 @@ import com.kumpello.whereiseveryone.main.common.domain.manager.FriendsManager
 import com.kumpello.whereiseveryone.main.map.presentation.LocationService
 import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceImpl
 import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceInterface
+import com.kumpello.whereiseveryone.main.map.presentation.MapScreenViewModel
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
+import com.kumpello.whereiseveryone.main.map.presentation.MessageViewModel
 import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
@@ -56,13 +58,21 @@ val mainModule = module {
         MapViewModel(
             locationService = get(),
             friendsManager = get(),
-            getKeyUseCase = get(),
-            saveKeyUseCase = get(),
-            updateStatusUseCase = get(),
-            getPermissionsStatusUseCase = get(),
             mapLocationUseCase = get(),
             mapFriendUseCase = get(),
-            calculateBearingUseCase = get(),
+            calculateBearingUseCase = get()
+        )
+    }
+    viewModel {
+        MapScreenViewModel(
+            getPermissionsStatusUseCase = get()
+        )
+    }
+    viewModel {
+        MessageViewModel(
+            saveKeyUseCase = get(),
+            getKeyUseCase = get(),
+            updateStatusUseCase = get(),
         )
     }
     viewModel { (locationServiceInterface: LocationServiceInterface) ->

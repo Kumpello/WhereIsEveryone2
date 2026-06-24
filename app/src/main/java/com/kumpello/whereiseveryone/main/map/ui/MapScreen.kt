@@ -2,289 +2,111 @@ package com.kumpello.whereiseveryone.main.map.ui
 
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.AnimationEndReason
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.common.entity.ScreenState
-import com.kumpello.whereiseveryone.common.ui.theme.Shapes
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.common.MainRoute
-import com.kumpello.whereiseveryone.main.common.entity.AccuracyLevel
-import com.kumpello.whereiseveryone.main.common.entity.AltDifference
-import com.kumpello.whereiseveryone.main.common.entity.Friend
-import com.kumpello.whereiseveryone.main.common.entity.FriendState
-import com.kumpello.whereiseveryone.main.common.entity.LastUpdateAge
-import com.kumpello.whereiseveryone.main.common.entity.Location
-import com.kumpello.whereiseveryone.main.common.ui.FriendDetailsCard
 import com.kumpello.whereiseveryone.main.common.ui.Notification
-import com.kumpello.whereiseveryone.main.map.entity.MapSettings
-import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.launch
+import com.kumpello.whereiseveryone.main.map.presentation.MapScreenViewModel
+import com.kumpello.whereiseveryone.main.map.presentation.MessageViewModel
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun MapScreen(
     navController: NavController,
-    viewModel: MapViewModel = viewModel()
+    screenViewModel: MapScreenViewModel = koinViewModel()
 ) {
     val context = LocalContext.current
-    val state by viewModel.state.collectAsStateWithLifecycle()
+    val screenState by screenViewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
-        viewModel.action.collect { action ->
+        screenViewModel.action.collect { action ->
             when (action) {
-                MapViewModel.Action.NavigateFriends -> navController.navigate(MainRoute.Friends)
-                MapViewModel.Action.NavigateSettings -> navController.navigate(MainRoute.Settings)
-                is MapViewModel.Action.Toast -> Toast.makeText(
+                MapScreenViewModel.Action.NavigateFriends -> navController.navigate(MainRoute.Friends)
+                MapScreenViewModel.Action.NavigateSettings -> navController.navigate(MainRoute.Settings)
+                is MapScreenViewModel.Action.Toast -> Toast.makeText(
                     context,
                     action.id,
                     Toast.LENGTH_SHORT
                 ).show()
-                else -> Unit
+                is MapScreenViewModel.Action.ShowPermissionSettings -> { /* Handle in Activity */ }
             }
         }
     }
 
-    BackHandler(state.screenState != ScreenState.Map) {
-        viewModel.trigger(MapViewModel.Event.BackToMap)
+    BackHandler(screenState.screenState != ScreenState.Map) {
+        screenViewModel.trigger(MapScreenViewModel.Event.BackToMap)
     }
 
     MapScreen(
-        viewState = state,
-        action = viewModel.action,
-        event = viewModel::trigger
+        screenViewState = screenState,
+        onScreenEvent = screenViewModel::trigger
     )
 }
 
 @Composable
-fun MapScreen(
-    viewState: MapViewModel.ViewState,
-    action: Flow<MapViewModel.Action>,
-    event: (MapViewModel.Event) -> Unit,
+private fun MapScreen(
+    screenViewState: MapScreenViewModel.ViewState,
+    onScreenEvent: (MapScreenViewModel.Event) -> Unit,
+    topControls: @Composable (Modifier) -> Unit = { MapTopControls(modifier = it) },
+    bottomControls: @Composable (Modifier) -> Unit = { MapBottomControls(modifier = it) },
+    messageFloatingCard: @Composable (Modifier) -> Unit = { 
+        MessageFloatingCard(
+            modifier = it,
+            onMessageSent = { onScreenEvent(MapScreenViewModel.Event.BackToMap) }
+        ) 
+    },
+    mapContent: @Composable (Modifier) -> Unit = {
+        MapContent(
+            modifier = it
+        )
+    }
 ) {
-    Box {
-        if (viewState.selectedFriend != null) {
-            FriendDetailsCard(
-                friend = viewState.selectedFriend,
-                onDismiss = { event(MapViewModel.Event.DismissFriendDetails) },
-                onNavigate = { friend -> event(MapViewModel.Event.NavigateToFriend(friend)) }
-            )
-        }
-        if (viewState.navigatingFriend != null && viewState.bearingToFriend != null) {
-            NavigationCompass(
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .safeDrawingPadding()
-                    .padding(8.dp),
-                bearing = viewState.bearingToFriend,
-                friendName = viewState.navigatingFriend.username,
-                onCancel = { event(MapViewModel.Event.CancelNavigation) }
-            )
-        }
-        if (viewState.showPermissionNotification) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (screenViewState.showPermissionNotification) {
             Notification(
                 modifier = Modifier
                     .zIndex(Float.MAX_VALUE)
                     .align(Alignment.Center)
                     .padding(8.dp),
                 notification = stringResource(R.string.permissions_message),
-                onAllowClick = { event(MapViewModel.Event.OnPermissionAllow) },
-                onDenyClick = { event(MapViewModel.Event.OnPermissionDeny) }
+                onAllowClick = { onScreenEvent(MapScreenViewModel.Event.OnPermissionAllow) },
+                onDenyClick = { onScreenEvent(MapScreenViewModel.Event.OnPermissionDeny) }
             )
         }
-        TopControls(
-            modifier = Modifier.align(Alignment.TopEnd),
-            onEvent = event
-        )
-        MapContent(
-            modifier = Modifier.align(Alignment.Center),
-            state = viewState.mapSettings,
-            actions = action,
-            userLocation = viewState.user,
-            friendsPositions = viewState.friends,
-            event = event
-        )
-        when (viewState.screenState) {
-            is ScreenState.Message -> MessageFloatingCard(
-                modifier = Modifier
+
+        topControls(Modifier.align(Alignment.TopEnd))
+
+        mapContent(Modifier.align(Alignment.Center))
+
+        if (screenViewState.screenState is ScreenState.Message) {
+            messageFloatingCard(
+                Modifier
                     .padding(top = 128.dp)
                     .align(Alignment.TopCenter)
-                    .fillMaxWidth(0.9f),
-                viewState = viewState,
-                onDismiss = { event(MapViewModel.Event.BackToMap) },
-                trigger = event
+                    .fillMaxWidth(0.9f)
             )
-
-            else -> Unit
         }
-        BottomControls(
-            modifier = Modifier.align(Alignment.BottomEnd),
-            onEvent = event
-        )
-    }
-}
 
-@Composable
-private fun NavigationCompass(
-    modifier: Modifier = Modifier,
-    bearing: Float,
-    friendName: String,
-    onCancel: () -> Unit
-) {
-    val scale = remember { Animatable(1f) }
-
-    Card(
-        modifier = modifier
-            .zIndex(1001f)
-            .scale(scale.value)
-            .pointerInput(Unit) {
-                coroutineScope {
-                    awaitEachGesture {
-                        awaitFirstDown()
-                        val animationJob = this@coroutineScope.launch {
-                            val result = scale.animateTo(
-                                targetValue = 0f,
-                                animationSpec = tween(durationMillis = 2000, easing = LinearEasing)
-                            )
-                            if (result.endReason == AnimationEndReason.Finished) {
-                                onCancel()
-                            }
-                        }
-                        waitForUpOrCancellation()
-                        animationJob.cancel()
-                        this@coroutineScope.launch {
-                            scale.animateTo(
-                                targetValue = 1f,
-                                animationSpec = tween(durationMillis = 300)
-                            )
-                        }
-                    }
-                }
-            },
-        shape = Shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f)
-        )
-    ) {
-        Row(
-            modifier = Modifier.padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.KeyboardArrowUp, //TODO: Change
-                contentDescription = "Direction to $friendName",
-                modifier = Modifier
-                    .size(32.dp)
-                    .rotate(bearing),
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Column {
-                Text(
-                    text = friendName,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "${bearing.toInt()}°",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun TopControls(
-    modifier: Modifier = Modifier,
-    onEvent: (MapViewModel.Event) -> Unit
-) {
-    ControlBar(modifier = modifier) {
-        ControlButton(
-            imageVector = Icons.Default.Edit,
-            contentDescription = "Message",
-            onClick = { onEvent(MapViewModel.Event.NavigateMessage) }
-        )
-        ControlButton(
-            imageVector = Icons.Default.Person,
-            contentDescription = "Friends",
-            onClick = { onEvent(MapViewModel.Event.NavigateFriends) }
-        )
-        ControlButton(
-            imageVector = Icons.Default.Settings,
-            contentDescription = "Settings",
-            onClick = { onEvent(MapViewModel.Event.NavigateSettings) }
-        )
-    }
-}
-
-@Composable
-private fun BottomControls(
-    modifier: Modifier = Modifier,
-    onEvent: (MapViewModel.Event) -> Unit
-) {
-    ControlBar(modifier = modifier) {
-        ControlButton(
-            imageVector = Icons.Default.KeyboardArrowUp,
-            contentDescription = "Zoom out",
-            onClick = { onEvent(MapViewModel.Event.ZoomOut) }
-        )
-        ControlButton(
-            imageVector = Icons.Default.KeyboardArrowDown,
-            contentDescription = "Zoom in",
-            onClick = { onEvent(MapViewModel.Event.ZoomIn) }
-        )
-        ControlButton(
-            imageVector = Icons.Default.LocationOn,
-            contentDescription = "Center",
-            onClick = { onEvent(MapViewModel.Event.CenterMap) }
-        )
+        bottomControls(Modifier.align(Alignment.BottomEnd))
     }
 }
 
@@ -293,36 +115,37 @@ private fun BottomControls(
 fun MapScreenPreview() {
     WhereIsEveryoneTheme {
         MapScreen(
-            viewState = MapViewModel.ViewState(
+            screenViewState = MapScreenViewModel.ViewState(
                 showPermissionNotification = false,
                 permissions = emptyMap(),
-                screenState = ScreenState.Map,
-                mapSettings = MapSettings(),
-                user = null,
-                friends = emptyList(),
-                userMessage = "Status message",
-                userMessageField = "",
-                selectedFriend = null,
-                navigatingFriend = Friend(
-                    username = "Janusz",
-                    status = "Doing something",
-                    state = FriendState.ACCEPTED,
-                    location = Location(
-                        lat = 0.0,
-                        lon = 0.0,
-                        bearing = null,
-                        alt = AltDifference.SOMEWHAT_SAME,
-                        rawAlt = 0.0,
-                        accuracy = AccuracyLevel.HIGH,
-                        rawAccuracy = 5f,
-                        lastUpdateTime = "",
-                        lastUpdateAge = LastUpdateAge.FRESH
-                    )
-                ),
-                bearingToFriend = 45f
+                screenState = ScreenState.Map
             ),
-            action = emptyFlow(),
-            event = {}
+            onScreenEvent = {},
+            topControls = {
+                MapTopControls(onEvent = {})
+            },
+            bottomControls = {
+                MapBottomControls(onEvent = {})
+            },
+            messageFloatingCard = {
+                MessageFloatingCard(
+                    viewState = MessageViewModel.ViewState(
+                        userMessage = "Status",
+                        userMessageField = "Draft"
+                    ),
+                    onEvent = {}
+                )
+            },
+            mapContent = {
+                Box(
+                    modifier = it
+                        .fillMaxSize()
+                        .background(androidx.compose.ui.graphics.Color.Gray),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Map Placeholder")
+                }
+            }
         )
     }
 }

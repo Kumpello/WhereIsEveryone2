@@ -37,7 +37,7 @@ import com.kumpello.whereiseveryone.main.friends.ui.FriendsScreen
 import com.kumpello.whereiseveryone.main.map.presentation.LocationService
 import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceImpl
 import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceInterface
-import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
+import com.kumpello.whereiseveryone.main.map.presentation.MapScreenViewModel
 import com.kumpello.whereiseveryone.main.map.ui.MapScreen
 import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel
 import com.kumpello.whereiseveryone.main.settings.ui.SettingsScreen
@@ -49,7 +49,7 @@ import timber.log.Timber
 
 class MainActivity : ComponentActivity(), LocationServiceInterface {
 
-    private val mapViewModel: MapViewModel by viewModel()
+    private val mapScreenViewModel: MapScreenViewModel by viewModel()
     private val addFriendViewModel: AddFriendViewModel by viewModel()
     private val shareProfileViewModel: ShareProfileViewModel by viewModel()
     private val settingsViewModel: SettingsViewModel by viewModel { parametersOf(this@MainActivity) }
@@ -74,7 +74,8 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
         }
 
         permissionsLauncher = getPermissionsLauncher()
-        mapViewModel.setPermissions(this)
+        // Initialize permissions
+        mapScreenViewModel.trigger(MapScreenViewModel.Event.SetPermissions(mapScreenViewModel.getPermissions(this)))
 
         setContent {
             WhereIsEveryoneTheme {
@@ -128,9 +129,9 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
         }
 
         lifecycleScope.launch {
-            mapViewModel.action.collect { action ->
+            mapScreenViewModel.action.collect { action ->
                 when (action) {
-                    is MapViewModel.Action.ShowPermissionSettings -> requestPermissionsOrStart(
+                    is MapScreenViewModel.Action.ShowPermissionSettings -> requestPermissionsOrStart(
                         permissionsLauncher,
                         action.permissions
                     ) {
@@ -173,7 +174,7 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
                 ?.toBoolean() ?: true
 
             if (!isLocationServiceBound
-                && !mapViewModel.state.value.permissions.containsValue(false)
+                && !mapScreenViewModel.state.value.permissions.containsValue(false)
                 && isEnabled
             ) {
                 initializeLocationServices()
@@ -239,7 +240,7 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
             } else {
                 //TODO: Action when user deny permissions
             }
-            mapViewModel.setPermissions(this)
+            mapScreenViewModel.trigger(MapScreenViewModel.Event.SetPermissions(mapScreenViewModel.getPermissions(this)))
         }
     }
 
@@ -285,7 +286,7 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
             startDestination = MainRoute.Map
         ) {
             composable<MainRoute.Map> {
-                MapScreen(navController = navController, viewModel = mapViewModel)
+                MapScreen(navController = navController)
             }
             composable<MainRoute.Friends> {
                 FriendsScreen(navController = navController)

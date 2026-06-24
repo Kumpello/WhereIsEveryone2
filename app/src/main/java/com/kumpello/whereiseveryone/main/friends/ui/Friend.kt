@@ -186,3 +186,59 @@ fun FriendPreview() {
         ) {}
     }
 }
+
+@Preview(
+    showBackground = true,
+    heightDp = 50
+)
+@Composable
+fun FriendOutgoingPreview() {
+    WhereIsEveryoneTheme {
+        Friend(
+            friend = Friend(
+                username = "JanuszAndrzejNowak",
+                status = "INBA",
+                state = PENDING_OUTGOING,
+                location = Location(
+                    lat = 0.0,
+                    lon = 0.0,
+                    bearing = 0.0f,
+                    alt = AltDifference.WAY_HIGHER,
+                    accuracy = AccuracyLevel.PERFECT,
+                    lastUpdateTime = "20.04.2137",
+                    lastUpdateAge = LastUpdateAge.FRESH,
+                    rawAlt = 0.0,
+                    rawAccuracy = 0.0f,
+                ),
+            )
+        ) {}
+    }
+}
+
+@Preview(
+    showBackground = true,
+    heightDp = 50
+)
+@Composable
+fun FriendIncomingPreview() {
+    WhereIsEveryoneTheme {
+        Friend(
+            friend = Friend(
+                username = "JanuszAndrzejNowak",
+                status = "INBA",
+                state = PENDING_INCOMING,
+                location = Location(
+                    lat = 0.0,
+                    lon = 0.0,
+                    bearing = 0.0f,
+                    alt = AltDifference.WAY_HIGHER,
+                    accuracy = AccuracyLevel.PERFECT,
+                    lastUpdateTime = "20.04.2137",
+                    lastUpdateAge = LastUpdateAge.FRESH,
+                    rawAlt = 0.0,
+                    rawAccuracy = 0.0f,
+                ),
+            )
+        ) {}
+    }
+}

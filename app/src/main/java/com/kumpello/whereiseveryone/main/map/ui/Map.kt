@@ -52,7 +52,7 @@ import timber.log.Timber
 
 @OptIn(MapboxExperimental::class)
 @Composable
-fun MapContent(
+fun Map(
     modifier: Modifier = Modifier,
     state: MapSettings,
     actions: Flow<MapViewModel.Action>,
@@ -150,14 +150,14 @@ fun MapContent(
                         .onLayerClicked("friends-layer") { feature, _ ->
                             feature.properties.getString("id")
                                 .let(friendsById::get)
-                                ?.let{ friend -> MapViewModel.Event.OnFriendClick(friend) }
+                                ?.let{ friend -> event(MapViewModel.Event.OnFriendClick(friend)) }
 
                             true
                         }
                         .onLayerLongClicked("friends-layer") { feature, _ ->
                             feature.properties.getString("id")
                                 .let(friendsById::get)
-                                ?.let{ friend -> MapViewModel.Event.OnFriendLongClick(friend) }
+                                ?.let{ friend -> event(MapViewModel.Event.OnFriendLongClick(friend)) }
 
                             true
                         }

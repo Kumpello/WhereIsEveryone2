@@ -1,15 +1,9 @@
 package com.kumpello.whereiseveryone.main.map.presentation
 
-import android.content.Context
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.viewModelScope
 import com.kumpello.whereiseveryone.R
-import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
-import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
-import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
-import com.kumpello.whereiseveryone.common.domain.ucecase.SaveKeyUseCase
-import com.kumpello.whereiseveryone.common.entity.ScreenState
 import com.kumpello.whereiseveryone.common.presentation.BaseViewModel
 import com.kumpello.whereiseveryone.main.common.domain.manager.FriendsManager
 import com.kumpello.whereiseveryone.main.common.domain.usecase.CalculateBearingUseCase
@@ -21,8 +15,6 @@ import com.kumpello.whereiseveryone.main.common.entity.Location
 import com.kumpello.whereiseveryone.main.common.entity.LocationData
 import com.kumpello.whereiseveryone.main.common.entity.toFriendState
 import com.kumpello.whereiseveryone.main.map.domain.model.FriendsResponse
-import com.kumpello.whereiseveryone.main.map.domain.usecase.GetPermissionsStatusUseCase
-import com.kumpello.whereiseveryone.main.map.domain.usecase.UpdateStatusUseCase
 import com.kumpello.whereiseveryone.main.map.entity.MapSettings
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -32,10 +24,6 @@ import kotlin.time.Instant
 class MapViewModel(
     private val locationService: LocationService,
     private val friendsManager: FriendsManager,
-    private val saveKeyUseCase: SaveKeyUseCase,
-    private val getKeyUseCase: GetKeyUseCase,
-    private val updateStatusUseCase: UpdateStatusUseCase,
-    private val getPermissionsStatusUseCase: GetPermissionsStatusUseCase,
     private val mapLocationUseCase: MapLocationUseCase,
     private val mapFriendUseCase: MapFriendUseCase,
     private val calculateBearingUseCase: CalculateBearingUseCase,
@@ -63,11 +51,6 @@ class MapViewModel(
                 trigger(Event.OnFriendsUpdate(response))
             }
         }
-        trigger(Event.LoadUserMessage)
-    }
-
-    fun setPermissions(context: Context) {
-        trigger(Event.SetPermissions(getPermissionsStatusUseCase.execute(context)))
     }
 
     override fun reduce(state: State, event: Event): ReducerResult<State, Event, Action> {
@@ -100,59 +83,6 @@ class MapViewModel(
                     }
                 }
             }
-
-            Event.LoadUserMessage -> state.toResult(SideEffect.AsyncWork {
-                val message = getKeyUseCase.getValue(WhereIsEveryoneApplication.USER_MESSAGE_KEY).orEmpty()
-                Timber.tag(TAG).d("Loaded user message: %s", message)
-                Event.OnUserMessageLoaded(message)
-            })
-
-            is Event.OnUserMessageLoaded -> state.copy(userMessage = event.message).toResult()
-
-            is Event.SetPermissions -> state.copy(permissionsState = event.permissions).toResult()
-
-            Event.OnPermissionAllow -> state.copy(permissionNotificationShown = true).toResult(
-                SideEffect.Effect(Action.ShowPermissionSettings(state.permissionsState))
-            )
-
-            Event.OnPermissionDeny -> state.copy(permissionNotificationShown = true).toResult()
-
-            Event.NavigateSettings -> state.toResult(SideEffect.Effect(Action.NavigateSettings))
-            Event.NavigateFriends -> state.toResult(SideEffect.Effect(Action.NavigateFriends))
-            Event.NavigateMessage -> state.copy(screenState = ScreenState.Message).toResult()
-            Event.BackToMap -> state.copy(screenState = ScreenState.Map).toResult()
-
-            is Event.WriteMessage -> state.copy(userMessageField = event.message).toResult()
-
-            Event.SendMessage -> state.toResult(SideEffect.AsyncWork {
-                try {
-                    val message = state.userMessageField
-                    when (updateStatusUseCase.execute(message)) {
-                        is CodeResponse.SuccessNoContent -> {
-                            saveKeyUseCase.saveValue(WhereIsEveryoneApplication.USER_MESSAGE_KEY, message)
-                            Timber.tag(TAG).d("Message saved to DataStore")
-                            Event.OnMessageSent(message)
-                        }
-
-                        is CodeResponse.ErrorData -> {
-                            Timber.tag(TAG).d("Error updating message!")
-                            Event.OnMessageError(R.string.error_updating_message)
-                        }
-                    }
-                } catch (e: Exception) {
-                    Timber.tag(TAG).d("Error updating message!\n%s", e.message.toString())
-                    Event.OnMessageError(R.string.error_updating_message)
-                }
-            })
-
-            is Event.OnMessageSent -> {
-                Timber.tag(TAG).d("Message updated successfully: %s", event.message)
-                state.copy(userMessage = event.message, userMessageField = "").toResult()
-            }
-
-            is Event.OnMessageError -> state.toResult(SideEffect.Effect(Action.Toast(event.errorId)))
-
-            Event.ClearMessage -> state.copy(userMessageField = "").toResult(SideEffect.InternalEvent(Event.SendMessage))
 
             Event.CenterMap -> {
                 Timber.tag(TAG).d("Centering map, zoom: %s", state.mapSettings.zoom)
@@ -202,16 +132,9 @@ class MapViewModel(
         } else null
 
         return ViewState(
-            screenState = screenState,
             mapSettings = mapSettings,
             user = mappedUser,
             friends = mappedFriends,
-            userMessage = userMessage,
-            userMessageField = userMessageField,
-            showPermissionNotification = !permissionNotificationShown && permissionsState.containsValue(
-                false
-            ),
-            permissions = permissionsState,
             selectedFriend = selectedFriend,
             navigatingFriend = navigatingFriend,
             bearingToFriend = bearing
@@ -221,32 +144,15 @@ class MapViewModel(
     sealed class Action {
         data class CenterMap(val zoom: Double) : Action()
         data class Zoom(val zoom: Double) : Action()
-        data object NavigateSettings : Action()
-        data object NavigateFriends : Action()
-        data class ShowPermissionSettings(val permissions: Map<String, Boolean>) : Action()
         data class Toast(@StringRes val id: Int) : Action()
     }
 
     sealed class Event {
         data class OnLocationUpdate(val location: LocationData?) : Event()
         data class OnFriendsUpdate(val response: FriendsResponse) : Event()
-        data object LoadUserMessage : Event()
-        data class OnUserMessageLoaded(val message: String) : Event()
-        data class SetPermissions(val permissions: Map<String, Boolean>) : Event()
-        data object OnPermissionAllow : Event()
-        data object OnPermissionDeny : Event()
-        data object NavigateSettings : Event()
-        data object NavigateFriends : Event()
-        data object NavigateMessage : Event()
-        data class WriteMessage(val message: String) : Event()
-        data object SendMessage : Event()
-        data class OnMessageSent(val message: String) : Event()
-        data class OnMessageError(@StringRes val errorId: Int) : Event()
-        data object ClearMessage : Event()
         data object ZoomOut : Event()
         data object ZoomIn : Event()
         data object CenterMap : Event()
-        data object BackToMap : Event()
         data class OnFriendClick(val friend: Friend) : Event()
         data class OnFriendLongClick(val friend: Friend) : Event()
         data object DismissFriendDetails : Event()
@@ -255,31 +161,21 @@ class MapViewModel(
     }
 
     data class State(
-        val permissionsState: Map<String, Boolean> = emptyMap(),
         val selectedFriend: Friend? = null,
         val navigatingFriend: Friend? = null,
-        val permissionNotificationShown: Boolean = false,
-        val screenState: ScreenState = ScreenState.Map,
         val mapSettings: MapSettings = MapSettings(),
         val friends: List<FriendLocalData> = emptyList(),
-        val userMessage: String = "",
-        val userMessageField: String = "",
         val user: LocationData? = null
     )
 
     @Immutable
     data class ViewState(
-        val showPermissionNotification: Boolean,
         val selectedFriend: Friend?,
         val navigatingFriend: Friend?,
         val bearingToFriend: Float?,
-        val permissions: Map<String, Boolean>,
-        val screenState: ScreenState,
         val mapSettings: MapSettings,
         val user: Location?,
         val friends: List<Friend>,
-        val userMessage: String,
-        val userMessageField: String,
     )
 
     companion object {
