@@ -51,6 +51,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -88,6 +89,7 @@ import com.kumpello.whereiseveryone.main.friends.entity.FriendsTabItem
 import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
 import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel.DeleteFriendDialogState
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
@@ -128,7 +130,7 @@ fun FriendsScreen(
                     context,
                     action.id,
                     Toast.LENGTH_SHORT
-                )
+                ).show()
 
                 else -> Unit
             }
@@ -215,7 +217,8 @@ private fun FriendsScreen(
             ) {
                 Card(
                     modifier = Modifier
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .height(200.dp),
                     elevation = CardDefaults.cardElevation(
                         defaultElevation = 8.dp,
                     ),
@@ -227,68 +230,113 @@ private fun FriendsScreen(
                     ),
                     shape = Shapes.large,
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .padding(10.dp),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        TextField.Regular(
-                            label = stringResource(R.string.your_friends_nick),
-                            value = viewState.addFriendNick,
-                            labelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            colors = TextFieldDefaults.colors(
-                                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                                unfocusedIndicatorColor = MaterialTheme.colorScheme.outline
-                            ),
-                            onValueChange = { nick ->
-                                trigger(FriendsViewModel.Event.SetAddFriendNick(nick))
-                            }
-                        )
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 8.dp),
-                            horizontalArrangement = Arrangement.SpaceEvenly,
-                            verticalAlignment = Alignment.CenterVertically
+                    val topPagerState = rememberPagerState(initialPage = 0) { 2 }
+                    val coroutineScope = rememberCoroutineScope()
+                    val topTabItems = listOf(
+                        stringResource(R.string.add_friend),
+                        stringResource(R.string.share_profile)
+                    )
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        PrimaryTabRow(
+                            selectedTabIndex = topPagerState.currentPage,
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                         ) {
-                            IconButton(
-                                onClick = { trigger(FriendsViewModel.Event.OpenShareDialog) },
-                                enabled = !viewState.actionState.isLoading
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.QrCode,
-                                    contentDescription = "Show My QR",
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.size(32.dp)
-                                )
-                            }
-                            IconButton(
-                                onClick = {
-                                    val nfcAdapter = NfcAdapter.getDefaultAdapter(context)
-                                    when {
-                                        nfcAdapter == null -> trigger(FriendsViewModel.Event.OnNfcNotSupported)
-                                        !nfcAdapter.isEnabled -> trigger(FriendsViewModel.Event.OnNfcDisabled)
-                                        else -> trigger(FriendsViewModel.Event.ShareViaNfc)
+                            topTabItems.forEachIndexed { index, title ->
+                                Tab(
+                                    selected = topPagerState.currentPage == index,
+                                    onClick = {
+                                        coroutineScope.launch {
+                                            topPagerState.animateScrollToPage(index)
+                                        }
+                                    },
+                                    text = {
+                                        Text(
+                                            text = title,
+                                            style = MaterialTheme.typography.labelLarge
+                                        )
                                     }
-                                },
-                                enabled = !viewState.actionState.isLoading
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Contactless,
-                                    contentDescription = "NFC Share",
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.size(32.dp)
                                 )
                             }
-                            Button.Animated(
-                                text = stringResource(R.string.add_friend),
-                                width = 150,
-                                enabled = !viewState.actionState.isLoading
+                        }
+                        HorizontalPager(
+                            state = topPagerState,
+                            modifier = Modifier.fillMaxSize()
+                        ) { page ->
+                            Column(
+                                modifier = Modifier
+                                    .padding(16.dp)
+                                    .fillMaxSize(),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
-                                trigger(FriendsViewModel.Event.AddFriend)
+                                if (page == 0) {
+                                    TextField.Regular(
+                                        label = stringResource(R.string.your_friends_nick),
+                                        value = viewState.addFriendNick,
+                                        labelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        colors = TextFieldDefaults.colors(
+                                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                            unfocusedIndicatorColor = MaterialTheme.colorScheme.outline
+                                        ),
+                                        onValueChange = { nick ->
+                                            trigger(FriendsViewModel.Event.SetAddFriendNick(nick))
+                                        }
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Button.Animated(
+                                        text = stringResource(R.string.add_friend),
+                                        width = 150,
+                                        enabled = !viewState.actionState.isLoading
+                                    ) {
+                                        trigger(FriendsViewModel.Event.AddFriend)
+                                    }
+                                } else {
+                                    Text(
+                                        text = "Your username: ${viewState.username}",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = 16.dp),
+                                        horizontalArrangement = Arrangement.SpaceEvenly,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        IconButton(
+                                            onClick = { trigger(FriendsViewModel.Event.OpenShareDialog) },
+                                            enabled = !viewState.actionState.isLoading
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.QrCode,
+                                                contentDescription = "Show My QR",
+                                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                modifier = Modifier.size(48.dp)
+                                            )
+                                        }
+                                        IconButton(
+                                            onClick = {
+                                                val nfcAdapter = NfcAdapter.getDefaultAdapter(context)
+                                                when {
+                                                    nfcAdapter == null -> trigger(FriendsViewModel.Event.OnNfcNotSupported)
+                                                    !nfcAdapter.isEnabled -> trigger(FriendsViewModel.Event.OnNfcDisabled)
+                                                    else -> trigger(FriendsViewModel.Event.ShareViaNfc)
+                                                }
+                                            },
+                                            enabled = !viewState.actionState.isLoading
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Contactless,
+                                                contentDescription = "NFC Share",
+                                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                modifier = Modifier.size(48.dp)
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
                     }

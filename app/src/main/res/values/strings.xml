@@ -21,6 +21,7 @@
     <string name="incoming_requests">Incoming requests</string>
     <string name="outgoing_requests">Outgoing requests</string>
     <string name="add_friend">Add Friend</string>
+    <string name="share_profile">Share</string>
     <string name="your_friends_nick">Your friends nick</string>
     <string name="friend_added">Friend added!</string>
     <string name="friend_accepted">Friend accepted!</string>
