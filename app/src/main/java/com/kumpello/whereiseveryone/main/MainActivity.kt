@@ -1,12 +1,17 @@
 package com.kumpello.whereiseveryone.main
 
 import android.Manifest.permission.ACCESS_BACKGROUND_LOCATION
+import android.app.Activity
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
+import android.nfc.NdefMessage
+import android.nfc.NdefRecord
+import android.nfc.NfcAdapter
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -22,6 +27,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
+import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.common.MainRoute
 import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
@@ -34,8 +41,6 @@ import com.kumpello.whereiseveryone.main.map.ui.MapScreen
 import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel
 import com.kumpello.whereiseveryone.main.settings.ui.SettingsScreen
 import kotlinx.coroutines.launch
-import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
-import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
@@ -54,10 +59,17 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
 
     private lateinit var permissionsLauncher: ActivityResultLauncher<Array<String>>
 
+    private var nfcAdapter: NfcAdapter? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         enableEdgeToEdge()
+
+        nfcAdapter = NfcAdapter.getDefaultAdapter(this)
+        if (nfcAdapter == null) {
+            Timber.tag(TAG).d("NFC is not available on this device")
+        }
 
         permissionsLauncher = getPermissionsLauncher()
         mapViewModel.setPermissions(this)
@@ -69,6 +81,48 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     MainScreen()
+                }
+            }
+        }
+
+        handleIntent(intent)
+
+        lifecycleScope.launch {
+            friendsViewModel.action.collect { action ->
+                when (action) {
+                    is FriendsViewModel.Action.TriggerNfcSharing -> {
+                        if (action.username == null) return@collect
+
+                        val uri = "whereiseveryone://addfriend/${action.username}"
+                        val message = NdefMessage(
+                            arrayOf(
+                                NdefRecord.createUri(uri),
+                                NdefRecord.createApplicationRecord(packageName)
+                            )
+                        )
+                        try {
+                            val method = nfcAdapter?.javaClass?.getMethod(
+                                "setNdefPushMessage",
+                                NdefMessage::class.java,
+                                Activity::class.java
+                            )
+                            method?.invoke(nfcAdapter, message, this@MainActivity)
+                            Toast.makeText(
+                                this@MainActivity,
+                                "NFC Sharing enabled for ${action.username}. Bring devices together.",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        } catch (e: Exception) {
+                            Timber.tag(TAG).e(e, "Error setting NDEF push message")
+                            Toast.makeText(
+                                this@MainActivity,
+                                "NFC Sharing not supported on this device/version",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+
+                    else -> Unit
                 }
             }
         }
@@ -95,9 +149,26 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
         }
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent?) {
+        intent?.data?.let { uri ->
+            if (uri.scheme == "whereiseveryone" && uri.host == "addfriend") {
+                friendsViewModel.trigger(FriendsViewModel.Event.OnUriReceived(uri))
+            }
+        }
+    }
+
+    private var usernameToShare: String? = null
+
     override fun onStart() {
         super.onStart()
         lifecycleScope.launch {
+            usernameToShare = getKeyUseCase.getValue(WhereIsEveryoneApplication.USER_NAME_KEY)
             val isEnabled = getKeyUseCase.getValue(WhereIsEveryoneApplication.LOCATION_SHARING_ENABLED_KEY)
                 ?.toBoolean() ?: true
 

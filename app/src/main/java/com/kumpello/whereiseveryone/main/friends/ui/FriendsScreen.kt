@@ -1,5 +1,6 @@
 package com.kumpello.whereiseveryone.main.friends.ui
 
+import android.nfc.NfcAdapter
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -11,15 +12,18 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -28,9 +32,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Contactless
+import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Surface
@@ -47,12 +56,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -118,6 +129,8 @@ fun FriendsScreen(
                     action.id,
                     Toast.LENGTH_SHORT
                 )
+
+                else -> Unit
             }
         }
     }
@@ -133,11 +146,18 @@ private fun FriendsScreen(
     viewState: FriendsViewModel.ViewState,
     trigger: (FriendsViewModel.Event) -> Unit,
 ) {
+    val context = LocalContext.current
     Box(modifier = Modifier.fillMaxSize()) {
         if (viewState.deleteFriendDialogState is DeleteFriendDialogState.Open) {
             DeleteFriendDialog(
                 friend = viewState.deleteFriendDialogState.friend,
                 trigger = trigger
+            )
+        }
+        if (viewState.isShareDialogOpen) {
+            QrCodeDialog(
+                username = viewState.username,
+                onDismiss = { trigger(FriendsViewModel.Event.CloseShareDialog) }
             )
         }
         viewState.selectedFriend?.let { friend ->
@@ -227,13 +247,49 @@ private fun FriendsScreen(
                                 trigger(FriendsViewModel.Event.SetAddFriendNick(nick))
                             }
                         )
-                        Spacer(Modifier.size(20.dp))
-                        Button.Animated(
-                            text = stringResource(R.string.add_friend),
-                            width = 250,
-                            enabled = !viewState.actionState.isLoading
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceEvenly,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            trigger(FriendsViewModel.Event.AddFriend)
+                            IconButton(
+                                onClick = { trigger(FriendsViewModel.Event.OpenShareDialog) },
+                                enabled = !viewState.actionState.isLoading
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.QrCode,
+                                    contentDescription = "Show My QR",
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
+                            IconButton(
+                                onClick = {
+                                    val nfcAdapter = NfcAdapter.getDefaultAdapter(context)
+                                    when {
+                                        nfcAdapter == null -> trigger(FriendsViewModel.Event.OnNfcNotSupported)
+                                        !nfcAdapter.isEnabled -> trigger(FriendsViewModel.Event.OnNfcDisabled)
+                                        else -> trigger(FriendsViewModel.Event.ShareViaNfc)
+                                    }
+                                },
+                                enabled = !viewState.actionState.isLoading
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Contactless,
+                                    contentDescription = "NFC Share",
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
+                            Button.Animated(
+                                text = stringResource(R.string.add_friend),
+                                width = 150,
+                                enabled = !viewState.actionState.isLoading
+                            ) {
+                                trigger(FriendsViewModel.Event.AddFriend)
+                            }
                         }
                     }
                 }
@@ -348,6 +404,59 @@ private fun FriendsCategory(
     }
 }
 
+@Composable
+fun QrCodeDialog(
+    username: String,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = Shapes.large,
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.onSurface
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Your QR Code",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                val qrContent = "whereiseveryone://addfriend/$username"
+                val qrBitmap = remember(qrContent) {
+                    QrCodeGenerator.generateQrCode(qrContent, 512)
+                }
+
+                qrBitmap?.let {
+                    Image(
+                        bitmap = it.asImageBitmap(),
+                        contentDescription = "QR Code",
+                        modifier = Modifier.size(200.dp)
+                    )
+                } ?: Text("Error generating QR")
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Scan this to add me as a friend",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Button.Animated(text = "Close", width = 150) {
+                    onDismiss()
+                }
+            }
+        }
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun FriendsWithDetailsPreview() {
@@ -390,7 +499,9 @@ fun FriendsWithDetailsPreview() {
                         lastUpdateAge = LastUpdateAge.SOMEWHAT_NEW,
                     )
                 ),
-                actionState = AsyncState.Idle
+                actionState = AsyncState.Idle,
+                isShareDialogOpen = false,
+                username = "Janusz"
             )
         ) {}
     }
@@ -438,7 +549,9 @@ fun FriendsWithDetailsPreviewDark() {
                         lastUpdateAge = LastUpdateAge.SOMEWHAT_NEW,
                     )
                 ),
-                actionState = AsyncState.Idle
+                actionState = AsyncState.Idle,
+                isShareDialogOpen = false,
+                username = "Janusz"
             )
         ) {}
     }
@@ -503,7 +616,9 @@ fun FriendsPreview() {
                 addFriendNick = "Papator2000",
                 deleteFriendDialogState = DeleteFriendDialogState.Closed,
                 selectedFriend = null,
-                actionState = AsyncState.Idle
+                actionState = AsyncState.Idle,
+                isShareDialogOpen = false,
+                username = "Janusz"
             )
         ) {}
     }
@@ -568,7 +683,9 @@ fun FriendsPreviewDark() {
                 addFriendNick = "Papator2000",
                 deleteFriendDialogState = DeleteFriendDialogState.Closed,
                 selectedFriend = null,
-                actionState = AsyncState.Idle
+                actionState = AsyncState.Idle,
+                isShareDialogOpen = false,
+                username = "Janusz"
             )
         ) {}
     }

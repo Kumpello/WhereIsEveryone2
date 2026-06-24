@@ -25,7 +25,8 @@ object TextField {
         value: String,
         onValueChange: (String) -> Unit,
         labelColor: Color = MaterialTheme.colorScheme.primary,
-        colors: TextFieldColors = OutlinedTextFieldDefaults.colors()
+        colors: TextFieldColors = OutlinedTextFieldDefaults.colors(),
+        trailingIcon: @Composable (() -> Unit)? = null
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Text(
@@ -39,7 +40,8 @@ object TextField {
                 value = value,
                 onValueChange = onValueChange,
                 shape = Shapes.large,
-                colors = colors
+                colors = colors,
+                trailingIcon = trailingIcon
             )
         }
     }

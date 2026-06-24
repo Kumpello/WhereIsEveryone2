@@ -26,7 +26,7 @@ class RefreshTokenUseCase(
     }
 
     private suspend fun saveUserData(response: AuthResponse.AuthData): Response {
-        saveKeyUseCase.saveValue(WhereIsEveryoneApplication.USER_ID_KEY, response.id)
+        saveKeyUseCase.saveValue(WhereIsEveryoneApplication.USER_NAME_KEY, response.id)
         saveKeyUseCase.saveValue(WhereIsEveryoneApplication.AUTH_TOKEN_KEY, response.token)
         saveKeyUseCase.saveValue(WhereIsEveryoneApplication.AUTH_REFRESH_TOKEN_KEY, response.refresh_token)
 

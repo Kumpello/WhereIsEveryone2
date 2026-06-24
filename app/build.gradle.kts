@@ -69,6 +69,7 @@ dependencies {
     implementation(libs.activity.compose)
     implementation(platform(libs.compose.bom))
     implementation(libs.bundles.compose.bom)
+    implementation(libs.compose.material.icons.extended)
     implementation(libs.bundles.viewmodel)
     implementation(libs.bundles.runtime)
     implementation(libs.bundles.koin)
@@ -91,6 +92,7 @@ dependencies {
 
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
+    implementation(libs.zxing.core)
     ksp(libs.room.compiler)
 
     ksp(libs.moshi.kotlin.codegen)

@@ -30,14 +30,10 @@ class WhereIsEveryoneApplication : Application() {
     companion object {
 
         const val PREFERENCES_NAME = "secret_keeper"
-        const val USER_ID_KEY = "user_id"
         const val USER_NAME_KEY = "user_name"
         const val USER_MESSAGE_KEY = "user_message"
         const val AUTH_TOKEN_KEY = "auth_token"
         const val AUTH_REFRESH_TOKEN_KEY = "auth_refresh_token"
-        const val FRIENDS_KEY = "friends"
-        const val LATITUDE_KEY = "lat"
-        const val LONGITUDE_KEY = "lng"
         const val LOCATION_SHARING_ENABLED_KEY = "location_sharing_enabled"
     }
 

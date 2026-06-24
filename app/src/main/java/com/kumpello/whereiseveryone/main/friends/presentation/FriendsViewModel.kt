@@ -3,7 +3,9 @@ package com.kumpello.whereiseveryone.main.friends.presentation
 import androidx.annotation.StringRes
 import androidx.lifecycle.viewModelScope
 import com.kumpello.whereiseveryone.R
+import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
 import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
+import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
 import com.kumpello.whereiseveryone.common.entity.ScreenState
 import com.kumpello.whereiseveryone.common.extension.formatDistance
 import com.kumpello.whereiseveryone.common.presentation.AsyncState
@@ -43,7 +45,8 @@ class FriendsViewModel(
     private val convertAltUseCase: ConvertAltUseCase,
     private val convertLastUpdateUseCase: ConvertLastUpdateUseCase,
     private val locationService: LocationService,
-    private val calculateDistanceUseCase: CalculateDistanceUseCase
+    private val calculateDistanceUseCase: CalculateDistanceUseCase,
+    private val getKeyUseCase: GetKeyUseCase
 ) : BaseViewModel<FriendsViewModel.State, FriendsViewModel.ViewState, FriendsViewModel.Event, FriendsViewModel.Action>(
     State()
 ) {
@@ -63,12 +66,25 @@ class FriendsViewModel(
                 }))
             }
         }
+        viewModelScope.launch {
+            val username = getKeyUseCase.getValue(WhereIsEveryoneApplication.USER_NAME_KEY)
+            trigger(Event.OnUsernameLoaded(username ?: ""))
+        }
         trigger(Event.CheckFriends)
     }
 
     override fun reduce(state: State, event: Event): ReducerResult<State, Event, Action> {
         return when (event) {
             is Event.OnLocationUpdate -> state.copy(userLocation = event.location).toResult()
+            is Event.OnUriReceived -> {
+                val username = event.uri.lastPathSegment
+                if (username != null) {
+                    trigger(Event.SetAddFriendNick(username))
+                    trigger(Event.AddFriend)
+                }
+                state.toResult()
+            }
+            is Event.OnUsernameLoaded -> state.copy(username = event.username).toResult()
             Event.CheckFriends -> {
                 Timber.tag(TAG).d("Checking friends")
                 state.toResult(SideEffect.AsyncWork {
@@ -206,6 +222,11 @@ class FriendsViewModel(
 
             is Event.SelectFriend -> state.copy(selectedFriend = event.friend).toResult()
             Event.ClearSelectedFriend -> state.copy(selectedFriend = null).toResult()
+            Event.OpenShareDialog -> state.copy(isShareDialogOpen = true).toResult()
+            Event.CloseShareDialog -> state.copy(isShareDialogOpen = false).toResult()
+            Event.ShareViaNfc -> state.toResult(SideEffect.Effect(Action.TriggerNfcSharing(state.username)))
+            Event.OnNfcNotSupported -> state.toResult(SideEffect.Effect(Action.Toast(R.string.nfc_not_supported)))
+            Event.OnNfcDisabled -> state.toResult(SideEffect.Effect(Action.Toast(R.string.nfc_disabled)))
         }
     }
 
@@ -242,7 +263,9 @@ class FriendsViewModel(
             addFriendNick = addFriendNick,
             deleteFriendDialogState = deleteFriendDialogState,
             selectedFriend = selectedFriend,
-            actionState = actionState
+            actionState = actionState,
+            isShareDialogOpen = isShareDialogOpen,
+            username = username,
         )
     }
 
@@ -256,10 +279,13 @@ class FriendsViewModel(
     sealed class Action {
         data class Toast(@StringRes val id: Int) : Action()
         data object BackToMap : Action()
+        data class TriggerNfcSharing(val username: String?) : Action()
     }
 
     sealed class Event {
         data class OnLocationUpdate(val location: LocationData?) : Event()
+        data class OnUriReceived(val uri: android.net.Uri) : Event()
+        data class OnUsernameLoaded(val username: String) : Event()
         data object CheckFriends : Event()
         data class OnFriendsLoaded(val friends: List<FriendLocalData>) : Event()
         data class OnError(@StringRes val id: Int) : Event()
@@ -273,6 +299,11 @@ class FriendsViewModel(
         data class SelectFriend(val friend: Friend): Event()
         data object ClearSelectedFriend: Event()
         data class OnActionSuccess(@StringRes val messageId: Int) : Event()
+        data object OpenShareDialog : Event()
+        data object CloseShareDialog : Event()
+        data object ShareViaNfc : Event()
+        data object OnNfcNotSupported : Event()
+        data object OnNfcDisabled : Event()
     }
 
     data class State(
@@ -282,7 +313,9 @@ class FriendsViewModel(
         val deleteFriendDialogState: DeleteFriendDialogState = DeleteFriendDialogState.Closed,
         val selectedFriend: Friend? = null,
         val userLocation: LocationData? = null,
-        val actionState: AsyncState<Unit> = AsyncState.Idle
+        val actionState: AsyncState<Unit> = AsyncState.Idle,
+        val isShareDialogOpen: Boolean = false,
+        val username: String = "",
     )
 
     @Immutable
@@ -291,7 +324,9 @@ class FriendsViewModel(
         val addFriendNick: String,
         val deleteFriendDialogState: DeleteFriendDialogState,
         val selectedFriend: Friend?,
-        val actionState: AsyncState<Unit>
+        val actionState: AsyncState<Unit>,
+        val isShareDialogOpen: Boolean,
+        val username: String,
     )
 
     sealed class DeleteFriendDialogState {
