@@ -23,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kumpello.whereiseveryone.common.ui.theme.Shapes
@@ -46,6 +47,7 @@ fun Friend(
     Card(
         modifier = modifier
             .fillMaxWidth()
+            .testTag("friend_card_${friend.username}")
             .clickable { trigger(FriendsViewModel.Event.SelectFriend(friend)) },
         colors = CardDefaults.cardColors().copy(
             containerColor = MaterialTheme.colorScheme.secondaryContainer
@@ -99,11 +101,12 @@ private fun AcceptedButtons(
         onClick = { trigger(FriendsViewModel.Event.DeleteFriend(friend.username)) },
         modifier = Modifier
             .height(50.dp)
+            .testTag("delete_button")
     ) {
         Icon(
             modifier = Modifier.size(size = 50.dp),
             imageVector = Icons.Outlined.Delete,
-            contentDescription = "",
+            contentDescription = "Delete",
             tint = Color.Red
         )
     }
@@ -118,11 +121,12 @@ private fun PendingIncomingButtons(
         onClick = { trigger(FriendsViewModel.Event.AcceptFriend(friend.username)) },
         modifier = Modifier
             .height(50.dp)
+            .testTag("accept_button")
     ) {
         Icon(
             modifier = Modifier.size(size = 50.dp),
             imageVector = Icons.Outlined.Done,
-            contentDescription = "",
+            contentDescription = "Accept",
             tint = Color.Green
         )
     }
@@ -130,11 +134,12 @@ private fun PendingIncomingButtons(
         onClick = { trigger(FriendsViewModel.Event.RejectFriend(friend.username)) },
         modifier = Modifier
             .height(50.dp)
+            .testTag("reject_button")
     ) {
         Icon(
             modifier = Modifier.size(size = 50.dp),
             imageVector = Icons.Outlined.Clear,
-            contentDescription = "",
+            contentDescription = "Reject",
             tint = Color.Red
         )
     }
@@ -149,11 +154,12 @@ private fun PendingOutgoingButtons(
         onClick = { trigger(FriendsViewModel.Event.RejectFriend(friend.username)) },
         modifier = Modifier
             .height(50.dp)
+            .testTag("reject_button")
     ) {
         Icon(
             modifier = Modifier.size(size = 50.dp),
             imageVector = Icons.Outlined.Clear,
-            contentDescription = "",
+            contentDescription = "Reject",
             tint = Color.Red
         )
     }

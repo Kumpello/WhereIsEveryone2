@@ -17,13 +17,15 @@ abstract class BaseViewModel<S : Any, VS : Any, E : Any, Ef : Any>(
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(initialState)
-    val state: StateFlow<VS> = _state
-        .map { it.toViewState() }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = initialState.toViewState()
-        )
+    val state: StateFlow<VS> by lazy {
+        _state
+            .map { it.toViewState() }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = currentState.toViewState()
+            )
+    }
 
     private val _effect = Channel<Ef>()
     val action: Flow<Ef> = _effect.receiveAsFlow()

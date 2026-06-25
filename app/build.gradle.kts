@@ -97,9 +97,13 @@ dependencies {
 
     ksp(libs.moshi.kotlin.codegen)
     testImplementation(libs.test.junit)
+    testImplementation(libs.mockk)
+    testImplementation(libs.coroutines.test)
+    testImplementation(libs.turbine)
 
     androidTestImplementation(libs.android.test.junit)
     androidTestImplementation(libs.espresso)
+    androidTestImplementation(libs.mockk.android)
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.compose.ui.test.junit)
 
