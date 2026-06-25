@@ -188,34 +188,31 @@ fun FriendsSymbolLayer(
 ) {
     val featureCollection = remember(friends) {
         FeatureCollection.fromFeatures(
-            friends.map { friend ->
-
-                Feature.fromGeometry(
-                    Point.fromLngLat(
-                        friend.location.lon,
-                        friend.location.lat
-                    )
-                ).apply {
-
-                    addStringProperty(
-                        "id",
-                        friend.username
-                    )
-
-                    addNumberProperty(
-                        "bearing",
-                        friend.location.bearing ?: 0.0
-                    )
-
-                    addNumberProperty(
-                        "opacity",
-                        friend.location.lastUpdateAge.opacity
-                    )
-
-                    addNumberProperty(
-                        "haloWidth",
-                        friend.location.accuracy.haloSize
-                    )
+            friends.mapNotNull { friend ->
+                friend.location?.let { loc ->
+                    Feature.fromGeometry(
+                        Point.fromLngLat(
+                            loc.lon,
+                            loc.lat
+                        )
+                    ).apply {
+                        addStringProperty(
+                            "id",
+                            friend.username
+                        )
+                        addNumberProperty(
+                            "bearing",
+                            loc.bearing ?: 0.0
+                        )
+                        addNumberProperty(
+                            "opacity",
+                            loc.lastUpdateAge.opacity
+                        )
+                        addNumberProperty(
+                            "haloWidth",
+                            loc.accuracy.haloSize
+                        )
+                    }
                 }
             }
         )

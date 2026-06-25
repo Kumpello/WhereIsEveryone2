@@ -97,19 +97,36 @@ private fun FriendDetailsContent(
             }
             HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
-            DetailItem(label = "Latitude", value = friend.location.lat.toString())
-            DetailItem(label = "Longitude", value = friend.location.lon.toString())
-            DetailItem(label = "Bearing", value = friend.location.bearing?.let { "$it°" } ?: "Unknown")
-            DetailItem(
-                label = "Altitude",
-                value = "${friend.location.alt.name.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() }} (${friend.location.rawAlt ?: "N/A"}m)"
-            )
-            DetailItem(
-                label = "Accuracy",
-                value = "${friend.location.accuracy.name.lowercase().replaceFirstChar { it.uppercase() }} (${friend.location.rawAccuracy ?: "N/A"}m)"
-            )
-            DetailItem(label = "Last Update", value = friend.location.lastUpdateTime)
-            DetailItem(label = "Data Age", value = friend.location.lastUpdateAge.name.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() })
+            friend.location?.let { loc ->
+                DetailItem(label = "Latitude", value = loc.lat.toString())
+                DetailItem(label = "Longitude", value = loc.lon.toString())
+                loc.bearing?.let {
+                    DetailItem(label = "Bearing", value = "$it°")
+                }
+                loc.rawAlt?.let {
+                    DetailItem(
+                        label = "Altitude",
+                        value = "${
+                            loc.alt.name.replace("_", " ").lowercase()
+                                .replaceFirstChar { it.uppercase() }
+                        } (${it}m)"
+                    )
+                }
+                loc.rawAccuracy?.let {
+                    DetailItem(
+                        label = "Accuracy",
+                        value = "${
+                            loc.accuracy.name.lowercase().replaceFirstChar { it.uppercase() }
+                        } (${it}m)"
+                    )
+                }
+                DetailItem(label = "Last Update", value = loc.lastUpdateTime)
+                DetailItem(
+                    label = "Data Age",
+                    value = loc.lastUpdateAge.name.replace("_", " ").lowercase()
+                        .replaceFirstChar { it.uppercase() }
+                )
+            }
 
             Spacer(modifier = Modifier.size(16.dp))
             Row(

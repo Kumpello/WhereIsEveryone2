@@ -11,7 +11,7 @@ data class FriendDatabaseEntity(
     @PrimaryKey val username: String,
     val status: String,
     val state: String,
-    @Embedded val location: UserInfoEntity
+    @Embedded val location: UserInfoEntity?
 )
 
 data class UserInfoEntity(
@@ -27,26 +27,30 @@ fun FriendData.toDatabaseEntity() = FriendDatabaseEntity(
     username = username,
     status = status,
     state = state,
-    location = UserInfoEntity(
-        latitude = location.latitude,
-        longitude = location.longitude,
-        bearing = location.bearing,
-        altitude = location.altitude,
-        accuracy = location.accuracy,
-        lastUpdate = location.last_update
-    )
+    location = location?.let {
+        UserInfoEntity(
+            latitude = it.latitude,
+            longitude = it.longitude,
+            bearing = it.bearing,
+            altitude = it.altitude,
+            accuracy = it.accuracy,
+            lastUpdate = it.last_update
+        )
+    }
 )
 
 fun FriendDatabaseEntity.toDomain() = FriendData(
     username = username,
     status = status,
     state = state,
-    location = UserInfo(
-        latitude = location.latitude,
-        longitude = location.longitude,
-        bearing = location.bearing,
-        altitude = location.altitude,
-        accuracy = location.accuracy,
-        last_update = location.lastUpdate
-    )
+    location = location?.let {
+        UserInfo(
+            latitude = it.latitude,
+            longitude = it.longitude,
+            bearing = it.bearing,
+            altitude = it.altitude,
+            accuracy = it.accuracy,
+            last_update = it.lastUpdate
+        )
+    }
 )

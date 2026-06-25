@@ -14,27 +14,30 @@ class MapFriendUseCase(
     private val formatLastUpdateUseCase: FormatLastUpdateUseCase
 ) {
     fun execute(friend: FriendLocalData, userLocation: LocationData?): Friend {
-        val dist = userLocation?.let {
+        val friendLocation = friend.location
+        val dist = if (userLocation != null && friendLocation != null) {
             calculateDistanceUseCase.execute(
-                it.lat, it.lon, it.alt,
-                friend.location.lat, friend.location.lon, friend.location.alt
+                userLocation.lat, userLocation.lon, userLocation.alt,
+                friendLocation.lat, friendLocation.lon, friendLocation.alt
             )
-        }
+        } else null
         return Friend(
             username = friend.username,
             status = friend.status,
             state = friend.state,
-            location = Location(
-                lat = friend.location.lat,
-                lon = friend.location.lon,
-                bearing = friend.location.bearing,
-                alt = convertAltUseCase.execute(userLocation?.alt, friend.location.alt),
-                rawAlt = friend.location.alt,
-                accuracy = convertAccuracyUseCase.execute(friend.location.accuracy),
-                rawAccuracy = friend.location.accuracy,
-                lastUpdateTime = formatLastUpdateUseCase.execute(friend.location.last_update),
-                lastUpdateAge = convertLastUpdateUseCase.execute(friend.location.last_update)
-            ),
+            location = friendLocation?.let { loc ->
+                Location(
+                    lat = loc.lat,
+                    lon = loc.lon,
+                    bearing = loc.bearing,
+                    alt = convertAltUseCase.execute(userLocation?.alt, loc.alt),
+                    rawAlt = loc.alt,
+                    accuracy = convertAccuracyUseCase.execute(loc.accuracy),
+                    rawAccuracy = loc.accuracy,
+                    lastUpdateTime = formatLastUpdateUseCase.execute(loc.last_update),
+                    lastUpdateAge = convertLastUpdateUseCase.execute(loc.last_update)
+                )
+            },
             distance = dist,
             formattedDistance = dist?.let { formatDistance(it) }
         )

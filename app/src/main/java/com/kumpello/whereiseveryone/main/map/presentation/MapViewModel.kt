@@ -64,14 +64,16 @@ class MapViewModel(
                                 username = friendData.username,
                                 status = friendData.status,
                                 state = friendData.state.toFriendState(),
-                                location = LocationData(
-                                    lat = friendData.location.latitude,
-                                    lon = friendData.location.longitude,
-                                    bearing = friendData.location.bearing,
-                                    alt = friendData.location.altitude,
-                                    accuracy = friendData.location.accuracy,
-                                    last_update = Instant.parse(friendData.location.last_update),
-                                )
+                                location = friendData.location?.let { loc ->
+                                    LocationData(
+                                        lat = loc.latitude,
+                                        lon = loc.longitude,
+                                        bearing = loc.bearing,
+                                        alt = loc.altitude,
+                                        accuracy = loc.accuracy,
+                                        last_update = Instant.parse(loc.last_update),
+                                    )
+                                }
                             )
                         }
                         state.copy(friends = friends).toResult()
@@ -123,12 +125,14 @@ class MapViewModel(
             mapFriendUseCase.execute(friend, user)
         }
         val bearing = if (mappedUser != null && navigatingFriend != null) {
-            calculateBearingUseCase.execute(
-                mappedUser.lat,
-                mappedUser.lon,
-                navigatingFriend.location.lat,
-                navigatingFriend.location.lon
-            )
+            navigatingFriend.location?.let { loc ->
+                calculateBearingUseCase.execute(
+                    mappedUser.lat,
+                    mappedUser.lon,
+                    loc.lat,
+                    loc.lon
+                )
+            }
         } else null
 
         return ViewState(

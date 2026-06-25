@@ -66,14 +66,16 @@ class FriendsViewModel(
                                         username = friendData.username,
                                         status = friendData.status,
                                         state = friendData.state.toFriendState(),
-                                        location = LocationData(
-                                            lat = friendData.location.latitude,
-                                            lon = friendData.location.longitude,
-                                            bearing = friendData.location.bearing,
-                                            alt = friendData.location.altitude,
-                                            accuracy = friendData.location.accuracy,
-                                            last_update = Instant.parse(friendData.location.last_update)
-                                        )
+                                        location = friendData.location?.let { loc ->
+                                            LocationData(
+                                                lat = loc.latitude,
+                                                lon = loc.longitude,
+                                                bearing = loc.bearing,
+                                                alt = loc.altitude,
+                                                accuracy = loc.accuracy,
+                                                last_update = Instant.parse(loc.last_update)
+                                            )
+                                        }
                                     )
                                 }
                                 Event.OnFriendsLoaded(friendList)
@@ -92,66 +94,70 @@ class FriendsViewModel(
             }
 
             is Event.OnFriendsLoaded -> state.copy(friends = event.friends).toResult()
-            is Event.OnError -> state.copy(actionState = AsyncState.Idle).toResult(SideEffect.Effect(Action.Toast(event.id)))
+            is Event.OnError -> state.copy(actionState = AsyncState.Idle)
+                .toResult(SideEffect.Effect(Action.Toast(event.id)))
 
             is Event.DeleteFriend -> {
                 Timber.tag(TAG).d("Deleting friend: %s", event.nick)
-                state.copy(actionState = AsyncState.Loading(message = "Deleting friend...")).toResult(SideEffect.AsyncWork {
-                    try {
-                        when (val response = removeFriendUseCase.execute(event.nick)) {
-                            CodeResponse.SuccessNoContent -> {
-                                Event.OnActionSuccess(R.string.friend_deleted_successfully)
-                            }
+                state.copy(actionState = AsyncState.Loading(message = "Deleting friend..."))
+                    .toResult(SideEffect.AsyncWork {
+                        try {
+                            when (val response = removeFriendUseCase.execute(event.nick)) {
+                                CodeResponse.SuccessNoContent -> {
+                                    Event.OnActionSuccess(R.string.friend_deleted_successfully)
+                                }
 
-                            is CodeResponse.ErrorData -> {
-                                Event.OnError(R.string.error_deleting_friend)
+                                is CodeResponse.ErrorData -> {
+                                    Event.OnError(R.string.error_deleting_friend)
+                                }
                             }
+                        } catch (e: Exception) {
+                            Timber.tag(TAG).d("Error deleting friend!\n%s", e.message.toString())
+                            Event.OnError(R.string.error_deleting_friend)
                         }
-                    } catch (e: Exception) {
-                        Timber.tag(TAG).d("Error deleting friend!\n%s", e.message.toString())
-                        Event.OnError(R.string.error_deleting_friend)
-                    }
-                })
+                    })
             }
 
             is Event.AcceptFriend -> {
                 Timber.tag(TAG).d("Accepting friend: %s", event.nick)
-                state.copy(actionState = AsyncState.Loading(message = "Accepting request...")).toResult(SideEffect.AsyncWork {
-                    try {
-                        when (val response = acceptFriendUseCase.execute(event.nick)) {
-                            CodeResponse.SuccessNoContent -> {
-                                Event.OnActionSuccess(R.string.friend_accepted)
-                            }
+                state.copy(actionState = AsyncState.Loading(message = "Accepting request..."))
+                    .toResult(SideEffect.AsyncWork {
+                        try {
+                            when (val response = acceptFriendUseCase.execute(event.nick)) {
+                                CodeResponse.SuccessNoContent -> {
+                                    Event.OnActionSuccess(R.string.friend_accepted)
+                                }
 
-                            is CodeResponse.ErrorData -> {
-                                Event.OnError(R.string.error_occurred_during_accepting_friend)
+                                is CodeResponse.ErrorData -> {
+                                    Event.OnError(R.string.error_occurred_during_accepting_friend)
+                                }
                             }
+                        } catch (e: Exception) {
+                            Timber.tag(TAG).d("Error accepting friend!\n%s", e.message.toString())
+                            Event.OnError(R.string.error_occurred_during_accepting_friend)
                         }
-                    } catch (e: Exception) {
-                        Timber.tag(TAG).d("Error accepting friend!\n%s", e.message.toString())
-                        Event.OnError(R.string.error_occurred_during_accepting_friend)
-                    }
-                })
+                    })
             }
 
             is Event.RejectFriend -> {
                 Timber.tag(TAG).d("Rejecting friend: %s", event.nick)
-                state.copy(actionState = AsyncState.Loading(message = "Rejecting request...")).toResult(SideEffect.AsyncWork {
-                    try {
-                        when (val response = rejectFriendUseCase.execute(event.nick)) {
-                            CodeResponse.SuccessNoContent -> {
-                                Event.OnActionSuccess(R.string.rejected_successfully)
-                            }
+                state.copy(actionState = AsyncState.Loading(message = "Rejecting request..."))
+                    .toResult(SideEffect.AsyncWork {
+                        try {
+                            when (val response = rejectFriendUseCase.execute(event.nick)) {
+                                CodeResponse.SuccessNoContent -> {
+                                    Event.OnActionSuccess(R.string.rejected_successfully)
+                                }
 
-                            is CodeResponse.ErrorData -> {
-                                Event.OnError(R.string.error_during_reject)
+                                is CodeResponse.ErrorData -> {
+                                    Event.OnError(R.string.error_during_reject)
+                                }
                             }
+                        } catch (e: Exception) {
+                            Timber.tag(TAG).d("Error rejecting friend!\n%s", e.message.toString())
+                            Event.OnError(R.string.error_during_reject)
                         }
-                    } catch (e: Exception) {
-                        Timber.tag(TAG).d("Error rejecting friend!\n%s", e.message.toString())
-                        Event.OnError(R.string.error_during_reject)
-                    }
-                })
+                    })
             }
 
             is Event.OnActionSuccess -> state.copy(actionState = AsyncState.Idle).toResult(
@@ -200,13 +206,13 @@ class FriendsViewModel(
         data object CheckFriends : Event()
         data class OnFriendsLoaded(val friends: List<FriendLocalData>) : Event()
         data class OnError(@StringRes val id: Int) : Event()
-        data class DeleteFriend(val nick: String): Event()
-        data class AcceptFriend(val nick: String): Event()
-        data class RejectFriend(val nick: String): Event()
-        data class OpenDeleteFriendDialog(val friend: Friend): Event()
-        data object CloseDeleteFriendDialog: Event()
-        data class SelectFriend(val friend: Friend): Event()
-        data object ClearSelectedFriend: Event()
+        data class DeleteFriend(val nick: String) : Event()
+        data class AcceptFriend(val nick: String) : Event()
+        data class RejectFriend(val nick: String) : Event()
+        data class OpenDeleteFriendDialog(val friend: Friend) : Event()
+        data object CloseDeleteFriendDialog : Event()
+        data class SelectFriend(val friend: Friend) : Event()
+        data object ClearSelectedFriend : Event()
         data class OnActionSuccess(@StringRes val messageId: Int) : Event()
         data object OpenShareDialog : Event()
         data object CloseShareDialog : Event()
@@ -235,8 +241,8 @@ class FriendsViewModel(
     )
 
     sealed class DeleteFriendDialogState {
-        data class Open(val friend: Friend): DeleteFriendDialogState()
-        data object Closed: DeleteFriendDialogState()
+        data class Open(val friend: Friend) : DeleteFriendDialogState()
+        data object Closed : DeleteFriendDialogState()
     }
 
     companion object {

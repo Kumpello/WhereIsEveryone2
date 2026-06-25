@@ -18,8 +18,8 @@ class MapLocationUseCase(
             accuracy = convertAccuracyUseCase.execute(data.accuracy),
             lastUpdateTime = formatLastUpdateUseCase.execute(data.last_update),
             lastUpdateAge = convertLastUpdateUseCase.execute(data.last_update),
-            rawAlt = 0.0,
-            rawAccuracy = 0.0f
+            rawAlt = data.alt,
+            rawAccuracy = data.accuracy
         )
     }
 }

@@ -9,6 +9,7 @@ import com.kumpello.whereiseveryone.main.common.entity.LocationData
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.Assert.assertEquals
+ import org.junit.Assert.assertNull
 import org.junit.Test
 import kotlin.time.Clock
 
@@ -49,6 +50,24 @@ class MapFriendUseCaseTest {
 
         assertEquals("friend1", result.username)
         assertEquals(100.0, result.distance!!, 0.001)
-        assertEquals("1 min ago", result.location.lastUpdateTime)
+        assertEquals("1 min ago", result.location?.lastUpdateTime)
+    }
+
+    @Test
+    fun `execute handles null friend location`() {
+        val lastUpdate = Clock.System.now()
+        val friendLocalData = FriendLocalData(
+            username = "friend1",
+            status = "status",
+            state = FriendState.ACCEPTED,
+            location = null
+        )
+        val userLocation = LocationData(0.0, 0.0, 0f, 0.0, 0f, lastUpdate)
+
+        val result = useCase.execute(friendLocalData, userLocation)
+
+        assertEquals("friend1", result.username)
+        assertNull(result.location)
+        assertNull(result.distance)
     }
 }

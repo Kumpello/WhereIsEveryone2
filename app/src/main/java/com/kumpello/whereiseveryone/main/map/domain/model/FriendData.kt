@@ -7,5 +7,5 @@ data class FriendData(
     val username: String,
     val status: String,
     val state: String,
-    val location: UserInfo
+    val location: UserInfo?
 )
