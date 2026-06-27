@@ -20,8 +20,11 @@ import com.kumpello.whereiseveryone.main.common.domain.usecase.SendLocationUseCa
 import com.kumpello.whereiseveryone.main.common.domain.usecase.WipeLocationUseCase
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.AcceptFriendUseCase
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.AddFriendUseCase
+import com.kumpello.whereiseveryone.main.friends.domain.usecase.GetPausedFriendsUseCase
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.RejectFriendUseCase
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.RemoveFriendUseCase
+import com.kumpello.whereiseveryone.main.friends.domain.usecase.ResumeSharingUseCase
+import com.kumpello.whereiseveryone.main.friends.domain.usecase.StopSharingUseCase
 import com.kumpello.whereiseveryone.main.friends.presentation.AddFriendViewModel
 import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
 import com.kumpello.whereiseveryone.main.friends.presentation.ShareProfileViewModel
@@ -60,7 +63,10 @@ val mainModule = module {
             friendsManager = get(),
             mapLocationUseCase = get(),
             mapFriendUseCase = get(),
-            calculateBearingUseCase = get()
+            calculateBearingUseCase = get(),
+            stopSharingUseCase = get(),
+            resumeSharingUseCase = get(),
+            getPausedFriendsUseCase = get()
         )
     }
     viewModel {
@@ -84,6 +90,9 @@ val mainModule = module {
         )
     }
     viewModel { FriendsViewModel(
+        get(),
+        get(),
+        get(),
         get(),
         get(),
         get(),
@@ -115,6 +124,9 @@ val mainModule = module {
     single { RemoveFriendUseCase(get(), get()) }
     single { AcceptFriendUseCase(get(), get()) }
     single { RejectFriendUseCase(get(), get()) }
+    single { StopSharingUseCase(get(), get()) }
+    single { ResumeSharingUseCase(get(), get()) }
+    single { GetPausedFriendsUseCase(get(), get()) }
     single { UpdateStatusUseCase(get(), get()) }
     single { ConvertAccuracyUseCase() }
     single { ConvertAltUseCase() }

@@ -18,11 +18,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.common.ui.entity.Button
 import com.kumpello.whereiseveryone.common.ui.theme.Shapes
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
@@ -37,7 +39,8 @@ import com.kumpello.whereiseveryone.main.common.entity.Location
 fun FriendDetailsCard(
     friend: Friend,
     onDismiss: () -> Unit,
-    onNavigate: (Friend) -> Unit
+    onNavigate: (Friend) -> Unit,
+    onSharingToggle: (Friend) -> Unit
 ) {
     Dialog(
         onDismissRequest = onDismiss,
@@ -50,7 +53,8 @@ fun FriendDetailsCard(
             FriendDetailsContent(
                 friend = friend,
                 onDismiss = onDismiss,
-                onNavigate = onNavigate
+                onNavigate = onNavigate,
+                onSharingToggle = onSharingToggle
             )
         }
     }
@@ -60,7 +64,8 @@ fun FriendDetailsCard(
 private fun FriendDetailsContent(
     friend: Friend,
     onDismiss: () -> Unit,
-    onNavigate: (Friend) -> Unit
+    onNavigate: (Friend) -> Unit,
+    onSharingToggle: (Friend) -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -130,6 +135,18 @@ private fun FriendDetailsContent(
 
             Spacer(modifier = Modifier.size(16.dp))
             Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Button.Animated(
+                    text = if (friend.isPaused) stringResource(R.string.resume_sharing) else stringResource(R.string.stop_sharing),
+                    width = 268
+                ) {
+                    onSharingToggle(friend)
+                }
+            }
+            Spacer(modifier = Modifier.size(8.dp))
+            Row(
                 horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -194,7 +211,8 @@ fun FriendDetailsPreview() {
                 )
             ),
             onDismiss = {},
-            onNavigate = {}
+            onNavigate = {},
+            onSharingToggle = {}
         )
     }
 }

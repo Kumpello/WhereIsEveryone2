@@ -9,7 +9,7 @@ import com.kumpello.whereiseveryone.main.common.entity.LocationData
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.Assert.assertEquals
- import org.junit.Assert.assertNull
+import org.junit.Assert.assertNull
 import org.junit.Test
 import kotlin.time.Clock
 

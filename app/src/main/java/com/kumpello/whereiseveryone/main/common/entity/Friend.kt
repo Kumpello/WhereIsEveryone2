@@ -9,5 +9,6 @@ data class Friend(
     val state: FriendState,
     val location: Location?,
     val distance: Double? = null,
-    val formattedDistance: String? = null
+    val formattedDistance: String? = null,
+    val isPaused: Boolean = false
 )

@@ -12,8 +12,11 @@ import com.kumpello.whereiseveryone.main.common.domain.repository.FriendsReposit
 import com.kumpello.whereiseveryone.main.common.domain.repository.LocationRepository
 import com.kumpello.whereiseveryone.main.common.domain.repository.LocationRepositoryImpl
 import com.kumpello.whereiseveryone.main.friends.domain.api.FriendApi
+import com.kumpello.whereiseveryone.main.friends.domain.api.SharingApi
 import com.kumpello.whereiseveryone.main.friends.domain.repository.FriendRepository
 import com.kumpello.whereiseveryone.main.friends.domain.repository.FriendRepositoryImpl
+import com.kumpello.whereiseveryone.main.friends.domain.repository.SharingRepository
+import com.kumpello.whereiseveryone.main.friends.domain.repository.SharingRepositoryImpl
 import com.kumpello.whereiseveryone.main.map.domain.api.LocationApi
 import com.kumpello.whereiseveryone.main.map.domain.api.StatusApi
 import com.kumpello.whereiseveryone.main.map.domain.repository.StatusRepository
@@ -60,10 +63,12 @@ val networkModule = module {
     single { get<Retrofit>().create(FriendsApi::class.java) }
     single { get<Retrofit>().create(FriendApi::class.java) }
     single { get<Retrofit>().create(StatusApi::class.java) }
+    single { get<Retrofit>().create(SharingApi::class.java) }
 
     single { AuthenticationRepositoryImpl(get()) } bind AuthenticationRepository::class
     single { LocationRepositoryImpl(get()) } bind LocationRepository::class
     single { FriendsRepositoryImpl(get()) } bind FriendsRepository::class
     single { FriendRepositoryImpl(get()) } bind FriendRepository::class
+    single { SharingRepositoryImpl(get()) } bind SharingRepository::class
     single { StatusRepositoryImpl(get()) } bind StatusRepository::class
 }

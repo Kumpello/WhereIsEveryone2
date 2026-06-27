@@ -97,7 +97,6 @@ fun FriendsScreen(
                     action.id,
                     Toast.LENGTH_SHORT
                 ).show()
-                else -> Unit
             }
         }
     }
@@ -136,6 +135,9 @@ private fun FriendsScreen(
                 onDismiss = { onFriendsEvent(FriendsViewModel.Event.ClearSelectedFriend) },
                 onNavigate = { _ ->
                     onFriendsEvent(FriendsViewModel.Event.ClearSelectedFriend)
+                },
+                onSharingToggle = {
+                    onFriendsEvent(FriendsViewModel.Event.ToggleSharing(it.username))
                 }
             )
         }

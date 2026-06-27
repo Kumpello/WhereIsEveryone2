@@ -60,7 +60,8 @@ fun MapContent(
             FriendDetailsCard(
                 friend = state.selectedFriend!!,
                 onDismiss = { viewModel.trigger(MapViewModel.Event.DismissFriendDetails) },
-                onNavigate = { friend -> viewModel.trigger(MapViewModel.Event.NavigateToFriend(friend)) }
+                onNavigate = { friend -> viewModel.trigger(MapViewModel.Event.NavigateToFriend(friend)) },
+                onSharingToggle = { friend -> viewModel.trigger(MapViewModel.Event.ToggleSharing(friend.username)) }
             )
         }
 

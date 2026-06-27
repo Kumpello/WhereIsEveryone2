@@ -13,9 +13,13 @@ import com.kumpello.whereiseveryone.main.common.entity.Friend
 import com.kumpello.whereiseveryone.main.common.entity.FriendLocalData
 import com.kumpello.whereiseveryone.main.common.entity.LocationData
 import com.kumpello.whereiseveryone.main.common.entity.toFriendState
+import com.kumpello.whereiseveryone.main.friends.domain.model.SharingResponse
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.AcceptFriendUseCase
+import com.kumpello.whereiseveryone.main.friends.domain.usecase.GetPausedFriendsUseCase
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.RejectFriendUseCase
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.RemoveFriendUseCase
+import com.kumpello.whereiseveryone.main.friends.domain.usecase.ResumeSharingUseCase
+import com.kumpello.whereiseveryone.main.friends.domain.usecase.StopSharingUseCase
 import com.kumpello.whereiseveryone.main.map.domain.model.FriendsResponse
 import com.kumpello.whereiseveryone.main.map.presentation.LocationService
 import kotlinx.coroutines.launch
@@ -29,7 +33,10 @@ class FriendsViewModel(
     private val acceptFriendUseCase: AcceptFriendUseCase,
     private val rejectFriendUseCase: RejectFriendUseCase,
     private val locationService: LocationService,
-    private val mapFriendUseCase: MapFriendUseCase
+    private val mapFriendUseCase: MapFriendUseCase,
+    private val stopSharingUseCase: StopSharingUseCase,
+    private val resumeSharingUseCase: ResumeSharingUseCase,
+    private val getPausedFriendsUseCase: GetPausedFriendsUseCase
 ) : BaseViewModel<FriendsViewModel.State, FriendsViewModel.ViewState, FriendsViewModel.Event, FriendsViewModel.Action>(
     State()
 ) {
@@ -59,9 +66,19 @@ class FriendsViewModel(
                 Timber.tag(TAG).d("Checking friends")
                 state.toResult(SideEffect.AsyncWork {
                     try {
-                        when (val friends = getFriendsDataUseCase.execute()) {
+                        val friendsResponse = getFriendsDataUseCase.execute()
+                        val pausedResponse = getPausedFriendsUseCase.execute()
+
+                        val paused = if (pausedResponse is SharingResponse.PausedFriends) {
+                            pausedResponse.usernames
+                        } else {
+                            Timber.tag(TAG).d("Error getting paused friends!\n%s", pausedResponse)
+                            emptyList()
+                        }
+
+                        when (friendsResponse) {
                             is FriendsResponse.FriendsData -> {
-                                val friendList = friends.positions.map { friendData ->
+                                val friendList = friendsResponse.positions.map { friendData ->
                                     FriendLocalData(
                                         username = friendData.username,
                                         status = friendData.status,
@@ -78,11 +95,11 @@ class FriendsViewModel(
                                         }
                                     )
                                 }
-                                Event.OnFriendsLoaded(friendList)
+                                Event.OnFriendsLoaded(friendList, paused)
                             }
 
                             is FriendsResponse.ErrorData -> {
-                                Timber.tag(TAG).d("Error getting friends!\n%s", friends)
+                                Timber.tag(TAG).d("Error getting friends!\n%s", friendsResponse)
                                 Event.OnError(R.string.error_getting_friends)
                             }
                         }
@@ -93,7 +110,10 @@ class FriendsViewModel(
                 })
             }
 
-            is Event.OnFriendsLoaded -> state.copy(friends = event.friends).toResult()
+            is Event.OnFriendsLoaded -> state.copy(
+                friends = event.friends,
+                pausedFriends = event.pausedFriends
+            ).toResult()
             is Event.OnError -> state.copy(actionState = AsyncState.Idle)
                 .toResult(SideEffect.Effect(Action.Toast(event.id)))
 
@@ -165,6 +185,40 @@ class FriendsViewModel(
                 SideEffect.InternalEvent(Event.CheckFriends)
             )
 
+            is Event.ToggleSharing -> {
+                val isPaused = state.pausedFriends.contains(event.nick)
+                val (useCase, loadingMsg, successMsg, errorMsg) = if (isPaused) {
+                    listOf(
+                        resumeSharingUseCase::execute,
+                        "Resuming sharing...",
+                        R.string.sharing_resumed_successfully,
+                        R.string.error_resuming_sharing
+                    )
+                } else {
+                    listOf(
+                        stopSharingUseCase::execute,
+                        "Stopping sharing...",
+                        R.string.sharing_stopped_successfully,
+                        R.string.error_stopping_sharing
+                    )
+                }
+                
+                state.copy(actionState = AsyncState.Loading(message = loadingMsg as String))
+                    .toResult(SideEffect.AsyncWork {
+                        try {
+                            val response = (useCase as suspend (String) -> CodeResponse).invoke(event.nick)
+                            if (response is CodeResponse.SuccessNoContent) {
+                                Event.OnActionSuccess(successMsg as Int)
+                            } else {
+                                Event.OnError(errorMsg as Int)
+                            }
+                        } catch (e: Exception) {
+                            Timber.tag(TAG).d("Error toggling sharing!\n%s", e.message.toString())
+                            Event.OnError(errorMsg as Int)
+                        }
+                    })
+            }
+
             is Event.OpenDeleteFriendDialog -> state.copy(
                 deleteFriendDialogState = DeleteFriendDialogState.Open(event.friend)
             ).toResult()
@@ -182,7 +236,9 @@ class FriendsViewModel(
 
     override fun State.toViewState(): ViewState {
         val mappedFriends = friends.map { friend ->
-            mapFriendUseCase.execute(friend, userLocation)
+            mapFriendUseCase.execute(friend, userLocation).copy(
+                isPaused = pausedFriends.contains(friend.username)
+            )
         }.sortedBy { it.distance ?: Double.MAX_VALUE }
 
         return ViewState(
@@ -204,11 +260,15 @@ class FriendsViewModel(
     sealed class Event {
         data class OnLocationUpdate(val location: LocationData?) : Event()
         data object CheckFriends : Event()
-        data class OnFriendsLoaded(val friends: List<FriendLocalData>) : Event()
+        data class OnFriendsLoaded(
+            val friends: List<FriendLocalData>,
+            val pausedFriends: List<String>
+        ) : Event()
         data class OnError(@StringRes val id: Int) : Event()
         data class DeleteFriend(val nick: String) : Event()
         data class AcceptFriend(val nick: String) : Event()
         data class RejectFriend(val nick: String) : Event()
+        data class ToggleSharing(val nick: String) : Event()
         data class OpenDeleteFriendDialog(val friend: Friend) : Event()
         data object CloseDeleteFriendDialog : Event()
         data class SelectFriend(val friend: Friend) : Event()
@@ -220,6 +280,7 @@ class FriendsViewModel(
 
     data class State(
         val friends: List<FriendLocalData> = emptyList(),
+        val pausedFriends: List<String> = emptyList(),
         val deleteFriendDialogState: DeleteFriendDialogState = DeleteFriendDialogState.Closed,
         val selectedFriend: Friend? = null,
         val userLocation: LocationData? = null,

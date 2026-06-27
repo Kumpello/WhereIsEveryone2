@@ -33,6 +33,14 @@
     <string name="error_occurred_during_accepting_friend">Error occurred during accepting friend</string>
     <string name="error_during_reject">Error during reject</string>
 
+    <!-- Sharing Controls -->
+    <string name="stop_sharing">Stop sharing</string>
+    <string name="resume_sharing">Resume sharing</string>
+    <string name="sharing_stopped_successfully">Sharing stopped successfully</string>
+    <string name="sharing_resumed_successfully">Sharing resumed successfully</string>
+    <string name="error_stopping_sharing">Error occurred during stopping sharing</string>
+    <string name="error_resuming_sharing">Error occurred during resuming sharing</string>
+
     <!-- Authentication & Validation -->
     <string name="minimum_8_characters">Minimum 8 characters</string>
     <string name="minimum_1_special_character">Minimum 1 special character</string>

@@ -4,6 +4,7 @@ import androidx.annotation.StringRes
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.viewModelScope
 import com.kumpello.whereiseveryone.R
+import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
 import com.kumpello.whereiseveryone.common.presentation.BaseViewModel
 import com.kumpello.whereiseveryone.main.common.domain.manager.FriendsManager
 import com.kumpello.whereiseveryone.main.common.domain.usecase.CalculateBearingUseCase
@@ -14,6 +15,10 @@ import com.kumpello.whereiseveryone.main.common.entity.FriendLocalData
 import com.kumpello.whereiseveryone.main.common.entity.Location
 import com.kumpello.whereiseveryone.main.common.entity.LocationData
 import com.kumpello.whereiseveryone.main.common.entity.toFriendState
+import com.kumpello.whereiseveryone.main.friends.domain.model.SharingResponse
+import com.kumpello.whereiseveryone.main.friends.domain.usecase.GetPausedFriendsUseCase
+import com.kumpello.whereiseveryone.main.friends.domain.usecase.ResumeSharingUseCase
+import com.kumpello.whereiseveryone.main.friends.domain.usecase.StopSharingUseCase
 import com.kumpello.whereiseveryone.main.map.domain.model.FriendsResponse
 import com.kumpello.whereiseveryone.main.map.entity.MapSettings
 import kotlinx.coroutines.launch
@@ -27,6 +32,9 @@ class MapViewModel(
     private val mapLocationUseCase: MapLocationUseCase,
     private val mapFriendUseCase: MapFriendUseCase,
     private val calculateBearingUseCase: CalculateBearingUseCase,
+    private val stopSharingUseCase: StopSharingUseCase,
+    private val resumeSharingUseCase: ResumeSharingUseCase,
+    private val getPausedFriendsUseCase: GetPausedFriendsUseCase
 ) : BaseViewModel<MapViewModel.State, MapViewModel.ViewState, MapViewModel.Event, MapViewModel.Action>(
     State()
 ) {
@@ -49,6 +57,25 @@ class MapViewModel(
         viewModelScope.launch {
             friendsManager.observeFriends().collect { response ->
                 trigger(Event.OnFriendsUpdate(response))
+                checkPaused()
+            }
+        }
+    }
+
+    private fun checkPaused() {
+        viewModelScope.launch {
+            try {
+                when (val response = getPausedFriendsUseCase.execute()) {
+                    is SharingResponse.PausedFriends -> {
+                        trigger(Event.OnPausedFriendsLoaded(response.usernames))
+                    }
+
+                    is SharingResponse.ErrorData -> {
+                        Timber.tag(TAG).d("Error getting paused friends!\n%s", response)
+                    }
+                }
+            } catch (e: Exception) {
+                Timber.tag(TAG).d("Error getting paused friends!\n%s", e.message.toString())
             }
         }
     }
@@ -86,6 +113,58 @@ class MapViewModel(
                 }
             }
 
+            is Event.OnPausedFriendsLoaded -> state.copy(pausedFriends = event.pausedFriends).toResult()
+
+            is Event.ToggleSharing -> {
+                val isPaused = state.pausedFriends.contains(event.nick)
+                val (useCase, loadingMsg, successMsg, errorMsg) = if (isPaused) {
+                    listOf(
+                        resumeSharingUseCase::execute,
+                        R.string.resume_sharing,
+                        R.string.sharing_resumed_successfully,
+                        R.string.error_resuming_sharing
+                    )
+                } else {
+                    listOf(
+                        stopSharingUseCase::execute,
+                        R.string.stop_sharing,
+                        R.string.sharing_stopped_successfully,
+                        R.string.error_stopping_sharing
+                    )
+                }
+
+                state.toResult(
+                    SideEffect.Effect(Action.Toast(loadingMsg as Int)),
+                    SideEffect.AsyncWork {
+                        try {
+                            val response =
+                                (useCase as suspend (String) -> CodeResponse).invoke(
+                                    event.nick
+                                )
+                            if (response is CodeResponse.SuccessNoContent) {
+                                Event.OnActionSuccess(successMsg as Int)
+                            } else {
+                                Event.OnError(errorMsg as Int)
+                            }
+                        } catch (e: Exception) {
+                            Timber.tag(TAG).d("Error toggling sharing!\n%s", e.message.toString())
+                            Event.OnError(errorMsg as Int)
+                        }
+                    })
+            }
+
+            is Event.OnActionSuccess -> state.toResult(
+                SideEffect.Effect(Action.Toast(event.messageId)),
+                SideEffect.InternalEvent(Event.CheckPaused)
+            )
+
+            Event.CheckPaused -> {
+                checkPaused()
+                state.toResult()
+            }
+
+            is Event.OnError -> state.toResult(SideEffect.Effect(Action.Toast(event.id)))
+
             Event.CenterMap -> {
                 Timber.tag(TAG).d("Centering map, zoom: %s", state.mapSettings.zoom)
                 state.toResult(SideEffect.Effect(Action.CenterMap(state.mapSettings.zoom)))
@@ -122,7 +201,9 @@ class MapViewModel(
     override fun State.toViewState(): ViewState {
         val mappedUser = user?.let { mapLocationUseCase.execute(it) }
         val mappedFriends = friends.map { friend ->
-            mapFriendUseCase.execute(friend, user)
+            mapFriendUseCase.execute(friend, user).copy(
+                isPaused = pausedFriends.contains(friend.username)
+            )
         }
         val bearing = if (mappedUser != null && navigatingFriend != null) {
             navigatingFriend.location?.let { loc ->
@@ -154,6 +235,11 @@ class MapViewModel(
     sealed class Event {
         data class OnLocationUpdate(val location: LocationData?) : Event()
         data class OnFriendsUpdate(val response: FriendsResponse) : Event()
+        data class OnPausedFriendsLoaded(val pausedFriends: List<String>) : Event()
+        data class ToggleSharing(val nick: String) : Event()
+        data class OnActionSuccess(@StringRes val messageId: Int) : Event()
+        data class OnError(@StringRes val id: Int) : Event()
+        data object CheckPaused : Event()
         data object ZoomOut : Event()
         data object ZoomIn : Event()
         data object CenterMap : Event()
@@ -169,6 +255,7 @@ class MapViewModel(
         val navigatingFriend: Friend? = null,
         val mapSettings: MapSettings = MapSettings(),
         val friends: List<FriendLocalData> = emptyList(),
+        val pausedFriends: List<String> = emptyList(),
         val user: LocationData? = null
     )
 
