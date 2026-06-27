@@ -132,6 +132,9 @@ private fun FriendDetailsContent(
                         .replaceFirstChar { it.uppercase() }
                 )
             }
+            friend.friendSince?.let {
+                DetailItem(label = "Friend since", value = it)
+            }
 
             Spacer(modifier = Modifier.size(16.dp))
             Row(
@@ -208,7 +211,8 @@ fun FriendDetailsPreview() {
                     rawAccuracy = 5.0f,
                     lastUpdateTime = "12:34:56 03.06.2026",
                     lastUpdateAge = LastUpdateAge.FRESH
-                )
+                ),
+                friendSince = "01.01.2024"
             ),
             onDismiss = {},
             onNavigate = {},

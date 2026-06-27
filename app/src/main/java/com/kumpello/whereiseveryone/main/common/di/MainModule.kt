@@ -12,6 +12,7 @@ import com.kumpello.whereiseveryone.main.common.domain.usecase.CalculateDistance
 import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertAccuracyUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertAltUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertLastUpdateUseCase
+import com.kumpello.whereiseveryone.main.common.domain.usecase.FormatDateUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.FormatLastUpdateUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.GetFriendsDataUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.MapFriendUseCase
@@ -132,8 +133,9 @@ val mainModule = module {
     single { ConvertAltUseCase() }
     single { ConvertLastUpdateUseCase() }
     single { FormatLastUpdateUseCase() }
+    single { FormatDateUseCase() }
     single { MapLocationUseCase(get(), get(), get()) }
-    single { MapFriendUseCase(get(), get(), get(), get(), get()) }
+    single { MapFriendUseCase(get(), get(), get(), get(), get(), get()) }
     single { CalculateBearingUseCase() }
     single { CalculateDistanceUseCase() }
 }

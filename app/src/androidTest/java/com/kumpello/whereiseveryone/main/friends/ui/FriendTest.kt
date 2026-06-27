@@ -34,7 +34,7 @@ class FriendTest {
 
     @Test
     fun friend_displaysUsername() {
-        val friend = Friend("user1", "status", FriendState.ACCEPTED, testLocation)
+        val friend = Friend("user1", "status", FriendState.ACCEPTED, testLocation, friendSince = "2023-01-01")
         composeTestRule.setContent {
             Friend(friend = friend, trigger = {})
         }
@@ -44,7 +44,7 @@ class FriendTest {
 
     @Test
     fun friend_accepted_showsDeleteButton() {
-        val friend = Friend("user1", "status", FriendState.ACCEPTED, testLocation)
+        val friend = Friend("user1", "status", FriendState.ACCEPTED, testLocation, friendSince = "2023-01-01")
         composeTestRule.setContent {
             Friend(friend = friend, trigger = {})
         }
@@ -55,7 +55,7 @@ class FriendTest {
 
     @Test
     fun friend_pendingIncoming_showsAcceptAndRejectButtons() {
-        val friend = Friend("user1", "status", FriendState.PENDING_INCOMING, testLocation)
+        val friend = Friend("user1", "status", FriendState.PENDING_INCOMING, testLocation, friendSince = "2023-01-01")
         composeTestRule.setContent {
             Friend(friend = friend, trigger = {})
         }
@@ -67,7 +67,7 @@ class FriendTest {
     @Test
     fun friend_click_triggersSelectFriendEvent() {
         var triggeredEvent: FriendsViewModel.Event? = null
-        val friend = Friend("user1", "status", FriendState.ACCEPTED, testLocation)
+        val friend = Friend("user1", "status", FriendState.ACCEPTED, testLocation, friendSince = "2023-01-01")
         composeTestRule.setContent {
             Friend(friend = friend, trigger = { triggeredEvent = it })
         }

@@ -11,7 +11,8 @@ class MapFriendUseCase(
     private val convertAltUseCase: ConvertAltUseCase,
     private val convertAccuracyUseCase: ConvertAccuracyUseCase,
     private val convertLastUpdateUseCase: ConvertLastUpdateUseCase,
-    private val formatLastUpdateUseCase: FormatLastUpdateUseCase
+    private val formatLastUpdateUseCase: FormatLastUpdateUseCase,
+    private val formatDateUseCase: FormatDateUseCase
 ) {
     fun execute(friend: FriendLocalData, userLocation: LocationData?): Friend {
         val friendLocation = friend.location
@@ -39,7 +40,8 @@ class MapFriendUseCase(
                 )
             },
             distance = dist,
-            formattedDistance = dist?.let { formatDistance(it) }
+            formattedDistance = dist?.let { formatDistance(it) },
+            friendSince = friend.friendSince?.let { formatDateUseCase.execute(it) }
         )
     }
 }

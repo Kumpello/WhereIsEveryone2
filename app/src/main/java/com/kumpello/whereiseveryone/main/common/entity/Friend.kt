@@ -10,5 +10,6 @@ data class Friend(
     val location: Location?,
     val distance: Double? = null,
     val formattedDistance: String? = null,
-    val isPaused: Boolean = false
+    val isPaused: Boolean = false,
+    val friendSince: String? = null
 )

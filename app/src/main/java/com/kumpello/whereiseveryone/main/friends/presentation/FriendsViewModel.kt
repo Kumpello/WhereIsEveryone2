@@ -92,7 +92,8 @@ class FriendsViewModel(
                                                 accuracy = loc.accuracy,
                                                 last_update = Instant.parse(loc.last_update)
                                             )
-                                        }
+                                        },
+                                        friendSince = friendData.friend_since?.let { Instant.parse(it) }
                                     )
                                 }
                                 Event.OnFriendsLoaded(friendList, paused)

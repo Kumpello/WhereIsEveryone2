@@ -100,7 +100,8 @@ class MapViewModel(
                                         accuracy = loc.accuracy,
                                         last_update = Instant.parse(loc.last_update),
                                     )
-                                }
+                                },
+                                friendSince = friendData.friend_since?.let { Instant.parse(it) }
                             )
                         }
                         state.copy(friends = friends).toResult()

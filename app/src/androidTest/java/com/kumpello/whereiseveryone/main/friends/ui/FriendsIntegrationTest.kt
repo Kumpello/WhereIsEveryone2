@@ -32,8 +32,8 @@ class FriendsIntegrationTest {
     @Test
     fun friendsList_rendersMultipleFriends() {
         val friends = listOf(
-            Friend("user1", "status", FriendState.ACCEPTED, testLocation),
-            Friend("user2", "status", FriendState.PENDING_INCOMING, testLocation)
+            Friend("user1", "status", FriendState.ACCEPTED, testLocation, friendSince = "2023-01-01"),
+            Friend("user2", "status", FriendState.PENDING_INCOMING, testLocation, friendSince = "2023-01-01")
         )
         
         composeTestRule.setContent {

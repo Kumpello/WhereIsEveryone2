@@ -38,7 +38,8 @@ class FriendDaoTest {
                 username = "user1",
                 status = "status1",
                 state = "accepted",
-                location = UserInfoEntity(1.0, 2.0, 0f, 3.0, 4f, "2023-01-01T00:00:00Z")
+                location = UserInfoEntity(1.0, 2.0, 0f, 3.0, 4f, "2023-01-01T00:00:00Z"),
+                friendSince = "2023-01-01"
             )
         )
         dao.insertFriends(friends)
@@ -55,7 +56,8 @@ class FriendDaoTest {
                 username = "user1",
                 status = "status1",
                 state = "accepted",
-                location = UserInfoEntity(1.0, 2.0, 0f, 3.0, 4f, "2023-01-01T00:00:00Z")
+                location = UserInfoEntity(1.0, 2.0, 0f, 3.0, 4f, "2023-01-01T00:00:00Z"),
+                friendSince = "2023-01-01"
             )
         )
         dao.insertFriends(friends)

@@ -11,7 +11,8 @@ data class FriendDatabaseEntity(
     @PrimaryKey val username: String,
     val status: String,
     val state: String,
-    @Embedded val location: UserInfoEntity?
+    @Embedded val location: UserInfoEntity?,
+    val friendSince: String?
 )
 
 data class UserInfoEntity(
@@ -36,7 +37,8 @@ fun FriendData.toDatabaseEntity() = FriendDatabaseEntity(
             accuracy = it.accuracy,
             lastUpdate = it.last_update
         )
-    }
+    },
+    friendSince = friend_since
 )
 
 fun FriendDatabaseEntity.toDomain() = FriendData(
@@ -52,5 +54,6 @@ fun FriendDatabaseEntity.toDomain() = FriendData(
             accuracy = it.accuracy,
             last_update = it.lastUpdate
         )
-    }
+    },
+    friend_since = friendSince
 )
