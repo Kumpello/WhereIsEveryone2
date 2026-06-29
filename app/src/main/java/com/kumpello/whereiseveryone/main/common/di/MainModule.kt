@@ -53,7 +53,7 @@ val mainModule = module {
             androidContext(),
             AppDatabase::class.java,
             "where-is-everyone-db"
-        ).build()
+        ).fallbackToDestructiveMigration().build()
     }
     single { get<AppDatabase>().friendDao() }
     single { get<AppDatabase>().userLocationDao() }
