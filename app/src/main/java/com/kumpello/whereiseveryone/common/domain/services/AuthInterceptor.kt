@@ -6,11 +6,14 @@ import com.kumpello.whereiseveryone.common.domain.ucecase.RefreshTokenUseCase
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.Response
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 class AuthInterceptor(
-    private val getKeyUseCase: GetKeyUseCase,
-    private val refreshTokenUseCase: RefreshTokenUseCase
-) : Interceptor {
+    private val getKeyUseCase: GetKeyUseCase
+) : Interceptor, KoinComponent {
+
+    private val refreshTokenUseCase: RefreshTokenUseCase by inject()
 
     override fun intercept(chain: Interceptor.Chain): Response {
         val originalRequest = chain.request()

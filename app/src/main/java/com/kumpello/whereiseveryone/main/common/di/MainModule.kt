@@ -2,11 +2,7 @@ package com.kumpello.whereiseveryone.main.common.di
 
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
-import com.kumpello.whereiseveryone.common.domain.ucecase.GetCurrentAuthTokenUseCase
-import com.kumpello.whereiseveryone.common.domain.repository.EncryptedDataStoreRepository
-import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
 import com.kumpello.whereiseveryone.common.domain.ucecase.GetNeededPermissionsUseCase
-import com.kumpello.whereiseveryone.common.domain.ucecase.SaveKeyUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.CalculateBearingUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.CalculateDistanceUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertAccuracyUseCase
@@ -33,8 +29,6 @@ import com.kumpello.whereiseveryone.main.map.domain.usecase.GetPermissionsStatus
 import com.kumpello.whereiseveryone.main.map.domain.usecase.UpdateStatusUseCase
 import androidx.room.Room
 import com.kumpello.whereiseveryone.common.database.AppDatabase
-import com.kumpello.whereiseveryone.common.domain.ucecase.GetCurrentRefreshTokenUseCase
-import com.kumpello.whereiseveryone.common.domain.ucecase.RefreshTokenUseCase
 import com.kumpello.whereiseveryone.main.common.domain.manager.FriendsManager
 import com.kumpello.whereiseveryone.main.map.presentation.LocationService
 import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceImpl
@@ -112,15 +106,9 @@ val mainModule = module {
     single { FriendsManager(get(), get()) }
     single { GetPermissionsStatusUseCase(get()) }
     single { GetNeededPermissionsUseCase() }
-    single { RefreshTokenUseCase(get(), get(), get()) }
     single { WipeLocationUseCase(get(), get()) }
-    single { GetCurrentAuthTokenUseCase(get()) }
-    single { GetCurrentRefreshTokenUseCase(get()) }
-    single { SaveKeyUseCase(get()) }
-    single { GetKeyUseCase(get()) }
     single { SendLocationUseCase(get(), get()) }
     single { GetFriendsDataUseCase(get(), get()) }
-    single { EncryptedDataStoreRepository(androidContext()) }
     single { AddFriendUseCase(get(), get()) }
     single { RemoveFriendUseCase(get(), get()) }
     single { AcceptFriendUseCase(get(), get()) }

@@ -3,6 +3,7 @@ package com.kumpello.whereiseveryone.app
 import android.app.Application
 import com.kumpello.whereiseveryone.BuildConfig
 import com.kumpello.whereiseveryone.authentication.common.di.authenticationModule
+import com.kumpello.whereiseveryone.common.di.commonModule
 import com.kumpello.whereiseveryone.main.common.di.mainModule
 import com.kumpello.whereiseveryone.common.di.networkModule
 import org.koin.android.ext.koin.androidContext
@@ -23,7 +24,7 @@ class WhereIsEveryoneApplication : Application() {
         startKoin{
             androidLogger()
             androidContext(this@WhereIsEveryoneApplication)
-            modules(listOf(mainModule, authenticationModule, networkModule))
+            modules(listOf(commonModule, mainModule, authenticationModule, networkModule))
         }
     }
 
