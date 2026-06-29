@@ -90,7 +90,7 @@ fun SignUpScreen(
     trigger: (SignUpViewModel.Event) -> Unit,
 ) {
     Column(
-        verticalArrangement = Arrangement.Top,
+        verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .safeDrawingPadding()
@@ -98,8 +98,6 @@ fun SignUpScreen(
             .padding(horizontal = 20.dp)
     ) {
         Logo.Text(
-            modifier = Modifier
-                .padding(vertical = 4.dp),
             size = 35
         )
         Column(

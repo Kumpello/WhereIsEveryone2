@@ -80,15 +80,13 @@ fun LoginScreen(
     trigger: (LoginViewModel.Event) -> Unit,
 ) {
     Column(
-        verticalArrangement = Arrangement.Top,
+        verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .safeDrawingPadding()
             .padding(horizontal = 24.dp, vertical = 4.dp)
     ) {
         Logo.Text(
-            modifier = Modifier
-                .padding(vertical = 4.dp),
             size = 35
         )
         Column(
