@@ -97,8 +97,8 @@ fun SignUpScreen(
             .padding(4.dp)
             .padding(horizontal = 20.dp)
     ) {
-        Logo.Text(
-            size = 35
+        Logo.Image(
+            modifier = Modifier.padding(bottom = 32.dp)
         )
         Column(
             modifier = Modifier

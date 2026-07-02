@@ -86,8 +86,8 @@ fun LoginScreen(
             .safeDrawingPadding()
             .padding(horizontal = 24.dp, vertical = 4.dp)
     ) {
-        Logo.Text(
-            size = 35
+        Logo.Image(
+            modifier = Modifier.padding(bottom = 32.dp)
         )
         Column(
             modifier = Modifier
