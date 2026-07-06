@@ -286,13 +286,19 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
             startDestination = MainRoute.Map
         ) {
             composable<MainRoute.Map> {
-                MapScreen(navController = navController)
+                MapScreen(
+                    navController = navController,
+                    screenViewModel = mapScreenViewModel
+                )
             }
             composable<MainRoute.Friends> {
                 FriendsScreen(navController = navController)
             }
             composable<MainRoute.Settings> {
-                SettingsScreen(navController = navController, viewModel = settingsViewModel)
+                SettingsScreen(
+                    navController = navController,
+                    viewModel = settingsViewModel
+                )
             }
         }
     }

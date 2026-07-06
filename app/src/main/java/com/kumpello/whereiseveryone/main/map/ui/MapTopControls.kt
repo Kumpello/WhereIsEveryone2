@@ -9,18 +9,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.map.presentation.MapScreenViewModel
-import org.koin.compose.viewmodel.koinViewModel
-
-@Composable
-fun MapTopControls(
-    modifier: Modifier = Modifier,
-    viewModel: MapScreenViewModel = koinViewModel()
-) {
-    MapTopControls(
-        modifier = modifier,
-        onEvent = viewModel::trigger
-    )
-}
 
 @Composable
 fun MapTopControls(
