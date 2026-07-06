@@ -15,6 +15,6 @@ interface AuthApi {
     @HTTP(method = "POST", path = "auth/login", hasBody = true)
     suspend fun login(@Body requestData: LogInRequest): Response<AuthResponse.AuthData>
 
-    @HTTP(method = "GET", path = "auth/refresh", hasBody = true)
+    @HTTP(method = "POST", path = "auth/refresh", hasBody = true)
     suspend fun refresh(@Body requestData: RefreshRequest): Response<AuthResponse.AuthData>
 }
