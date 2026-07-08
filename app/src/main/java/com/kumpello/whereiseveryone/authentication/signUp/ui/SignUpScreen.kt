@@ -128,6 +128,10 @@ fun SignUpScreen(
                 value = viewState.password,
                 onValueChange = { password ->
                     trigger(SignUpViewModel.Event.SetPassword(password))
+                },
+                passwordVisible = viewState.passwordVisible,
+                onTogglePasswordVisibility = {
+                    trigger(SignUpViewModel.Event.TogglePasswordVisibility)
                 }
             )
 
@@ -217,6 +221,7 @@ fun SignUpPreview() {
                     screenState = ScreenState.Map,
                     username = "Janusz",
                     password = "dupadupadupa",
+                    passwordVisible = false,
                     passwordState = PasswordValidationState(
                         hasMinimum = true,
                         hasSpecialCharacter = true,
@@ -245,6 +250,7 @@ fun SignUpPreviewDark() {
                     screenState = ScreenState.Map,
                     username = "Janusz",
                     password = "dupadupadupa",
+                    passwordVisible = false,
                     passwordState = PasswordValidationState(
                         hasMinimum = true,
                         hasSpecialCharacter = true,

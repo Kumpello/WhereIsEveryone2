@@ -5,18 +5,17 @@ import com.kumpello.whereiseveryone.main.friends.domain.model.SharingResponse
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
-import retrofit2.http.GET
+import retrofit2.http.HTTP
 import retrofit2.http.Header
-import retrofit2.http.POST
 
 interface SharingApi {
 
-    @POST("sharing/stop")
+    @HTTP(method = "POST", path = "me/sharing/stop", hasBody = true)
     suspend fun stopSharing(@Header("Authorization") token: String, @Body request: FriendRequest): Response<ResponseBody>
 
-    @POST("sharing/resume")
+    @HTTP(method = "POST", path = "me/sharing/resume", hasBody = true)
     suspend fun resumeSharing(@Header("Authorization") token: String, @Body request: FriendRequest): Response<ResponseBody>
 
-    @GET("sharing")
+    @HTTP(method = "GET", path = "me/sharing", hasBody = false)
     suspend fun getPaused(@Header("Authorization") token: String): Response<SharingResponse.PausedFriends>
 }

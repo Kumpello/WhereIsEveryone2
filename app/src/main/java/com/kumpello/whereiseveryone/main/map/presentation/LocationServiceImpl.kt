@@ -181,7 +181,6 @@ class LocationServiceImpl : Service(), LocationService {
         Timber.tag(TAG).d("LocationService stopping")
         stopUpdates()
         LocationServiceImpl.state.value = false
-        locationSendChannel.close()
         job.cancel()
         serviceThread.quitSafely()
         super.onDestroy()

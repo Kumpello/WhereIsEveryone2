@@ -1,7 +1,5 @@
 package com.kumpello.whereiseveryone.authentication.splash.presentation
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.AnimationVector1D
 import com.kumpello.whereiseveryone.common.domain.ucecase.GetCurrentAuthTokenUseCase
 import com.kumpello.whereiseveryone.common.domain.ucecase.RefreshTokenUseCase
 import com.kumpello.whereiseveryone.common.presentation.BaseViewModel
@@ -12,74 +10,76 @@ class SplashViewModel(
     private val getCurrentAuthTokenUseCase: GetCurrentAuthTokenUseCase,
     private val refreshTokenUseCase: RefreshTokenUseCase
 ) : BaseViewModel<SplashViewModel.State, SplashViewModel.ViewState, SplashViewModel.Event, SplashViewModel.Action>(
-    State()
+    State
 ) {
 
-    private suspend fun isUserLogged() : Boolean {
+    private suspend fun checkUserStatus() : AuthStatus {
         val authKey = getCurrentAuthTokenUseCase.execute()
         if (authKey.isNullOrEmpty()) {
-            Timber.tag(TAG).d("No auth token found, user is not logged in")
-            return false
+            Timber.tag(TAG).d("No auth token found")
+            return AuthStatus.NoToken
         }
 
-        val result = refreshTokenUseCase.execute()
-        return when (result) {
+        return when (refreshTokenUseCase.execute()) {
             RefreshTokenUseCase.Response.Success -> {
-                Timber.tag(TAG).d("Token refresh successful, user is logged in")
-                true
+                Timber.tag(TAG).d("Token refresh successful")
+                AuthStatus.RefreshSuccess
             }
             RefreshTokenUseCase.Response.Error -> {
-                Timber.tag(TAG).d("Token refresh failed, user is not logged in")
-                false
+                Timber.tag(TAG).d("Token refresh failed")
+                AuthStatus.RefreshFailed
             }
         }
     }
 
     override fun reduce(state: State, event: Event): ReducerResult<State, Event, Action> {
         return when (event) {
-            Event.NavigateToNextDestination -> {
-                Timber.tag(TAG).d("Navigating to next destination from Splash")
+            Event.CheckUserStatus -> {
+                Timber.tag(TAG).d("Checking user status from Splash")
                 state.toResult(
                     SideEffect.AsyncWork {
-                        Event.OnAuthChecked(isUserLogged())
+                        Event.OnAuthChecked(checkUserStatus())
                     }
                 )
             }
 
             is Event.OnAuthChecked -> {
-                Timber.tag(TAG).d("Auth checked: logged in = %s", event.isLogged)
-                state.toResult(
-                    SideEffect.Effect(if (event.isLogged) Action.NavigateMain else Action.NavigateSignUp)
-                )
+                Timber.tag(TAG).d("Auth checked: status = %s", event.status)
+                val action = when (event.status) {
+                    AuthStatus.NoToken -> Action.NavigateSignUp
+                    AuthStatus.RefreshSuccess -> Action.NavigateMain
+                    AuthStatus.RefreshFailed -> Action.NavigateLogin
+                }
+                state.toResult(SideEffect.Effect(action))
             }
         }
     }
 
     override fun State.toViewState(): ViewState {
-        return ViewState(
-            scale = scale,
-        )
+        return ViewState
     }
 
     sealed class Action {
         data object NavigateSignUp: Action()
         data object NavigateMain: Action()
-
+        data object NavigateLogin: Action()
     }
 
     sealed class Event {
-        data object NavigateToNextDestination : Event()
-        data class OnAuthChecked(val isLogged: Boolean) : Event()
+        data object CheckUserStatus : Event()
+        data class OnAuthChecked(val status: AuthStatus) : Event()
     }
 
-    data class State(
-        val scale : Animatable<Float, AnimationVector1D> = Animatable(0f)
-    )
+    sealed class AuthStatus {
+        data object NoToken : AuthStatus()
+        data object RefreshSuccess : AuthStatus()
+        data object RefreshFailed : AuthStatus()
+    }
+
+    data object State
 
     @Immutable
-    data class ViewState(
-        val scale : Animatable<Float, AnimationVector1D>
-    )
+    data object ViewState
 
     companion object {
         private const val TAG = "SPLASH_VM"

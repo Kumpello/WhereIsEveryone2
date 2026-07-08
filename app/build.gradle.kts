@@ -65,6 +65,7 @@ android {
 dependencies {
     implementation(libs.androidx.foundation.layout)
     implementation(libs.androidx.ktx)
+    implementation(libs.androidx.core.splashscreen)
     implementation(platform(libs.kotlin.bom))
     implementation(libs.activity.compose)
     implementation(platform(libs.compose.bom))

@@ -87,7 +87,12 @@ fun MessageFloatingCard(
         ) {
             Text(
                 text = stringResource(R.string.your_message),
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            Text(
+                text = viewState.userMessage,
+                style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
             Spacer(Modifier.size(8.dp))

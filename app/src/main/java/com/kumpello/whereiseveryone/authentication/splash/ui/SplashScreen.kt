@@ -19,8 +19,6 @@ import com.kumpello.whereiseveryone.authentication.common.AuthenticationRoute
 import com.kumpello.whereiseveryone.authentication.splash.presentation.SplashViewModel
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.MainActivity
-import kotlinx.coroutines.delay
-import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun SplashScreen(
@@ -30,24 +28,35 @@ fun SplashScreen(
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
-        delay(2000.milliseconds)
-        viewModel.trigger(SplashViewModel.Event.NavigateToNextDestination)
+        viewModel.trigger(SplashViewModel.Event.CheckUserStatus)
     }
 
     LaunchedEffect(Unit) {
         viewModel.action.collect { action ->
             when (action) {
-                SplashViewModel.Action.NavigateMain -> context.startActivity(
-                    Intent(
-                        context,
-                        MainActivity::class.java
+                SplashViewModel.Action.NavigateMain -> {
+                    context.startActivity(
+                        Intent(
+                            context,
+                            MainActivity::class.java
+                        )
                     )
-                )
+                }
 
-                SplashViewModel.Action.NavigateSignUp -> navController.navigate(
-                    AuthenticationRoute.SignUp
-                ) {
-                    popUpTo(AuthenticationRoute.Splash) { inclusive = true }
+                SplashViewModel.Action.NavigateSignUp -> {
+                    navController.navigate(
+                        AuthenticationRoute.SignUp
+                    ) {
+                        popUpTo(AuthenticationRoute.Splash) { inclusive = true }
+                    }
+                }
+
+                SplashViewModel.Action.NavigateLogin -> {
+                    navController.navigate(
+                        AuthenticationRoute.Login
+                    ) {
+                        popUpTo(AuthenticationRoute.Splash) { inclusive = true }
+                    }
                 }
             }
         }
@@ -59,13 +68,14 @@ fun SplashScreen(
 }
 
 @Composable
-fun SplashScreen(modifier: Modifier = Modifier) {
+fun SplashScreen(
+    modifier: Modifier = Modifier
+) {
     Surface(
         modifier = modifier,
         color = Color.Black
-        ) {
+    ) {
         Image(
-            modifier = Modifier,
             contentScale = ContentScale.FillHeight,
             painter = painterResource(id = R.drawable.im_splash_screen),
             contentDescription = "Splash screen",

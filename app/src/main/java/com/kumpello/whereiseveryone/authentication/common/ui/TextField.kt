@@ -4,6 +4,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -14,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.kumpello.whereiseveryone.common.ui.theme.Shapes
 
@@ -51,6 +57,8 @@ object TextField {
         label: String,
         value: String,
         onValueChange: (String) -> Unit,
+        passwordVisible: Boolean,
+        onTogglePasswordVisibility: () -> Unit
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Text(
@@ -62,10 +70,21 @@ object TextField {
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
                 value = value,
-                visualTransformation = PasswordVisualTransformation(),
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 onValueChange = onValueChange,
                 shape = Shapes.large,
+                trailingIcon = {
+                    val image = if (passwordVisible)
+                        Icons.Filled.Visibility
+                    else Icons.Filled.VisibilityOff
+
+                    val description = if (passwordVisible) "Hide password" else "Show password"
+
+                    IconButton(onClick = onTogglePasswordVisibility) {
+                        Icon(imageVector = image, contentDescription = description)
+                    }
+                },
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedContainerColor = Color.Transparent,
                     unfocusedContainerColor = Color.Transparent,

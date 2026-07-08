@@ -117,6 +117,10 @@ fun LoginScreen(
                 value = viewState.password,
                 onValueChange = { value ->
                     trigger(LoginViewModel.Event.SetPassword(value))
+                },
+                passwordVisible = viewState.passwordVisible,
+                onTogglePasswordVisibility = {
+                    trigger(LoginViewModel.Event.TogglePasswordVisibility)
                 }
             )
 
@@ -157,6 +161,7 @@ fun LoginPreview() {
                     screenState = ScreenState.Map,
                     username = "Janusz",
                     password = "dupadupadupa",
+                    passwordVisible = false,
                     loginState = AsyncState.Idle
                 )
             ) {}
@@ -178,6 +183,7 @@ fun LoginPreviewDark() {
                     screenState = ScreenState.Map,
                     username = "Janusz",
                     password = "dupadupadupa",
+                    passwordVisible = false,
                     loginState = AsyncState.Idle
                 )
             ) {}

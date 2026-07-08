@@ -52,7 +52,7 @@
         <activity
             android:name=".authentication.AuthenticationActivity"
             android:exported="true"
-            android:theme="@style/Theme.WhereIsEveryone" >
+            android:theme="@style/Theme.App.Starting" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

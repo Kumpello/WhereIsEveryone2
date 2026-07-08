@@ -56,6 +56,10 @@ class LoginViewModel(
             is Event.SetPassword -> state.copy(
                 password = event.password
             ).toResult()
+
+            Event.TogglePasswordVisibility -> state.copy(
+                passwordVisible = !state.passwordVisible
+            ).toResult()
         }
     }
 
@@ -64,6 +68,7 @@ class LoginViewModel(
             screenState = screenState,
             username = username,
             password = password,
+            passwordVisible = passwordVisible,
             loginState = loginState
         )
     }
@@ -78,6 +83,7 @@ class LoginViewModel(
         data object OnLoginClick : Event()
         data class SetUsername(val username: String) : Event()
         data class SetPassword(val password: String) : Event()
+        data object TogglePasswordVisibility : Event()
         data object NavigateSignUp : Event()
         data class OnLoginResult(val success: Boolean, val error: Throwable? = null) : Event()
     }
@@ -86,6 +92,7 @@ class LoginViewModel(
         val screenState: ScreenState = ScreenState.Map,
         val username: String = "",
         val password: String = "",
+        val passwordVisible: Boolean = false,
         val loginState: AsyncState<Unit> = AsyncState.Idle
     )
 
@@ -94,6 +101,7 @@ class LoginViewModel(
         val screenState: ScreenState,
         val username: String,
         val password: String,
+        val passwordVisible: Boolean,
         val loginState: AsyncState<Unit>
     )
 
