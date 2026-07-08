@@ -10,22 +10,18 @@ class FriendsRepositoryImpl(
 
     override suspend fun getFriends(token: String): FriendsResponse {
         val response = friendsApi.getFriends("Bearer $token")
-        return when {
-            response.isSuccessful -> {
-                Timber.tag(TAG).d("Successfully fetched friends")
-                FriendsResponse.FriendsData(
-                    response.body() ?: emptyList()
-                )
-            }
-
-            else -> {
-                Timber.tag(TAG).e("Error fetching friends: %s", response.errorBody()?.string())
-                FriendsResponse.ErrorData(
-                    response.code(),
-                    response.errorBody().toString(),
-                    response.message()
-                )
-            }
+        return if (response.isSuccessful) {
+            Timber.tag(TAG).d("Successfully fetched friends")
+            FriendsResponse.FriendsData(
+                response.body() ?: emptyList()
+            )
+        } else {
+            Timber.tag(TAG).e("Error fetching friends: %s", response.errorBody()?.string())
+            FriendsResponse.ErrorData(
+                response.code(),
+                response.errorBody().toString(),
+                response.message()
+            )
         }
     }
 

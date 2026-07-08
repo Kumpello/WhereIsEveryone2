@@ -54,7 +54,9 @@ class SharingRepositoryImpl(
         val response = sharingApi.getPaused("Bearer $token")
 
         return if (response.isSuccessful) {
-            response.body() ?: SharingResponse.PausedFriends(emptyList())
+            SharingResponse.PausedFriends(
+                response.body() ?: emptyList()
+            )
         } else {
             Timber.tag(TAG).e("Get paused friends failed: %s", response.errorBody()?.string())
             SharingResponse.ErrorData(

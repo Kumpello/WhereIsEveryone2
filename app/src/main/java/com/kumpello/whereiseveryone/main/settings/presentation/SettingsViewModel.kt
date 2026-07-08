@@ -34,11 +34,6 @@ class SettingsViewModel(
                 trigger(OnLocationServiceStateUpdate(state))
             }
         }
-        viewModelScope.launch(Dispatchers.IO) {
-            val isEnabled = getKeyUseCase.getValue(WhereIsEveryoneApplication.LOCATION_SHARING_ENABLED_KEY)
-                ?.toBoolean() ?: true
-            trigger(OnLocationServiceStateUpdate(isEnabled))
-        }
     }
 
     override fun reduce(state: State, event: Event): ReducerResult<State, Event, Action> {
