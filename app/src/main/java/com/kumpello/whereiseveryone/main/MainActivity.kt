@@ -139,7 +139,7 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
                             val isEnabled = getKeyUseCase.getValue(WhereIsEveryoneApplication.LOCATION_SHARING_ENABLED_KEY)
                                 ?.toBoolean() ?: true
                             if (isEnabled) {
-                                initializeLocationServices()
+                                startLocationService()
                             }
                         }
                     }
@@ -177,7 +177,7 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
                 && !mapScreenViewModel.state.value.permissions.containsValue(false)
                 && isEnabled
             ) {
-                initializeLocationServices()
+                startLocationService()
             }
         }
     }
@@ -196,7 +196,7 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
         }
     }
 
-    override fun startLocationService() {
+    fun startForegroundLocationService() {
         val serviceIntent = Intent(applicationContext, LocationServiceImpl::class.java)
         //TODO: Add value to extra
         serviceIntent.putExtra(STATUS_PARAM, "test value")
@@ -235,7 +235,7 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
     private fun getPermissionsLauncher(): ActivityResultLauncher<Array<String>> {
         return registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissionsResult ->
             if (!permissionsResult.containsValue(false)) {
-                initializeLocationServices()
+                startLocationService()
                 requestBackgroundPermission(permissionsLauncher)
             } else {
                 //TODO: Action when user deny permissions
@@ -244,8 +244,8 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
         }
     }
 
-    private fun initializeLocationServices() {
-        startLocationService()
+    override fun startLocationService() {
+        startForegroundLocationService()
         bindLocationService()
         setLocationService(LocationService.UpdateType.Foreground)
     }
