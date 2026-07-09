@@ -63,4 +63,10 @@
     <string name="settings_delete_location_data">Delete your location data</string>
     <string name="nfc_not_supported">NFC is not supported on this device</string>
     <string name="nfc_disabled">NFC is disabled, please enable it in settings</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">Settings</string>
+    <string name="about_title">About</string>
+    <string name="about_description">WhereIsEveryone is an app that allows you to share your location with your friends in real time. Built with Jetpack Compose and Mapbox.</string>
+    <string name="version_format">Version: %s</string>
 </resources>
