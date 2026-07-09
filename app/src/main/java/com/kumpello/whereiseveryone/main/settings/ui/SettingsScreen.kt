@@ -1,6 +1,8 @@
 package com.kumpello.whereiseveryone.main.settings.ui
 
+import android.content.Intent
 import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,6 +36,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.kumpello.whereiseveryone.BuildConfig
 import com.kumpello.whereiseveryone.R
+import com.kumpello.whereiseveryone.authentication.AuthenticationActivity
 import com.kumpello.whereiseveryone.common.ui.entity.Button
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel
@@ -55,6 +58,11 @@ fun SettingsScreen(
                     action.id,
                     Toast.LENGTH_SHORT,
                 ).show()
+
+                SettingsViewModel.Action.NavigateToAuth -> {
+                    context.startActivity(Intent(context, AuthenticationActivity::class.java))
+                    (context as? ComponentActivity)?.finish()
+                }
             }
         }
     }
@@ -108,6 +116,12 @@ private fun SettingsScreen(
                     textSize = 18
                 ) {
                     trigger(SettingsViewModel.Event.ClearData)
+                }
+                Button.Animated(
+                    text = stringResource(viewState.logoutTextId),
+                    textSize = 18
+                ) {
+                    trigger(SettingsViewModel.Event.Logout)
                 }
             }
 
@@ -179,7 +193,8 @@ fun SettingsPreview() {
             viewState = SettingsViewModel.ViewState(
                 isLocationServiceRunning = true,
                 locationSwitchTextId = R.string.settings_stop_sharing_location,
-                deleteLocationDataId = R.string.settings_delete_location_data
+                deleteLocationDataId = R.string.settings_delete_location_data,
+                logoutTextId = R.string.settings_logout
             )
         ) {}
     }

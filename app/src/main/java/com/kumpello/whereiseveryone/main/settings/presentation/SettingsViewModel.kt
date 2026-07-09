@@ -11,6 +11,7 @@ import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
 import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
 import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
+import com.kumpello.whereiseveryone.common.domain.ucecase.LogoutUseCase
 import com.kumpello.whereiseveryone.common.domain.ucecase.SaveKeyUseCase
 import com.kumpello.whereiseveryone.common.presentation.BaseViewModel.SideEffect.*
 import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel.Event.*
@@ -23,7 +24,8 @@ class SettingsViewModel(
     @InjectedParam private val locationServiceInterface: LocationServiceInterface,
     private val wipeLocationUseCase: WipeLocationUseCase,
     private val saveKeyUseCase: SaveKeyUseCase,
-    private val getKeyUseCase: GetKeyUseCase
+    private val getKeyUseCase: GetKeyUseCase,
+    private val logoutUseCase: LogoutUseCase
 ) : BaseViewModel<SettingsViewModel.State, SettingsViewModel.ViewState, SettingsViewModel.Event, SettingsViewModel.Action>(
     State()
 ) {
@@ -89,6 +91,20 @@ class SettingsViewModel(
                 })
             }
 
+            Logout -> {
+                Timber.tag(TAG).d("Logging out user")
+                state.toResult(AsyncWork {
+                    locationServiceInterface.stopLocationService()
+                    logoutUseCase.execute()
+                    OnLogoutComplete
+                })
+            }
+
+            OnLogoutComplete -> {
+                Timber.tag(TAG).d("Logout complete, navigating to auth")
+                state.toResult(Effect(Action.NavigateToAuth))
+            }
+
             OnDataCleared -> {
                 Timber.tag(TAG).d("User data cleared successfully")
                 state.toResult(InternalEvent(Toast(R.string.location_wiped_correctly_sharing_stoped)))
@@ -108,19 +124,23 @@ class SettingsViewModel(
             } else {
                 R.string.settings_start_sharing_location
             },
-            deleteLocationDataId = R.string.settings_delete_location_data
+            deleteLocationDataId = R.string.settings_delete_location_data,
+            logoutTextId = R.string.settings_logout
         )
     }
 
     sealed class Action {
         data object BackToMap : Action()
         data class Toast(@param:StringRes val id: Int) : Action()
+        data object NavigateToAuth : Action()
     }
 
     sealed class Event {
         data class OnLocationServiceStateUpdate(val isRunning: Boolean) : Event()
         data object ClearData : Event()
         data object SwitchLocationServiceState : Event()
+        data object Logout : Event()
+        data object OnLogoutComplete : Event()
         data object OnDataCleared : Event()
         data class Toast(@param:StringRes val stringId: Int) : Event()
         data object NoOp : Event()
@@ -135,6 +155,7 @@ class SettingsViewModel(
         val isLocationServiceRunning: Boolean,
         @param:StringRes val locationSwitchTextId: Int,
         @param:StringRes val deleteLocationDataId: Int,
+        @param:StringRes val logoutTextId: Int,
     )
 
     companion object {

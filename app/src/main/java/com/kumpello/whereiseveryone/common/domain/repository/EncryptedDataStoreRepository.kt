@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Base64
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStore
 import com.google.crypto.tink.Aead
 import com.google.crypto.tink.KeyTemplates
@@ -26,6 +27,10 @@ class EncryptedDataStoreRepository(private val context: Context) {
     }
 
     fun dataStore(): DataStore<Preferences> = context.dataStore
+
+    suspend fun clearAll() {
+        context.dataStore.edit { it.clear() }
+    }
 
     fun encrypt(value: String): String {
         val encrypted = aead.encrypt(value.toByteArray(), null)
