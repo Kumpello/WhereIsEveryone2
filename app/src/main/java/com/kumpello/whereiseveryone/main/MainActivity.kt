@@ -5,6 +5,7 @@ import android.app.Activity
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.pm.PackageManager
 import android.nfc.NdefMessage
 import android.nfc.NdefRecord
 import android.nfc.NfcAdapter
@@ -239,7 +240,7 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
         return registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissionsResult ->
             if (!permissionsResult.containsValue(false)) {
                 startLocationService()
-                requestBackgroundPermission(permissionsLauncher)
+                requestBackgroundPermissionIfNeeded(permissionsLauncher)
             } else {
                 //TODO: Action when user deny permissions
             }
@@ -275,9 +276,20 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
         }
     }
 
-    private fun requestBackgroundPermission(permissionLauncher: ActivityResultLauncher<Array<String>>) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+    private fun requestBackgroundPermissionIfNeeded(permissionLauncher: ActivityResultLauncher<Array<String>>) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && shouldRequestBackgroundPermission()) {
             permissionLauncher.launch(arrayOf(ACCESS_BACKGROUND_LOCATION))
+        }
+    }
+
+    private fun shouldRequestBackgroundPermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ContextCompat.checkSelfPermission(
+                this,
+                ACCESS_BACKGROUND_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        } else {
+            false
         }
     }
 
