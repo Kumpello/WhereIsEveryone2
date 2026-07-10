@@ -296,7 +296,6 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
             Timber.tag(TAG).d("LocationServiceConnection: connected to service.")
             val binder = iBinder as LocationServiceImpl.LocationBinder
             locationService = binder.service
-            isLocationServiceBound = true
             // Do stuff
         }
 
