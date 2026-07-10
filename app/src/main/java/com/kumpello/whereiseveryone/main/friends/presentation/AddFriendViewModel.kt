@@ -58,6 +58,8 @@ class AddFriendViewModel(
                     state.toResult()
                 }
             }
+
+            Event.ScanQrCode -> state.toResult(SideEffect.Effect(Action.OpenQrScanner))
         }
     }
 
@@ -71,6 +73,7 @@ class AddFriendViewModel(
     sealed class Action {
         data class Toast(@StringRes val id: Int) : Action()
         data object NotifyFriendAdded : Action()
+        data object OpenQrScanner : Action()
     }
 
     sealed class Event {
@@ -79,6 +82,7 @@ class AddFriendViewModel(
         data class OnActionSuccess(@StringRes val messageId: Int) : Event()
         data class OnError(@StringRes val id: Int) : Event()
         data class OnUriReceived(val uri: android.net.Uri) : Event()
+        data object ScanQrCode : Event()
     }
 
     data class State(

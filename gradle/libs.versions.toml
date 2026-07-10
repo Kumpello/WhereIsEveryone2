@@ -27,6 +27,7 @@ tink = "1.22.0"
 core-splashscreen = "1.2.0"
 foundationLayoutVersion = "1.11.4"
 zxing = "3.5.4"
+play-services-code-scanner = "16.1.0"
 mockk = "1.14.11"
 coroutines-test = "1.11.0"
 turbine = "1.2.1"
@@ -80,6 +81,7 @@ compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
 androidx-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout", version.ref = "foundationLayoutVersion" }
 zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
+play-services-code-scanner = { group = "com.google.android.gms", name = "play-services-code-scanner", version.ref = "play-services-code-scanner" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 mockk-android = { group = "io.mockk", name = "mockk-android", version.ref = "mockk" }
 coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines-test" }

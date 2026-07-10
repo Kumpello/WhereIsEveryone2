@@ -74,4 +74,14 @@ class AddFriendViewModelTest {
             assertTrue(awaitItem() is AddFriendViewModel.Action.Toast)
         }
     }
+
+    @Test
+    fun `ScanQrCode triggers OpenQrScanner action`() = runTest {
+        setupViewModel()
+
+        viewModel.action.test {
+            viewModel.trigger(AddFriendViewModel.Event.ScanQrCode)
+            assertTrue(awaitItem() is AddFriendViewModel.Action.OpenQrScanner)
+        }
+    }
 }
