@@ -15,6 +15,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.kumpello.whereiseveryone.R
+import com.kumpello.whereiseveryone.authentication.AuthenticationActivity
 import com.kumpello.whereiseveryone.authentication.common.AuthenticationRoute
 import com.kumpello.whereiseveryone.authentication.splash.presentation.SplashViewModel
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
@@ -26,21 +27,22 @@ fun SplashScreen(
     viewModel: SplashViewModel = viewModel()
 ) {
     val context = LocalContext.current
+    val activity = context as? AuthenticationActivity
+    val intentUri = activity?.intent?.data
 
     LaunchedEffect(Unit) {
-        viewModel.trigger(SplashViewModel.Event.CheckUserStatus)
+        viewModel.trigger(SplashViewModel.Event.CheckUserStatus(intentUri))
     }
 
     LaunchedEffect(Unit) {
         viewModel.action.collect { action ->
             when (action) {
-                SplashViewModel.Action.NavigateMain -> {
-                    context.startActivity(
-                        Intent(
-                            context,
-                            MainActivity::class.java
-                        )
-                    )
+                is SplashViewModel.Action.NavigateMain -> {
+                    val intent = Intent(context, MainActivity::class.java).apply {
+                        data = action.uri
+                    }
+                    context.startActivity(intent)
+                    activity?.finish()
                 }
 
                 SplashViewModel.Action.NavigateSignUp -> {

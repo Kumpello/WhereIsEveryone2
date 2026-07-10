@@ -157,8 +157,11 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
     }
 
     private fun handleIntent(intent: Intent?) {
+        Timber.tag(TAG).d("handleIntent: %s", intent)
         intent?.data?.let { uri ->
+            Timber.tag(TAG).d("handleIntent: uri = %s, scheme = %s, host = %s", uri, uri.scheme, uri.host)
             if (uri.scheme == "whereiseveryone" && uri.host == "addfriend") {
+                Timber.tag(TAG).d("handleIntent: Triggering OnUriReceived with %s", uri)
                 addFriendViewModel.trigger(AddFriendViewModel.Event.OnUriReceived(uri))
             }
         }

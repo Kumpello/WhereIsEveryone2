@@ -34,20 +34,20 @@ class SplashViewModel(
 
     override fun reduce(state: State, event: Event): ReducerResult<State, Event, Action> {
         return when (event) {
-            Event.CheckUserStatus -> {
-                Timber.tag(TAG).d("Checking user status from Splash")
+            is Event.CheckUserStatus -> {
+                Timber.tag(TAG).d("Checking user status from Splash, uri = %s", event.uri)
                 state.toResult(
                     SideEffect.AsyncWork {
-                        Event.OnAuthChecked(checkUserStatus())
+                        Event.OnAuthChecked(checkUserStatus(), event.uri)
                     }
                 )
             }
 
             is Event.OnAuthChecked -> {
-                Timber.tag(TAG).d("Auth checked: status = %s", event.status)
+                Timber.tag(TAG).d("Auth checked: status = %s, uri = %s", event.status, event.uri)
                 val action = when (event.status) {
                     AuthStatus.NoToken -> Action.NavigateSignUp
-                    AuthStatus.RefreshSuccess -> Action.NavigateMain
+                    AuthStatus.RefreshSuccess -> Action.NavigateMain(event.uri)
                     AuthStatus.RefreshFailed -> Action.NavigateLogin
                 }
                 state.toResult(SideEffect.Effect(action))
@@ -61,13 +61,13 @@ class SplashViewModel(
 
     sealed class Action {
         data object NavigateSignUp: Action()
-        data object NavigateMain: Action()
+        data class NavigateMain(val uri: android.net.Uri?): Action()
         data object NavigateLogin: Action()
     }
 
     sealed class Event {
-        data object CheckUserStatus : Event()
-        data class OnAuthChecked(val status: AuthStatus) : Event()
+        data class CheckUserStatus(val uri: android.net.Uri?) : Event()
+        data class OnAuthChecked(val status: AuthStatus, val uri: android.net.Uri?) : Event()
     }
 
     sealed class AuthStatus {

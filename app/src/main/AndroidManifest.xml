@@ -43,12 +43,6 @@
             android:exported="true"
             android:launchMode="singleInstance"
             >
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="whereiseveryone" android:host="addfriend" />
-            </intent-filter>
         </activity>
         <activity
             android:name=".authentication.AuthenticationActivity"
@@ -58,6 +52,13 @@
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="whereiseveryone" android:host="addfriend" />
             </intent-filter>
 
             <meta-data

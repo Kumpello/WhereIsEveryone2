@@ -4,7 +4,9 @@ import androidx.annotation.StringRes
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.viewModelScope
 import com.kumpello.whereiseveryone.R
+import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
 import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
+import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
 import com.kumpello.whereiseveryone.common.presentation.AsyncState
 import com.kumpello.whereiseveryone.common.presentation.BaseViewModel
 import com.kumpello.whereiseveryone.main.common.domain.usecase.GetFriendsDataUseCase
@@ -36,13 +38,16 @@ class FriendsViewModel(
     private val mapFriendUseCase: MapFriendUseCase,
     private val stopSharingUseCase: StopSharingUseCase,
     private val resumeSharingUseCase: ResumeSharingUseCase,
-    private val getPausedFriendsUseCase: GetPausedFriendsUseCase
+    private val getPausedFriendsUseCase: GetPausedFriendsUseCase,
+    private val getKeyUseCase: GetKeyUseCase
 ) : BaseViewModel<FriendsViewModel.State, FriendsViewModel.ViewState, FriendsViewModel.Event, FriendsViewModel.Action>(
     State()
 ) {
 
     init {
         viewModelScope.launch {
+            val username = getKeyUseCase.getValue(WhereIsEveryoneApplication.USER_NAME_KEY)
+            trigger(Event.OnUsernameLoaded(username ?: ""))
             locationService.observeLocation().collect { location ->
                 trigger(Event.OnLocationUpdate(location?.let {
                     LocationData(
@@ -115,6 +120,9 @@ class FriendsViewModel(
                 friends = event.friends,
                 pausedFriends = event.pausedFriends
             ).toResult()
+
+            is Event.OnUsernameLoaded -> state.copy(username = event.username).toResult()
+
             is Event.OnError -> state.copy(actionState = AsyncState.Idle)
                 .toResult(SideEffect.Effect(Action.Toast(event.id)))
 
@@ -265,6 +273,7 @@ class FriendsViewModel(
             val friends: List<FriendLocalData>,
             val pausedFriends: List<String>
         ) : Event()
+        data class OnUsernameLoaded(val username: String) : Event()
         data class OnError(@StringRes val id: Int) : Event()
         data class DeleteFriend(val nick: String) : Event()
         data class AcceptFriend(val nick: String) : Event()
