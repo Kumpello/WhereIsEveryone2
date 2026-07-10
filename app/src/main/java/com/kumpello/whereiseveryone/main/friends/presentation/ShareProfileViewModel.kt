@@ -25,7 +25,6 @@ class ShareProfileViewModel(
     override fun reduce(state: State, event: Event): ReducerResult<State, Event, Action> {
         return when (event) {
             is Event.OnUsernameLoaded -> state.copy(username = event.username).toResult()
-            Event.ShareViaNfc -> state.toResult(SideEffect.Effect(Action.TriggerNfcSharing(state.username)))
             Event.OnNfcNotSupported -> state.toResult(SideEffect.Effect(Action.Toast(R.string.nfc_not_supported)))
             Event.OnNfcDisabled -> state.toResult(SideEffect.Effect(Action.Toast(R.string.nfc_disabled)))
         }
@@ -39,12 +38,10 @@ class ShareProfileViewModel(
 
     sealed class Action {
         data class Toast(@StringRes val id: Int) : Action()
-        data class TriggerNfcSharing(val username: String) : Action()
     }
 
     sealed class Event {
         data class OnUsernameLoaded(val username: String) : Event()
-        data object ShareViaNfc : Event()
         data object OnNfcNotSupported : Event()
         data object OnNfcDisabled : Event()
     }

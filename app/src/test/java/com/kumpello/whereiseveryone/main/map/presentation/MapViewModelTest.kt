@@ -6,6 +6,9 @@ import com.kumpello.whereiseveryone.main.common.domain.manager.FriendsManager
 import com.kumpello.whereiseveryone.main.common.domain.usecase.CalculateBearingUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.MapFriendUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.MapLocationUseCase
+import com.kumpello.whereiseveryone.main.friends.domain.usecase.StopSharingUseCase
+import com.kumpello.whereiseveryone.main.friends.domain.usecase.ResumeSharingUseCase
+import com.kumpello.whereiseveryone.main.friends.domain.usecase.GetPausedFriendsUseCase
 import com.kumpello.whereiseveryone.utils.MainDispatcherRule
 import io.mockk.every
 import io.mockk.mockk
@@ -32,6 +35,9 @@ class MapViewModelTest {
     private val mapLocationUseCase: MapLocationUseCase = mockk()
     private val mapFriendUseCase: MapFriendUseCase = mockk()
     private val calculateBearingUseCase: CalculateBearingUseCase = mockk()
+    private val stopSharingUseCase: StopSharingUseCase = mockk()
+    private val resumeSharingUseCase: ResumeSharingUseCase = mockk()
+    private val getPausedFriendsUseCase: GetPausedFriendsUseCase = mockk()
 
     private lateinit var viewModel: MapViewModel
 
@@ -41,7 +47,10 @@ class MapViewModelTest {
             friendsManager,
             mapLocationUseCase,
             mapFriendUseCase,
-            calculateBearingUseCase
+            calculateBearingUseCase,
+            stopSharingUseCase,
+            resumeSharingUseCase,
+            getPausedFriendsUseCase
         )
     }
 

@@ -20,13 +20,15 @@ class MapFriendUseCaseTest {
     private val convertAccuracyUseCase: ConvertAccuracyUseCase = mockk()
     private val convertLastUpdateUseCase: ConvertLastUpdateUseCase = mockk()
     private val formatLastUpdateUseCase: FormatLastUpdateUseCase = mockk()
+    private val formatDateUseCase: FormatDateUseCase = mockk()
     
     private val useCase = MapFriendUseCase(
         calculateDistanceUseCase,
         convertAltUseCase,
         convertAccuracyUseCase,
         convertLastUpdateUseCase,
-        formatLastUpdateUseCase
+        formatLastUpdateUseCase,
+        formatDateUseCase
     )
 
     @Test
@@ -36,7 +38,8 @@ class MapFriendUseCaseTest {
             username = "friend1",
             status = "status",
             state = FriendState.ACCEPTED,
-            location = LocationData(1.0, 2.0, 0f, 3.0, 4f, lastUpdate)
+            location = LocationData(1.0, 2.0, 0f, 3.0, 4f, lastUpdate),
+            friendSince = lastUpdate
         )
         val userLocation = LocationData(0.0, 0.0, 0f, 0.0, 0f, lastUpdate)
 
@@ -45,12 +48,14 @@ class MapFriendUseCaseTest {
         every { convertAccuracyUseCase.execute(any()) } returns AccuracyLevel.HIGH
         every { convertLastUpdateUseCase.execute(any(), any()) } returns LastUpdateAge.FRESH
         every { formatLastUpdateUseCase.execute(any()) } returns "1 min ago"
+        every { formatDateUseCase.execute(any()) } returns "2023-01-01"
 
         val result = useCase.execute(friendLocalData, userLocation)
 
         assertEquals("friend1", result.username)
         assertEquals(100.0, result.distance!!, 0.001)
         assertEquals("1 min ago", result.location?.lastUpdateTime)
+        assertEquals("2023-01-01", result.friendSince)
     }
 
     @Test
@@ -60,7 +65,8 @@ class MapFriendUseCaseTest {
             username = "friend1",
             status = "status",
             state = FriendState.ACCEPTED,
-            location = null
+            location = null,
+            friendSince = null
         )
         val userLocation = LocationData(0.0, 0.0, 0f, 0.0, 0f, lastUpdate)
 

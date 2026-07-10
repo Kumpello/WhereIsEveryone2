@@ -29,13 +29,15 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun ShareProfileContent(
     onShowQr: () -> Unit,
+    onTriggerNfc: () -> Unit,
     viewModel: ShareProfileViewModel = koinViewModel()
 ) {
     val viewState by viewModel.state.collectAsStateWithLifecycle()
     ShareProfileContent(
         viewState = viewState,
         onEvent = viewModel::trigger,
-        onShowQr = onShowQr
+        onShowQr = onShowQr,
+        onTriggerNfc = onTriggerNfc
     )
 }
 
@@ -43,7 +45,8 @@ fun ShareProfileContent(
 fun ShareProfileContent(
     viewState: ShareProfileViewModel.ViewState,
     onEvent: (ShareProfileViewModel.Event) -> Unit,
-    onShowQr: () -> Unit
+    onShowQr: () -> Unit,
+    onTriggerNfc: () -> Unit
 ) {
     val context = LocalContext.current
 
@@ -82,7 +85,7 @@ fun ShareProfileContent(
                     when {
                         nfcAdapter == null -> onEvent(ShareProfileViewModel.Event.OnNfcNotSupported)
                         !nfcAdapter.isEnabled -> onEvent(ShareProfileViewModel.Event.OnNfcDisabled)
-                        else -> onEvent(ShareProfileViewModel.Event.ShareViaNfc)
+                        else -> onTriggerNfc()
                     }
                 }
             ) {
@@ -105,6 +108,7 @@ fun ShareProfileContentPreview() {
             username = "Janusz"
         ),
         onEvent = {},
-        onShowQr = {}
+        onShowQr = {},
+        onTriggerNfc = {}
     )
 }

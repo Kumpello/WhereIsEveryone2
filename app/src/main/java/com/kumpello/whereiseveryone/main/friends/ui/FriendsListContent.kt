@@ -158,6 +158,7 @@ fun FriendsListContentPreview() {
             selectedFriend = null,
             actionState = com.kumpello.whereiseveryone.common.presentation.AsyncState.Idle,
             isShareDialogOpen = false,
+            isNfcSharingDialogOpen = false,
             username = "Janusz",
             friendUsername = "Janusz"
         ),

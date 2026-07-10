@@ -240,6 +240,8 @@ class FriendsViewModel(
             Event.ClearSelectedFriend -> state.copy(selectedFriend = null).toResult()
             Event.OpenShareDialog -> state.copy(isShareDialogOpen = true).toResult()
             Event.CloseShareDialog -> state.copy(isShareDialogOpen = false).toResult()
+            Event.OpenNfcSharingDialog -> state.copy(isNfcSharingDialogOpen = true).toResult(SideEffect.Effect(Action.TriggerNfcSharing(state.username)))
+            Event.CloseNfcSharingDialog -> state.copy(isNfcSharingDialogOpen = false).toResult(SideEffect.Effect(Action.StopNfcSharing))
         }
     }
 
@@ -256,6 +258,7 @@ class FriendsViewModel(
             selectedFriend = selectedFriend,
             actionState = actionState,
             isShareDialogOpen = isShareDialogOpen,
+            isNfcSharingDialogOpen = isNfcSharingDialogOpen,
             username = username,
             friendUsername = friendUsername
         )
@@ -264,6 +267,8 @@ class FriendsViewModel(
     sealed class Action {
         data class Toast(@StringRes val id: Int) : Action()
         data object BackToMap : Action()
+        data class TriggerNfcSharing(val username: String) : Action()
+        data object StopNfcSharing : Action()
     }
 
     sealed class Event {
@@ -286,6 +291,8 @@ class FriendsViewModel(
         data class OnActionSuccess(@StringRes val messageId: Int) : Event()
         data object OpenShareDialog : Event()
         data object CloseShareDialog : Event()
+        data object OpenNfcSharingDialog : Event()
+        data object CloseNfcSharingDialog : Event()
     }
 
     data class State(
@@ -296,6 +303,7 @@ class FriendsViewModel(
         val userLocation: LocationData? = null,
         val actionState: AsyncState<Unit> = AsyncState.Idle,
         val isShareDialogOpen: Boolean = false,
+        val isNfcSharingDialogOpen: Boolean = false,
         val username: String = "",
         val friendUsername: String = ""
     )
@@ -307,6 +315,7 @@ class FriendsViewModel(
         val selectedFriend: Friend?,
         val actionState: AsyncState<Unit>,
         val isShareDialogOpen: Boolean,
+        val isNfcSharingDialogOpen: Boolean,
         val username: String,
         val friendUsername: String
     )

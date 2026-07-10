@@ -1,5 +1,9 @@
 package com.kumpello.whereiseveryone.main.friends.ui
 
+import android.app.Activity
+import android.nfc.NdefMessage
+import android.nfc.NdefRecord
+import android.nfc.NfcAdapter
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -60,6 +64,7 @@ import com.kumpello.whereiseveryone.main.friends.presentation.ShareProfileViewMo
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
+import timber.log.Timber
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
@@ -97,6 +102,51 @@ fun FriendsScreen(
                     action.id,
                     Toast.LENGTH_SHORT
                 ).show()
+
+                is FriendsViewModel.Action.TriggerNfcSharing -> {
+                    val nfcAdapter = NfcAdapter.getDefaultAdapter(context)
+                    val uri = "whereiseveryone://addfriend/${action.username}"
+                    val message = NdefMessage(
+                        arrayOf(
+                            NdefRecord.createUri(uri),
+                            NdefRecord.createApplicationRecord(context.packageName)
+                        )
+                    )
+                    try {
+                        val method = nfcAdapter?.javaClass?.getMethod(
+                            "setNdefPushMessage",
+                            NdefMessage::class.java,
+                            Activity::class.java
+                        )
+                        method?.invoke(nfcAdapter, message, context as Activity)
+                        Toast.makeText(
+                            context,
+                            "NFC Sharing enabled for ${action.username}. Bring devices together.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    } catch (e: Exception) {
+                        Timber.tag("FRIENDS_SCREEN").e(e, "Error setting NDEF push message")
+                        Toast.makeText(
+                            context,
+                            "NFC Sharing not supported on this device/version",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+
+                FriendsViewModel.Action.StopNfcSharing -> {
+                    val nfcAdapter = NfcAdapter.getDefaultAdapter(context)
+                    try {
+                        val method = nfcAdapter?.javaClass?.getMethod(
+                            "setNdefPushMessage",
+                            NdefMessage::class.java,
+                            Activity::class.java
+                        )
+                        method?.invoke(nfcAdapter, null, context as Activity)
+                    } catch (e: Exception) {
+                        Timber.tag("FRIENDS_SCREEN").e(e, "Error stopping NDEF push message")
+                    }
+                }
             }
         }
     }
@@ -114,7 +164,12 @@ private fun FriendsScreen(
     onFriendsEvent: (FriendsViewModel.Event) -> Unit,
     onFriendAdded: () -> Unit,
     addFriendContent: @Composable () -> Unit = { AddFriendContent(onFriendAdded = onFriendAdded) },
-    shareProfileContent: @Composable () -> Unit = { ShareProfileContent(onShowQr = { onFriendsEvent(FriendsViewModel.Event.OpenShareDialog) }) }
+    shareProfileContent: @Composable () -> Unit = {
+        ShareProfileContent(
+            onShowQr = { onFriendsEvent(FriendsViewModel.Event.OpenShareDialog) },
+            onTriggerNfc = { onFriendsEvent(FriendsViewModel.Event.OpenNfcSharingDialog) }
+        )
+    }
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         if (friendsViewState.deleteFriendDialogState is FriendsViewModel.DeleteFriendDialogState.Open) {
@@ -127,6 +182,11 @@ private fun FriendsScreen(
             QrCodeDialog(
                 username = friendsViewState.username,
                 onDismiss = { onFriendsEvent(FriendsViewModel.Event.CloseShareDialog) }
+            )
+        }
+        if (friendsViewState.isNfcSharingDialogOpen) {
+            NfcSharingDialog(
+                onDismiss = { onFriendsEvent(FriendsViewModel.Event.CloseNfcSharingDialog) }
             )
         }
         friendsViewState.selectedFriend?.let { friend ->
@@ -296,6 +356,7 @@ fun FriendsWithDetailsPreview() {
                 ),
                 actionState = AsyncState.Idle,
                 isShareDialogOpen = false,
+                isNfcSharingDialogOpen = false,
                 username = "Janusz",
                 friendUsername = "Janusz"
             ),
@@ -316,7 +377,8 @@ fun FriendsWithDetailsPreview() {
                         username = "Janusz"
                     ),
                     onEvent = {},
-                    onShowQr = {}
+                    onShowQr = {},
+                    onTriggerNfc = {}
                 )
             }
         )
@@ -366,6 +428,7 @@ fun FriendsWithDetailsPreviewDark() {
                 ),
                 actionState = AsyncState.Idle,
                 isShareDialogOpen = false,
+                isNfcSharingDialogOpen = false,
                 username = "Janusz",
                 friendUsername = "Janusz"
             ),
@@ -386,7 +449,8 @@ fun FriendsWithDetailsPreviewDark() {
                         username = "Janusz"
                     ),
                     onEvent = {},
-                    onShowQr = {}
+                    onShowQr = {},
+                    onTriggerNfc = {}
                 )
             }
         )
@@ -453,6 +517,7 @@ fun FriendsPreview() {
                 selectedFriend = null,
                 actionState = AsyncState.Idle,
                 isShareDialogOpen = false,
+                isNfcSharingDialogOpen = false,
                 username = "Janusz",
                 friendUsername = "Janusz"
             ),
@@ -473,7 +538,8 @@ fun FriendsPreview() {
                         username = "Janusz"
                     ),
                     onEvent = {},
-                    onShowQr = {}
+                    onShowQr = {},
+                    onTriggerNfc = {}
                 )
             }
         )
@@ -540,6 +606,7 @@ fun FriendsPreviewDark() {
                 selectedFriend = null,
                 actionState = AsyncState.Idle,
                 isShareDialogOpen = false,
+                isNfcSharingDialogOpen = false,
                 username = "Janusz",
                 friendUsername = "Janusz"
             ),
@@ -560,7 +627,8 @@ fun FriendsPreviewDark() {
                         username = "Janusz"
                     ),
                     onEvent = {},
-                    onShowQr = {}
+                    onShowQr = {},
+                    onTriggerNfc = {}
                 )
             }
         )

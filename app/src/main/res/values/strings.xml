@@ -63,6 +63,8 @@
     <string name="settings_delete_location_data">Delete your location data</string>
     <string name="nfc_not_supported">NFC is not supported on this device</string>
     <string name="nfc_disabled">NFC is disabled, please enable it in settings</string>
+    <string name="nfc_sharing_title">NFC Sharing</string>
+    <string name="nfc_sharing_message">Sharing profile via NFC. Bring devices together.</string>
 
     <!-- Settings Screen -->
     <string name="settings_title">Settings</string>

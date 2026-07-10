@@ -1,13 +1,10 @@
 package com.kumpello.whereiseveryone.main
 
 import android.Manifest.permission.ACCESS_BACKGROUND_LOCATION
-import android.app.Activity
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
-import android.nfc.NdefMessage
-import android.nfc.NdefRecord
 import android.nfc.NfcAdapter
 import android.os.Build
 import android.os.Bundle
@@ -94,37 +91,13 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
         lifecycleScope.launch {
             shareProfileViewModel.action.collect { action ->
                 when (action) {
-                    is ShareProfileViewModel.Action.TriggerNfcSharing -> {
-                        val uri = "whereiseveryone://addfriend/${action.username}"
-                        val message = NdefMessage(
-                            arrayOf(
-                                NdefRecord.createUri(uri),
-                                NdefRecord.createApplicationRecord(packageName)
-                            )
-                        )
-                        try {
-                            val method = nfcAdapter?.javaClass?.getMethod(
-                                "setNdefPushMessage",
-                                NdefMessage::class.java,
-                                Activity::class.java
-                            )
-                            method?.invoke(nfcAdapter, message, this@MainActivity)
-                            Toast.makeText(
-                                this@MainActivity,
-                                "NFC Sharing enabled for ${action.username}. Bring devices together.",
-                                Toast.LENGTH_LONG
-                            ).show()
-                        } catch (e: Exception) {
-                            Timber.tag(TAG).e(e, "Error setting NDEF push message")
-                            Toast.makeText(
-                                this@MainActivity,
-                                "NFC Sharing not supported on this device/version",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
+                    is ShareProfileViewModel.Action.Toast -> {
+                        Toast.makeText(
+                            this@MainActivity,
+                            getString(action.id),
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
-
-                    else -> Unit
                 }
             }
         }
