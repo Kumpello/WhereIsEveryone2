@@ -1,7 +1,5 @@
 package com.kumpello.whereiseveryone.main.map.ui
 
-import android.graphics.Bitmap
-import android.graphics.Color
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,7 +17,6 @@ import androidx.compose.ui.unit.dp
 import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.main.common.entity.Friend
 import com.kumpello.whereiseveryone.main.common.entity.Location
-import com.kumpello.whereiseveryone.main.common.ui.rememberBitmapFromDrawable
 import com.kumpello.whereiseveryone.main.map.entity.MapSettings
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
 import com.mapbox.geojson.Feature
@@ -30,23 +27,27 @@ import com.mapbox.maps.extension.compose.MapEffect
 import com.mapbox.maps.extension.compose.MapboxMap
 import com.mapbox.maps.extension.compose.animation.viewport.rememberMapViewportState
 import com.mapbox.maps.extension.compose.rememberMapState
-import com.mapbox.maps.extension.compose.style.GenericStyle
-import com.mapbox.maps.extension.compose.style.rememberStyleState
+import com.mapbox.maps.extension.compose.style.rememberStyleImage
+import com.mapbox.maps.extension.compose.style.layers.generated.SymbolLayer
+import com.mapbox.maps.extension.compose.style.layers.generated.SymbolLayerState
+import com.mapbox.maps.extension.compose.style.sources.GeoJSONData
+import com.mapbox.maps.extension.compose.style.sources.generated.rememberGeoJsonSourceState
 import com.mapbox.maps.extension.style.expressions.generated.Expression
-import com.mapbox.maps.extension.style.layers.addLayer
-import com.mapbox.maps.extension.style.layers.generated.symbolLayer
-import com.mapbox.maps.extension.style.layers.getLayer
-import com.mapbox.maps.extension.style.layers.properties.generated.IconRotationAlignment
-import com.mapbox.maps.extension.style.sources.addSource
-import com.mapbox.maps.extension.style.sources.generated.GeoJsonSource
-import com.mapbox.maps.extension.style.sources.generated.geoJsonSource
-import com.mapbox.maps.extension.style.sources.getSourceAs
+import com.mapbox.maps.extension.compose.style.BooleanValue
+import com.mapbox.maps.extension.compose.style.ColorValue
+import com.mapbox.maps.extension.compose.style.DoubleListValue
+import com.mapbox.maps.extension.compose.style.DoubleValue
+import com.mapbox.maps.extension.compose.style.layers.FormattedValue
+import com.mapbox.maps.extension.compose.style.layers.ImageValue
+import com.mapbox.maps.extension.compose.style.layers.generated.IconRotationAlignmentValue
 import com.mapbox.maps.plugin.PuckBearing
 import com.mapbox.maps.plugin.gestures.generated.GesturesSettings
 import com.mapbox.maps.plugin.locationcomponent.createDefault2DPuck
 import com.mapbox.maps.plugin.locationcomponent.location
 import com.mapbox.maps.plugin.viewport.data.DefaultViewportTransitionOptions
 import com.mapbox.maps.plugin.viewport.data.FollowPuckViewportStateOptions
+import com.mapbox.maps.MapboxDelicateApi
+import com.mapbox.maps.extension.compose.style.standard.MapboxStandardStyle
 import kotlinx.coroutines.flow.Flow
 import timber.log.Timber
 
@@ -84,9 +85,6 @@ fun Map(
             pinchToZoomEnabled = true
             pitchEnabled = true
         }
-    }
-    val friendsById = remember(friendsPositions) {
-        friendsPositions.associateBy { it.username }
     }
 
     LaunchedEffect(actions) {
@@ -143,26 +141,14 @@ fun Map(
             )
         },
         style = {
-            GenericStyle(
-                styleState = rememberStyleState {
-
-                    styleInteractionsState
-                        .onLayerClicked("friends-layer") { feature, _ ->
-                            feature.properties.getString("id")
-                                .let(friendsById::get)
-                                ?.let{ friend -> event(MapViewModel.Event.OnFriendClick(friend)) }
-
-                            true
-                        }
-                        .onLayerLongClicked("friends-layer") { feature, _ ->
-                            feature.properties.getString("id")
-                                .let(friendsById::get)
-                                ?.let{ friend -> event(MapViewModel.Event.OnFriendLongClick(friend)) }
-
-                            true
-                        }
-                },
-                style = "mapbox://styles/mapbox/standard"
+            MapboxStandardStyle(
+                topSlot = {
+                    FriendsSymbolLayer(
+                        friends = friendsPositions,
+                        onFriendClick = { friend -> event(MapViewModel.Event.OnFriendClick(friend)) },
+                        onFriendLongClick = { friend -> event(MapViewModel.Event.OnFriendLongClick(friend)) }
+                    )
+                }
             )
         }
     ) {
@@ -174,18 +160,20 @@ fun Map(
                 enabled = true
             }
         }
-
-        //TODO Check if finally fixed
-        val friendMarker = rememberBitmapFromDrawable(R.drawable.ic_map_friend_sdf)
-        FriendsSymbolLayer(friendMarker, friendsPositions)
     }
 }
 
+@OptIn(MapboxExperimental::class, MapboxDelicateApi::class)
 @Composable
 fun FriendsSymbolLayer(
-    friendMarker: Bitmap,
-    friends: List<Friend>
+    friends: List<Friend>,
+    onFriendClick: (Friend) -> Unit,
+    onFriendLongClick: (Friend) -> Unit
 ) {
+    val friendsById = remember(friends) {
+        friends.associateBy { it.username }
+    }
+
     val featureCollection = remember(friends) {
         FeatureCollection.fromFeatures(
             friends.mapNotNull { friend ->
@@ -218,89 +206,60 @@ fun FriendsSymbolLayer(
         )
     }
 
-    MapEffect(featureCollection) { mapView ->
+    val sourceState = rememberGeoJsonSourceState {
+        data = GeoJSONData(featureCollection.features()!!)
+    }
 
-        mapView.mapboxMap.getStyle { style ->
+    LaunchedEffect(featureCollection) {
+        sourceState.data = GeoJSONData(featureCollection.features()!!)
+    }
 
-            if (!style.hasStyleImage("friend-arrow")) {
-                style.addImage(
-                    "friend-arrow",
-                    friendMarker,
+    val friendMarker = rememberStyleImage(
+        imageId = "friend-arrow",
+        resourceId = R.drawable.ic_map_friend_sdf,
+        sdf = true
+    )
+
+    SymbolLayer(
+        sourceState = sourceState,
+        layerId = "friends-layer",
+        symbolLayerState = remember {
+            SymbolLayerState().apply {
+                iconImage = ImageValue(friendMarker)
+                iconSize = DoubleValue(1.0)
+                iconRotate = DoubleValue(Expression.get("bearing"))
+                iconRotationAlignment = IconRotationAlignmentValue.MAP
+                iconOpacity = DoubleValue(Expression.get("opacity"))
+                iconColor = ColorValue(Expression.color(android.graphics.Color.BLACK))
+                
+                iconHaloColor = ColorValue(
+                    Expression.match(
+                        Expression.get("haloWidth"),
+                        Expression.literal(-1.0), Expression.color(android.graphics.Color.RED),
+                        Expression.color(android.graphics.Color.GREEN)
+                    )
+                )
+                iconHaloWidth = DoubleValue(Expression.get("haloWidth"))
+
+                iconAllowOverlap = BooleanValue(true)
+                iconIgnorePlacement = BooleanValue(true)
+
+                textField = FormattedValue(Expression.get("id"))
+                textOffset = DoubleListValue(listOf(0.0, -2.5))
+
+                interactionsState.onClicked { feature, _ ->
+                    feature.properties.getString("id")
+                        .let(friendsById::get)
+                        ?.let(onFriendClick)
                     true
-                )
-            }
-
-            val source =
-                style.getSourceAs<GeoJsonSource>(
-                    "friends-source"
-                )
-
-            if (source == null) {
-
-                style.addSource(
-                    geoJsonSource("friends-source") {
-                        featureCollection(featureCollection)
-                    }
-                )
-
-            } else {
-
-                source.featureCollection(
-                    featureCollection
-                )
-            }
-
-            if (style.getLayer("friends-layer") == null) {
-
-                style.addLayer(
-                    symbolLayer(
-                        "friends-layer",
-                        "friends-source"
-                    ) {
-
-                        iconImage("friend-arrow")
-
-                        iconSize(1.0)
-
-                        iconRotate(
-                            Expression.get("bearing")
-                        )
-
-                        iconRotationAlignment(
-                            IconRotationAlignment.MAP
-                        )
-
-                        iconOpacity(
-                            Expression.get("opacity")
-                        )
-
-                        iconColor(
-                            Color.BLACK
-                        )
-
-                        iconHaloColor(
-                            if (Expression.get("haloWidth").literalValue == (-1).toDouble()
-                                ) Color.GREEN else Color.RED
-                        )
-
-                        iconHaloWidth(
-                            50.0//Expression.get("haloWidth")
-                        )
-
-                        iconAllowOverlap(true)
-
-                        iconIgnorePlacement(true)
-
-                        textField(
-                            Expression.get("id")
-                        )
-
-                        textOffset(
-                            listOf(0.0, -2.5)
-                        )
-                    }
-                )
+                }
+                interactionsState.onLongClicked { feature, _ ->
+                    feature.properties.getString("id")
+                        .let(friendsById::get)
+                        ?.let(onFriendLongClick)
+                    true
+                }
             }
         }
-    }
+    )
 }

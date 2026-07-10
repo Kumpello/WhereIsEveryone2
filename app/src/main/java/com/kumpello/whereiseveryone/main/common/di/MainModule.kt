@@ -81,7 +81,8 @@ val mainModule = module {
             locationServiceInterface = locationServiceInterface,
             wipeLocationUseCase = get(),
             saveKeyUseCase = get(),
-            getKeyUseCase = get()
+            getKeyUseCase = get(),
+            logoutUseCase = get()
         )
     }
     viewModel { FriendsViewModel(
