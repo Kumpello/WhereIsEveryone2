@@ -13,7 +13,7 @@ interface FriendApi {
     @HTTP(method = "POST", path = "me/friend", hasBody = true)
     suspend fun addFriend(@Header("Authorization") token:String, @Body request: FriendRequest): Response<ResponseBody>
 
-    @HTTP(method = "DEL", path = "me/friend", hasBody = true)
+    @HTTP(method = "DELETE", path = "me/friend", hasBody = true)
     suspend fun removeFriend(@Header("Authorization") token:String, @Body request: FriendRequest): Response<ResponseBody>
 
     @HTTP(method = "POST", path = "me/friend/accept", hasBody = true)
