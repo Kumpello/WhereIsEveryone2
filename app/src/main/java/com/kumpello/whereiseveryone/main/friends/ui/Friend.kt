@@ -31,6 +31,7 @@ import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.common.entity.AccuracyLevel
 import com.kumpello.whereiseveryone.main.common.entity.AltDifference
 import com.kumpello.whereiseveryone.main.common.entity.Friend
+import com.kumpello.whereiseveryone.main.common.entity.FriendState
 import com.kumpello.whereiseveryone.main.common.entity.FriendState.ACCEPTED
 import com.kumpello.whereiseveryone.main.common.entity.FriendState.PENDING_INCOMING
 import com.kumpello.whereiseveryone.main.common.entity.FriendState.PENDING_OUTGOING
@@ -48,7 +49,13 @@ fun Friend(
         modifier = modifier
             .fillMaxWidth()
             .testTag("friend_card_${friend.username}")
-            .clickable { trigger(FriendsViewModel.Event.SelectFriend(friend)) },
+            .clickable(enabled = friend.state == ACCEPTED) {
+                trigger(
+                    FriendsViewModel.Event.SelectFriend(
+                        friend
+                    )
+                )
+            },
         colors = CardDefaults.cardColors().copy(
             containerColor = MaterialTheme.colorScheme.secondaryContainer
         ),
@@ -97,7 +104,7 @@ private fun AcceptedButtons(
     friend: Friend,
     trigger: (FriendsViewModel.Event) -> Unit,
 ) {
-    IconButton( //TODO: Add stop share location switch, needs work on server
+    IconButton(
         onClick = { trigger(FriendsViewModel.Event.DeleteFriend(friend.username)) },
         modifier = Modifier
             .height(50.dp)
