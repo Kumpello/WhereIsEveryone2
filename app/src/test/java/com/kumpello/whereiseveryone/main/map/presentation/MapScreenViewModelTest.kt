@@ -67,4 +67,23 @@ class MapScreenViewModelTest {
             assertFalse(awaitItem().showPermissionNotification)
         }
     }
+
+    @Test
+    fun `NavigateFriends action is received by multiple collectors`() = runTest {
+        setupViewModel()
+        viewModel.action.test {
+            val secondCollector = viewModel.action.testIn(this)
+            
+            viewModel.trigger(MapScreenViewModel.Event.OnPermissionAllow)
+            
+            val action1 = awaitItem()
+            val action2 = secondCollector.awaitItem()
+            
+            assertTrue(action1 is MapScreenViewModel.Action.ShowPermissionSettings)
+            assertTrue(action2 is MapScreenViewModel.Action.ShowPermissionSettings)
+            assertEquals(action1, action2)
+            
+            secondCollector.cancel()
+        }
+    }
 }
