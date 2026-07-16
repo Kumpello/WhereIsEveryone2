@@ -27,7 +27,7 @@ import com.kumpello.whereiseveryone.common.ui.theme.Shapes
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 
 @Composable
-fun NfcSharingDialog(
+fun NfcReadingDialog(
     onDismiss: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
@@ -46,7 +46,7 @@ fun NfcSharingDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = stringResource(R.string.nfc_sharing_title),
+                    text = "Reading NFC Tag",
                     style = MaterialTheme.typography.headlineSmall
                 )
                 Spacer(modifier = Modifier.height(16.dp))
@@ -60,7 +60,7 @@ fun NfcSharingDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "Your device is now acting as an NFC tag. Bring another device closer to share your profile.",
+                    text = "Bring another device or NFC tag closer to read friend information.",
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center
                 )
@@ -76,9 +76,9 @@ fun NfcSharingDialog(
 
 @Preview(showBackground = true)
 @Composable
-fun NfcSharingDialogPreview() {
+fun NfcReadingDialogPreview() {
     WhereIsEveryoneTheme {
-        NfcSharingDialog(
+        NfcReadingDialog(
             onDismiss = {}
         )
     }

@@ -34,7 +34,6 @@ fun MapScreen(
     val screenState by screenViewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
-        screenViewModel.trigger(MapScreenViewModel.Event.SetPermissions(screenViewModel.getPermissions(context)))
         screenViewModel.action.collect { action ->
             when (action) {
                 MapScreenViewModel.Action.NavigateFriends -> navController.navigate(MainRoute.Friends)

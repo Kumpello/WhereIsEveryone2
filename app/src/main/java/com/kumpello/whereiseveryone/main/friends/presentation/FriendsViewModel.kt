@@ -242,6 +242,8 @@ class FriendsViewModel(
             Event.CloseShareDialog -> state.copy(isShareDialogOpen = false).toResult()
             Event.OpenNfcSharingDialog -> state.copy(isNfcSharingDialogOpen = true).toResult(SideEffect.Effect(Action.TriggerNfcSharing(state.username)))
             Event.CloseNfcSharingDialog -> state.copy(isNfcSharingDialogOpen = false).toResult(SideEffect.Effect(Action.StopNfcSharing))
+            Event.OpenNfcReadingDialog -> state.copy(isNfcReadingDialogOpen = true).toResult(SideEffect.Effect(Action.TriggerNfcReading))
+            Event.CloseNfcReadingDialog -> state.copy(isNfcReadingDialogOpen = false).toResult(SideEffect.Effect(Action.StopNfcReading))
         }
     }
 
@@ -259,6 +261,7 @@ class FriendsViewModel(
             actionState = actionState,
             isShareDialogOpen = isShareDialogOpen,
             isNfcSharingDialogOpen = isNfcSharingDialogOpen,
+            isNfcReadingDialogOpen = isNfcReadingDialogOpen,
             username = username,
             friendUsername = friendUsername
         )
@@ -269,6 +272,8 @@ class FriendsViewModel(
         data object BackToMap : Action()
         data class TriggerNfcSharing(val username: String) : Action()
         data object StopNfcSharing : Action()
+        data object TriggerNfcReading : Action()
+        data object StopNfcReading : Action()
     }
 
     sealed class Event {
@@ -293,6 +298,8 @@ class FriendsViewModel(
         data object CloseShareDialog : Event()
         data object OpenNfcSharingDialog : Event()
         data object CloseNfcSharingDialog : Event()
+        data object OpenNfcReadingDialog : Event()
+        data object CloseNfcReadingDialog : Event()
     }
 
     data class State(
@@ -304,6 +311,7 @@ class FriendsViewModel(
         val actionState: AsyncState<Unit> = AsyncState.Idle,
         val isShareDialogOpen: Boolean = false,
         val isNfcSharingDialogOpen: Boolean = false,
+        val isNfcReadingDialogOpen: Boolean = false,
         val username: String = "",
         val friendUsername: String = ""
     )
@@ -316,6 +324,7 @@ class FriendsViewModel(
         val actionState: AsyncState<Unit>,
         val isShareDialogOpen: Boolean,
         val isNfcSharingDialogOpen: Boolean,
+        val isNfcReadingDialogOpen: Boolean,
         val username: String,
         val friendUsername: String
     )

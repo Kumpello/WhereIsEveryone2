@@ -1,10 +1,19 @@
 package com.kumpello.whereiseveryone.main.friends.ui
 
 import android.app.Activity
+import android.content.BroadcastReceiver
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.nfc.NdefMessage
-import android.nfc.NdefRecord
 import android.nfc.NfcAdapter
+import android.nfc.cardemulation.CardEmulation
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.widget.Toast
+import timber.log.Timber
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
@@ -30,6 +39,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -58,14 +68,14 @@ import com.kumpello.whereiseveryone.main.common.entity.FriendState
 import com.kumpello.whereiseveryone.main.common.entity.LastUpdateAge
 import com.kumpello.whereiseveryone.main.common.entity.Location
 import com.kumpello.whereiseveryone.main.common.ui.FriendDetailsCard
-import com.kumpello.whereiseveryone.main.friends.presentation.AddFriendViewModel
+import com.kumpello.whereiseveryone.main.friends.nfc.NdefHceService
 import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
-import com.kumpello.whereiseveryone.main.friends.presentation.ShareProfileViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
-import timber.log.Timber
 import kotlin.time.Duration.Companion.seconds
+
+const val TAG = "FRIENDS_SCREEN"
 
 @Composable
 fun FriendsScreen(
@@ -93,6 +103,29 @@ fun FriendsScreen(
         }
     }
 
+    DisposableEffect(Unit) {
+        val nfcReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                Timber.tag(TAG).d("Broadcast received: ${intent?.action}")
+                if (intent?.action == "com.kumpello.whereiseveryone.NFC_SUCCESS") {
+                    friendsViewModel.trigger(FriendsViewModel.Event.CloseNfcSharingDialog)
+                    Toast.makeText(context, "Profile shared successfully!", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+        val filter = IntentFilter("com.kumpello.whereiseveryone.NFC_SUCCESS")
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            context.registerReceiver(nfcReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
+            context.registerReceiver(nfcReceiver, filter)
+        }
+
+        onDispose {
+            context.unregisterReceiver(nfcReceiver)
+        }
+    }
+
     LaunchedEffect(Unit) {
         friendsViewModel.action.collect { action ->
             when (action) {
@@ -103,50 +136,10 @@ fun FriendsScreen(
                     Toast.LENGTH_SHORT
                 ).show()
 
-                is FriendsViewModel.Action.TriggerNfcSharing -> {
-                    val nfcAdapter = NfcAdapter.getDefaultAdapter(context)
-                    val uri = "whereiseveryone://addfriend/${action.username}"
-                    val message = NdefMessage(
-                        arrayOf(
-                            NdefRecord.createUri(uri),
-                            NdefRecord.createApplicationRecord(context.packageName)
-                        )
-                    )
-                    try {
-                        val method = nfcAdapter?.javaClass?.getMethod(
-                            "setNdefPushMessage",
-                            NdefMessage::class.java,
-                            Activity::class.java
-                        )
-                        method?.invoke(nfcAdapter, message, context as Activity)
-                        Toast.makeText(
-                            context,
-                            "NFC Sharing enabled for ${action.username}. Bring devices together.",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    } catch (e: Exception) {
-                        Timber.tag("FRIENDS_SCREEN").e(e, "Error setting NDEF push message")
-                        Toast.makeText(
-                            context,
-                            "NFC Sharing not supported on this device/version",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-
-                FriendsViewModel.Action.StopNfcSharing -> {
-                    val nfcAdapter = NfcAdapter.getDefaultAdapter(context)
-                    try {
-                        val method = nfcAdapter?.javaClass?.getMethod(
-                            "setNdefPushMessage",
-                            NdefMessage::class.java,
-                            Activity::class.java
-                        )
-                        method?.invoke(nfcAdapter, null, context as Activity)
-                    } catch (e: Exception) {
-                        Timber.tag("FRIENDS_SCREEN").e(e, "Error stopping NDEF push message")
-                    }
-                }
+                is FriendsViewModel.Action.TriggerNfcSharing -> triggerNfcSharing(context)
+                FriendsViewModel.Action.StopNfcSharing -> stopNfcSharing(context)
+                is FriendsViewModel.Action.TriggerNfcReading -> triggerNfcReading(context, friendsViewModel)
+                FriendsViewModel.Action.StopNfcReading -> stopNfcReading(context)
             }
         }
     }
@@ -154,7 +147,8 @@ fun FriendsScreen(
     FriendsScreen(
         friendsViewState = friendsState,
         onFriendsEvent = friendsViewModel::trigger,
-        onFriendAdded = { friendsViewModel.trigger(FriendsViewModel.Event.CheckFriends) }
+        onFriendAdded = { friendsViewModel.trigger(FriendsViewModel.Event.CheckFriends) },
+        onOpenNfcReading = { friendsViewModel.trigger(FriendsViewModel.Event.OpenNfcReadingDialog) }
     )
 }
 
@@ -163,13 +157,7 @@ private fun FriendsScreen(
     friendsViewState: FriendsViewModel.ViewState,
     onFriendsEvent: (FriendsViewModel.Event) -> Unit,
     onFriendAdded: () -> Unit,
-    addFriendContent: @Composable () -> Unit = { AddFriendContent(onFriendAdded = onFriendAdded) },
-    shareProfileContent: @Composable () -> Unit = {
-        ShareProfileContent(
-            onShowQr = { onFriendsEvent(FriendsViewModel.Event.OpenShareDialog) },
-            onTriggerNfc = { onFriendsEvent(FriendsViewModel.Event.OpenNfcSharingDialog) }
-        )
-    }
+    onOpenNfcReading: () -> Unit,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         if (friendsViewState.deleteFriendDialogState is FriendsViewModel.DeleteFriendDialogState.Open) {
@@ -189,6 +177,11 @@ private fun FriendsScreen(
                 onDismiss = { onFriendsEvent(FriendsViewModel.Event.CloseNfcSharingDialog) }
             )
         }
+        if (friendsViewState.isNfcReadingDialogOpen) {
+            NfcReadingDialog(
+                onDismiss = { onFriendsEvent(FriendsViewModel.Event.CloseNfcReadingDialog) }
+            )
+        }
         friendsViewState.selectedFriend?.let { friend ->
             FriendDetailsCard(
                 friend = friend,
@@ -202,7 +195,7 @@ private fun FriendsScreen(
             )
         }
 
-        val actionState = friendsViewState.actionState.takeIf { it !is AsyncState.Idle } 
+        val actionState = friendsViewState.actionState.takeIf { it !is AsyncState.Idle }
 
         AnimatedVisibility(
             modifier = Modifier
@@ -296,14 +289,20 @@ private fun FriendsScreen(
                             modifier = Modifier.weight(1f)
                         ) { page ->
                             if (page == 0) {
-                                addFriendContent()
+                                AddFriendContent(
+                                    onFriendAdded = onFriendAdded,
+                                    onOpenNfcReading = onOpenNfcReading
+                                )
                             } else {
-                                shareProfileContent()
+                                ShareProfileContent(
+                                    onShowQr = { onFriendsEvent(FriendsViewModel.Event.OpenShareDialog) },
+                                    onTriggerNfc = { onFriendsEvent(FriendsViewModel.Event.OpenNfcSharingDialog) }
+                                )
                             }
                         }
                     }
                 }
-                
+
                 FriendsListContent(
                     onEvent = onFriendsEvent,
                     viewState = friendsViewState
@@ -311,6 +310,133 @@ private fun FriendsScreen(
             }
         }
     }
+}
+
+private fun processNdefMessage(message: NdefMessage?, context: Context, viewModel: FriendsViewModel) {
+    var parsedUri: android.net.Uri? = null
+    message?.records?.forEachIndexed { index, record ->
+        Timber.tag(TAG).d("Record #$index: TNF=${record.tnf}, Type=${record.type.joinToString("") { "%02X".format(it) }}, PayloadLen=${record.payload.size}")
+        if (parsedUri == null) {
+            try {
+                parsedUri = record.toUri()
+                if (parsedUri != null) Timber.tag(TAG).d("Record #$index parsed as URI: $parsedUri")
+            } catch (e: Exception) {
+                Timber.tag(TAG).d("Record #$index is not a URI")
+            }
+        }
+    }
+
+    val uri = parsedUri
+    Timber.tag(TAG).d("Final Parsed URI: $uri")
+
+    if (uri != null && uri.scheme == "whereiseveryone" && uri.host == "addfriend") {
+        (context as Activity).runOnUiThread {
+            Timber.tag(TAG).i("Valid Friend URI received via NFC!")
+            val vibrator = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+                vibratorManager.defaultVibrator
+            } else {
+                @Suppress("DEPRECATION")
+                context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+            }
+            vibrator.vibrate(VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE))
+
+            context.startActivity(Intent(Intent.ACTION_VIEW, uri).apply {
+                setPackage(context.packageName)
+            })
+            Timber.tag(TAG).d("Triggering CloseNfcReadingDialog")
+            viewModel.trigger(FriendsViewModel.Event.CloseNfcReadingDialog)
+        }
+    }
+}
+
+private fun triggerNfcSharing(context: Context) {
+    Timber.tag(TAG).d("Triggering NFC Sharing")
+    val nfcAdapter = NfcAdapter.getDefaultAdapter(context)
+    if (nfcAdapter == null) {
+        Timber.tag(TAG).e("NFC Adapter is null")
+    } else {
+        val cardEmulation = CardEmulation.getInstance(nfcAdapter)
+        val componentName = ComponentName(context, NdefHceService::class.java)
+        Timber.tag(TAG).d("Setting preferred service: $componentName")
+        try {
+            val success = cardEmulation.setPreferredService(context as Activity, componentName)
+            Timber.tag(TAG).d("SetPreferredService success: $success")
+            if (success) {
+                Toast.makeText(context, "Ready to share!", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(context, "Could not start sharing priority", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "Error calling setPreferredService")
+        }
+    }
+}
+
+private fun stopNfcSharing(context: Context) {
+    Timber.tag(TAG).d("Stopping NFC Sharing")
+    val nfcAdapter = NfcAdapter.getDefaultAdapter(context)
+    if (nfcAdapter != null) {
+        val cardEmulation = CardEmulation.getInstance(nfcAdapter)
+        val success = cardEmulation.unsetPreferredService(context as Activity)
+        Timber.tag(TAG).d("UnsetPreferredService success: $success")
+    }
+}
+
+private fun triggerNfcReading(context: Context, viewModel: FriendsViewModel) {
+    Timber.tag(TAG).d("Triggering NFC Reading")
+    val nfcAdapter = NfcAdapter.getDefaultAdapter(context)
+    if (nfcAdapter == null) {
+        Timber.tag(TAG).e("NFC Adapter is null")
+    } else {
+        nfcAdapter.enableReaderMode(
+            context as Activity,
+            { tag ->
+                val ndef = android.nfc.tech.Ndef.get(tag)
+                try {
+                    ndef?.connect()
+                    val message = ndef?.ndefMessage
+
+                    if (message == null || message.records.isEmpty()) {
+                        Timber.tag(TAG).w("NDEF read returned empty. Attempting manual fallback...")
+                        val isoDep = android.nfc.tech.IsoDep.get(tag)
+                        if (isoDep != null) {
+                            isoDep.connect()
+                            // SELECT NDEF AID
+                            isoDep.transceive(byteArrayOf(0x00, 0xA4.toByte(), 0x04, 0x00, 0x07, 0xD2.toByte(), 0x76, 0x00, 0x00, 0x85.toByte(), 0x01, 0x01))
+                            // SELECT NDEF File (E104)
+                            isoDep.transceive(byteArrayOf(0x00, 0xA4.toByte(), 0x00, 0x0C, 0x02, 0xE1.toByte(), 0x04.toByte()))
+                            // READ Length
+                            val lenResp = isoDep.transceive(byteArrayOf(0x00, 0xB0.toByte(), 0x00, 0x00, 0x02))
+                            if (lenResp.size >= 2) {
+                                val ndefLen = ((lenResp[0].toInt() and 0xFF) shl 8) or (lenResp[1].toInt() and 0xFF)
+                                // READ Payload
+                                val payloadResp = isoDep.transceive(byteArrayOf(0x00, 0xB0.toByte(), 0x00, 0x02, (ndefLen and 0xFF).toByte()))
+                                if (payloadResp.size >= 2) {
+                                    val rawNdef = payloadResp.sliceArray(0 until payloadResp.size - 2)
+                                    processNdefMessage(NdefMessage(rawNdef), context, viewModel)
+                                }
+                            }
+                            isoDep.close()
+                        }
+                    } else {
+                        processNdefMessage(message, context, viewModel)
+                    }
+                    ndef?.close()
+                } catch (e: Exception) {
+                    Timber.tag(TAG).e(e, "Error reading NDEF tag")
+                }
+            },
+            NfcAdapter.FLAG_READER_NFC_A or NfcAdapter.FLAG_READER_NFC_B,
+            null
+        )
+    }
+}
+
+private fun stopNfcReading(context: Context) {
+    Timber.tag(TAG).d("Stopping NFC Reading")
+    val nfcAdapter = NfcAdapter.getDefaultAdapter(context)
+    nfcAdapter?.disableReaderMode(context as Activity)
 }
 
 @Preview(showBackground = true)
@@ -357,30 +483,13 @@ fun FriendsWithDetailsPreview() {
                 actionState = AsyncState.Idle,
                 isShareDialogOpen = false,
                 isNfcSharingDialogOpen = false,
+                isNfcReadingDialogOpen = false,
                 username = "Janusz",
                 friendUsername = "Janusz"
             ),
             onFriendsEvent = {},
             onFriendAdded = {},
-            addFriendContent = { 
-                AddFriendContent(
-                    viewState = AddFriendViewModel.ViewState(
-                        addFriendNick = "Papator2000",
-                        actionState = AsyncState.Idle
-                    ),
-                    onEvent = {}
-                )
-            },
-            shareProfileContent = {
-                ShareProfileContent(
-                    viewState = ShareProfileViewModel.ViewState(
-                        username = "Janusz"
-                    ),
-                    onEvent = {},
-                    onShowQr = {},
-                    onTriggerNfc = {}
-                )
-            }
+            onOpenNfcReading = {},
         )
     }
 }
@@ -429,30 +538,13 @@ fun FriendsWithDetailsPreviewDark() {
                 actionState = AsyncState.Idle,
                 isShareDialogOpen = false,
                 isNfcSharingDialogOpen = false,
+                isNfcReadingDialogOpen = false,
                 username = "Janusz",
                 friendUsername = "Janusz"
             ),
             onFriendsEvent = {},
             onFriendAdded = {},
-            addFriendContent = { 
-                AddFriendContent(
-                    viewState = AddFriendViewModel.ViewState(
-                        addFriendNick = "Papator2000",
-                        actionState = AsyncState.Idle
-                    ),
-                    onEvent = {}
-                )
-            },
-            shareProfileContent = {
-                ShareProfileContent(
-                    viewState = ShareProfileViewModel.ViewState(
-                        username = "Janusz"
-                    ),
-                    onEvent = {},
-                    onShowQr = {},
-                    onTriggerNfc = {}
-                )
-            }
+            onOpenNfcReading = {},
         )
     }
 }
@@ -518,30 +610,13 @@ fun FriendsPreview() {
                 actionState = AsyncState.Idle,
                 isShareDialogOpen = false,
                 isNfcSharingDialogOpen = false,
+                isNfcReadingDialogOpen = false,
                 username = "Janusz",
                 friendUsername = "Janusz"
             ),
             onFriendsEvent = {},
             onFriendAdded = {},
-            addFriendContent = { 
-                AddFriendContent(
-                    viewState = AddFriendViewModel.ViewState(
-                        addFriendNick = "Papator2000",
-                        actionState = AsyncState.Idle
-                    ),
-                    onEvent = {}
-                )
-            },
-            shareProfileContent = {
-                ShareProfileContent(
-                    viewState = ShareProfileViewModel.ViewState(
-                        username = "Janusz"
-                    ),
-                    onEvent = {},
-                    onShowQr = {},
-                    onTriggerNfc = {}
-                )
-            }
+            onOpenNfcReading = {},
         )
     }
 }
@@ -607,30 +682,13 @@ fun FriendsPreviewDark() {
                 actionState = AsyncState.Idle,
                 isShareDialogOpen = false,
                 isNfcSharingDialogOpen = false,
+                isNfcReadingDialogOpen = false,
                 username = "Janusz",
                 friendUsername = "Janusz"
             ),
             onFriendsEvent = {},
             onFriendAdded = {},
-            addFriendContent = { 
-                AddFriendContent(
-                    viewState = AddFriendViewModel.ViewState(
-                        addFriendNick = "Papator2000",
-                        actionState = AsyncState.Idle
-                    ),
-                    onEvent = {}
-                )
-            },
-            shareProfileContent = {
-                ShareProfileContent(
-                    viewState = ShareProfileViewModel.ViewState(
-                        username = "Janusz"
-                    ),
-                    onEvent = {},
-                    onShowQr = {},
-                    onTriggerNfc = {}
-                )
-            }
+            onOpenNfcReading = {},
         )
     }
 }

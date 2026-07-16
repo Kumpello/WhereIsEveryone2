@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Contactless
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -37,10 +38,12 @@ import com.kumpello.whereiseveryone.common.presentation.AsyncState
 import com.kumpello.whereiseveryone.common.ui.entity.Button
 import com.kumpello.whereiseveryone.main.friends.presentation.AddFriendViewModel
 import org.koin.compose.viewmodel.koinViewModel
+import androidx.core.net.toUri
 
 @Composable
 fun AddFriendContent(
     onFriendAdded: () -> Unit,
+    onOpenNfcReading: () -> Unit,
     viewModel: AddFriendViewModel = koinViewModel()
 ) {
     val viewState by viewModel.state.collectAsStateWithLifecycle()
@@ -66,7 +69,7 @@ fun AddFriendContent(
                     scanner.startScan()
                         .addOnSuccessListener { barcode ->
                             barcode.rawValue?.let { rawValue ->
-                                val uri = Uri.parse(rawValue)
+                                val uri = rawValue.toUri()
                                 viewModel.trigger(AddFriendViewModel.Event.OnUriReceived(uri))
                             }
                         }
@@ -80,14 +83,16 @@ fun AddFriendContent(
 
     AddFriendContent(
         viewState = viewState,
-        onEvent = viewModel::trigger
+        onEvent = viewModel::trigger,
+        onOpenNfcReading = onOpenNfcReading
     )
 }
 
 @Composable
 fun AddFriendContent(
     viewState: AddFriendViewModel.ViewState,
-    onEvent: (AddFriendViewModel.Event) -> Unit
+    onEvent: (AddFriendViewModel.Event) -> Unit,
+    onOpenNfcReading: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -134,6 +139,18 @@ fun AddFriendContent(
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
+            Spacer(modifier = Modifier.width(8.dp))
+            IconButton(
+                onClick = onOpenNfcReading,
+                enabled = !viewState.actionState.isLoading
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Contactless,
+                    contentDescription = "Read NFC",
+                    modifier = Modifier.size(32.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     }
 }
@@ -146,6 +163,7 @@ fun AddFriendContentPreview() {
             addFriendNick = "Papator2000",
             actionState = AsyncState.Idle
         ),
-        onEvent = {}
+        onEvent = {},
+        onOpenNfcReading = {}
     )
 }

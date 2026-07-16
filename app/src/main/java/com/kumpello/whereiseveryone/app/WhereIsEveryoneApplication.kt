@@ -16,6 +16,7 @@ class WhereIsEveryoneApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        instance = this
 
         if(BuildConfig.DEBUG){
             Timber.plant(Timber.DebugTree())
@@ -29,6 +30,8 @@ class WhereIsEveryoneApplication : Application() {
     }
 
     companion object {
+        lateinit var instance: WhereIsEveryoneApplication
+            private set
 
         const val PREFERENCES_NAME = "secret_keeper"
         const val USER_NAME_KEY = "user_name"
