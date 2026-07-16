@@ -104,25 +104,19 @@ private fun FriendDetailsContent(
                 loc.rawAlt?.let {
                     DetailItem(
                         label = "Altitude",
-                        value = "${
-                            loc.alt.name.replace("_", " ").lowercase()
-                                .replaceFirstChar { it.uppercase() }
-                        } (${it}m)"
+                        value = "${loc.alt.displayName} (${it.toInt()}m)"
                     )
                 }
                 loc.rawAccuracy?.let {
                     DetailItem(
                         label = "Accuracy",
-                        value = "${
-                            loc.accuracy.name.lowercase().replaceFirstChar { it.uppercase() }
-                        } (${it}m)"
+                        value = "${loc.accuracy.displayName} (${String.format("%.2f", it)}m)"
                     )
                 }
                 DetailItem(label = "Last Update", value = loc.lastUpdateTime)
                 DetailItem(
                     label = "Data Age",
-                    value = loc.lastUpdateAge.name.replace("_", " ").lowercase()
-                        .replaceFirstChar { it.uppercase() }
+                    value = loc.lastUpdateAge.displayName
                 )
             }
             friend.friendSince?.let {
