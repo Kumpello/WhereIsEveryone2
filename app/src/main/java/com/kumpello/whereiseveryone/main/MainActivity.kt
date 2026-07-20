@@ -26,6 +26,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
+import androidx.navigation.NavHostController
+import com.kumpello.whereiseveryone.authentication.AuthenticationActivity
+import com.kumpello.whereiseveryone.common.domain.ucecase.GetCurrentAuthTokenUseCase
 import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.common.MainRoute
@@ -53,6 +56,7 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
     private val settingsViewModel: SettingsViewModel by viewModel { parametersOf(this@MainActivity) }
 
     private val getKeyUseCase: GetKeyUseCase by inject()
+    private val getCurrentAuthTokenUseCase: GetCurrentAuthTokenUseCase by inject()
 
     private var locationService: LocationService? = null
     private var isLocationServiceBound: Boolean = false
@@ -61,8 +65,23 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
 
     private var nfcAdapter: NfcAdapter? = null
 
+    private var navController: NavHostController? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        lifecycleScope.launch {
+            val token = getCurrentAuthTokenUseCase.execute()
+            if (token.isNullOrEmpty()) {
+                Timber.tag(TAG).d("No auth token found, redirecting to AuthenticationActivity")
+                val intent = Intent(this@MainActivity, AuthenticationActivity::class.java).apply {
+                    data = this@MainActivity.intent.data
+                }
+                startActivity(intent)
+                finish()
+                return@launch
+            }
+        }
 
         enableEdgeToEdge()
 
@@ -98,6 +117,32 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
                             Toast.LENGTH_SHORT
                         ).show()
                     }
+                }
+            }
+        }
+
+        lifecycleScope.launch {
+            addFriendViewModel.action.collect { action ->
+                when (action) {
+                    is AddFriendViewModel.Action.NotifyFriendAdded -> {
+                        navController?.let { controller ->
+                            if (controller.currentDestination?.route?.contains("Map") == false) {
+                                controller.navigate(MainRoute.Map) {
+                                    popUpTo(MainRoute.Map) { inclusive = false }
+                                }
+                            }
+                        }
+                    }
+
+                    is AddFriendViewModel.Action.Toast -> {
+                        Toast.makeText(
+                            this@MainActivity,
+                            getString(action.id),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+
+                    else -> Unit
                 }
             }
         }
@@ -268,23 +313,24 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
 
     @Composable
     private fun MainScreen() {
-        val navController = rememberNavController()
+        val controller = rememberNavController()
+        navController = controller
         NavHost(
-            navController = navController,
+            navController = controller,
             startDestination = MainRoute.Map
         ) {
             composable<MainRoute.Map> {
                 MapScreen(
-                    navController = navController,
+                    navController = controller,
                     screenViewModel = mapScreenViewModel
                 )
             }
             composable<MainRoute.Friends> {
-                FriendsScreen(navController = navController)
+                FriendsScreen(navController = controller)
             }
             composable<MainRoute.Settings> {
                 SettingsScreen(
-                    navController = navController,
+                    navController = controller,
                     viewModel = settingsViewModel
                 )
             }

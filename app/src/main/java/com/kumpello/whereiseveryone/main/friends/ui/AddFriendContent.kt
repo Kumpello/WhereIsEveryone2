@@ -25,10 +25,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.activity.compose.LocalActivity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.activity.ComponentActivity
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
@@ -44,7 +46,9 @@ import androidx.core.net.toUri
 fun AddFriendContent(
     onFriendAdded: () -> Unit,
     onOpenNfcReading: () -> Unit,
-    viewModel: AddFriendViewModel = koinViewModel()
+    viewModel: AddFriendViewModel = koinViewModel(
+        viewModelStoreOwner = LocalActivity.current as ComponentActivity
+    )
 ) {
     val viewState by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
