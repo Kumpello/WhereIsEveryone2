@@ -10,23 +10,28 @@ class StatusRepositoryImpl(
 ) : StatusRepository {
 
     override suspend fun updateStatus(token: String, status: String): CodeResponse {
-        val response = statusApi
-            .updateStatus("Bearer $token", StatusRequest(status))
+        return try {
+            val response = statusApi
+                .updateStatus("Bearer $token", StatusRequest(status))
 
-        return when {
-            response.isSuccessful -> {
-                Timber.tag(TAG).d("Status update successful")
-                CodeResponse.SuccessNoContent
-            }
+            when {
+                response.isSuccessful -> {
+                    Timber.tag(TAG).d("Status update successful")
+                    CodeResponse.SuccessNoContent
+                }
 
-            else -> {
-                Timber.tag(TAG).e("Status update failed: %s", response.errorBody()?.string())
-                CodeResponse.ErrorData(
-                    response.code(),
-                    response.errorBody().toString(),
-                    response.message()
-                )
+                else -> {
+                    Timber.tag(TAG).e("Status update failed: %s", response.errorBody()?.string())
+                    CodeResponse.ErrorData(
+                        response.code(),
+                        response.errorBody().toString(),
+                        response.message()
+                    )
+                }
             }
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "Status update failed with exception")
+            CodeResponse.ErrorData(-1, e.message ?: "Unknown error", "Exception")
         }
     }
 

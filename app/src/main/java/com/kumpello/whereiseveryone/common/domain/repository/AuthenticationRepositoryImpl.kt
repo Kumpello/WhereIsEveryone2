@@ -12,62 +12,77 @@ class AuthenticationRepositoryImpl(
 ) : AuthenticationRepository {
 
     override suspend fun signUp(username: String, password: String): AuthResponse {
-        val authResponse = authApi.signUp(SignUpRequest(username, password))
+        return try {
+            val authResponse = authApi.signUp(SignUpRequest(username, password))
 
-        return when {
-            authResponse.isSuccessful -> {
-                Timber.tag(TAG).d("SignUp successful for user: %s", username)
-                authResponse.body()!!
-            }
+            when {
+                authResponse.isSuccessful -> {
+                    Timber.tag(TAG).d("SignUp successful for user: %s", username)
+                    authResponse.body()!!
+                }
 
-            else -> {
-                Timber.tag(TAG).e("SignUp failed: %s", authResponse.errorBody()?.string())
-                AuthResponse.ErrorData(
-                    authResponse.code(),
-                    authResponse.errorBody().toString(),
-                    authResponse.message()
-                )
+                else -> {
+                    Timber.tag(TAG).e("SignUp failed: %s", authResponse.errorBody()?.string())
+                    AuthResponse.ErrorData(
+                        authResponse.code(),
+                        authResponse.errorBody().toString(),
+                        authResponse.message()
+                    )
+                }
             }
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "SignUp failed with exception")
+            AuthResponse.ErrorData(-1, e.message ?: "Unknown error", "Exception")
         }
     }
 
     override suspend fun logIn(username: String, password: String): AuthResponse {
-        val authResponse = authApi.login(LogInRequest(username, password))
+        return try {
+            val authResponse = authApi.login(LogInRequest(username, password))
 
-        return when {
-            authResponse.isSuccessful -> {
-                Timber.tag(TAG).d("Login successful for user: %s", username)
-                authResponse.body()!!
-            }
+            when {
+                authResponse.isSuccessful -> {
+                    Timber.tag(TAG).d("Login successful for user: %s", username)
+                    authResponse.body()!!
+                }
 
-            else -> {
-                Timber.tag(TAG).e("Login failed: %s", authResponse.errorBody()?.string())
-                AuthResponse.ErrorData(
-                    authResponse.code(),
-                    authResponse.errorBody().toString(),
-                    authResponse.message()
-                )
+                else -> {
+                    Timber.tag(TAG).e("Login failed: %s", authResponse.errorBody()?.string())
+                    AuthResponse.ErrorData(
+                        authResponse.code(),
+                        authResponse.errorBody().toString(),
+                        authResponse.message()
+                    )
+                }
             }
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "Login failed with exception")
+            AuthResponse.ErrorData(-1, e.message ?: "Unknown error", "Exception")
         }
     }
 
     override suspend fun refreshToken(refreshToken: String): AuthResponse {
-        val authResponse = authApi.refresh(RefreshRequest(refreshToken))
+        return try {
+            val authResponse = authApi.refresh(RefreshRequest(refreshToken))
 
-        return when {
-            authResponse.isSuccessful -> {
-                Timber.tag(TAG).d("Token refresh successful")
-                authResponse.body()!!
-            }
+            when {
+                authResponse.isSuccessful -> {
+                    Timber.tag(TAG).d("Token refresh successful")
+                    authResponse.body()!!
+                }
 
-            else -> {
-                Timber.tag(TAG).e("Token refresh failed: %s", authResponse.errorBody()?.string())
-                AuthResponse.ErrorData(
-                    authResponse.code(),
-                    authResponse.errorBody().toString(),
-                    authResponse.message()
-                )
+                else -> {
+                    Timber.tag(TAG).e("Token refresh failed: %s", authResponse.errorBody()?.string())
+                    AuthResponse.ErrorData(
+                        authResponse.code(),
+                        authResponse.errorBody().toString(),
+                        authResponse.message()
+                    )
+                }
             }
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "Token refresh failed with exception")
+            AuthResponse.ErrorData(-1, e.message ?: "Unknown error", "Exception")
         }
     }
 
