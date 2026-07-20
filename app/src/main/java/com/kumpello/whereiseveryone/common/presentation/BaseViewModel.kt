@@ -53,11 +53,19 @@ abstract class BaseViewModel<S : Any, VS : Any, E : Any, Ef : Any>(
             }
             is SideEffect.AsyncWork -> {
                 viewModelScope.launch {
-                    val event = sideEffect.work()
-                    trigger(event)
+                    try {
+                        val event = sideEffect.work()
+                        trigger(event)
+                    } catch (e: Exception) {
+                        handleGlobalError(e)
+                    }
                 }
             }
         }
+    }
+
+    protected open fun handleGlobalError(e: Exception) {
+        // To be overridden by subclasses if needed
     }
 
     protected abstract fun reduce(state: S, event: E): ReducerResult<S, E, Ef>

@@ -15,21 +15,24 @@ class LoginViewModel(
     State()
 ) {
 
+    override fun handleGlobalError(e: Exception) {
+        Timber.tag(TAG).e(e, "Global error caught")
+        if (e is java.io.IOException) {
+            trigger(Event.OnLoginResult(false, e, "Server unreachable"))
+        }
+    }
+
     override fun reduce(state: State, event: Event): ReducerResult<State, Event, Action> {
         return when (event) {
             Event.OnLoginClick -> state.copy(loginState = AsyncState.Loading()).toResult(
                 SideEffect.AsyncWork {
-                    try {
-                        val response = loginUseCase.execute(
-                            username = state.username,
-                            password = state.password
-                        )
-                        when (response) {
-                            LoginUseCase.Response.Success -> Event.OnLoginResult(true)
-                            LoginUseCase.Response.Error -> Event.OnLoginResult(false)
-                        }
-                    } catch (e: Exception) {
-                        Event.OnLoginResult(false, e)
+                    val response = loginUseCase.execute(
+                        username = state.username,
+                        password = state.password
+                    )
+                    when (response) {
+                        LoginUseCase.Response.Success -> Event.OnLoginResult(true)
+                        LoginUseCase.Response.Error -> Event.OnLoginResult(false)
                     }
                 }
             )
@@ -42,8 +45,15 @@ class LoginViewModel(
                 } else {
                     Timber.tag(TAG).e("Login failed!")
                     event.error?.let { Timber.tag(TAG).e(it) }
+
+                    val toastMessage = if (event.message.isNotEmpty()) {
+                        event.message
+                    } else {
+                        "Login failed!"
+                    }
+
                     state.copy(loginState = AsyncState.Error(event.error))
-                        .toResult(SideEffect.Effect(Action.MakeToast("Login failed!")))
+                        .toResult(SideEffect.Effect(Action.MakeToast(toastMessage)))
                 }
             }
 
@@ -85,7 +95,11 @@ class LoginViewModel(
         data class SetPassword(val password: String) : Event()
         data object TogglePasswordVisibility : Event()
         data object NavigateSignUp : Event()
-        data class OnLoginResult(val success: Boolean, val error: Throwable? = null) : Event()
+        data class OnLoginResult(
+            val success: Boolean,
+            val error: Throwable? = null,
+            val message: String = ""
+        ) : Event()
     }
 
     data class State(

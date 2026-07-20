@@ -10,52 +10,42 @@ class FriendRepositoryImpl(
 ) : FriendRepository {
 
     override suspend fun addFriend(token: String, username: String): CodeResponse {
-        return try {
-            val response = friendApi.addFriend("Bearer $token", FriendRequest(username))
+        val response = friendApi.addFriend("Bearer $token", FriendRequest(username))
 
-            when {
-                response.isSuccessful -> {
-                    Timber.tag(TAG).d("Add friend request successful for user: %s", username)
-                    CodeResponse.SuccessNoContent
-                }
-
-                else -> {
-                    Timber.tag(TAG).e("Add friend request failed: %s", response.errorBody()?.string())
-                    CodeResponse.ErrorData(
-                        response.code(),
-                        response.errorBody().toString(),
-                        response.message()
-                    )
-                }
+        return when {
+            response.isSuccessful -> {
+                Timber.tag(TAG).d("Add friend request successful for user: %s", username)
+                CodeResponse.SuccessNoContent
             }
-        } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "Add friend request failed with exception")
-            CodeResponse.ErrorData(-1, e.message ?: "Unknown error", "Exception")
+
+            else -> {
+                Timber.tag(TAG).e("Add friend request failed: %s", response.errorBody()?.string())
+                CodeResponse.ErrorData(
+                    response.code(),
+                    response.errorBody().toString(),
+                    response.message()
+                )
+            }
         }
     }
 
     override suspend fun removeFriend(token: String, username: String): CodeResponse {
-        return try {
-            val response = friendApi.removeFriend("Bearer $token", FriendRequest(username))
+        val response = friendApi.removeFriend("Bearer $token", FriendRequest(username))
 
-            when {
-                response.isSuccessful -> {
-                    Timber.tag(TAG).d("Remove friend successful for user: %s", username)
-                    CodeResponse.SuccessNoContent
-                }
-
-                else -> {
-                    Timber.tag(TAG).e("Remove friend failed: %s", response.errorBody()?.string())
-                    CodeResponse.ErrorData(
-                        response.code(),
-                        response.errorBody().toString(),
-                        response.message()
-                    )
-                }
+        return when {
+            response.isSuccessful -> {
+                Timber.tag(TAG).d("Remove friend successful for user: %s", username)
+                CodeResponse.SuccessNoContent
             }
-        } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "Remove friend failed with exception")
-            CodeResponse.ErrorData(-1, e.message ?: "Unknown error", "Exception")
+
+            else -> {
+                Timber.tag(TAG).e("Remove friend failed: %s", response.errorBody()?.string())
+                CodeResponse.ErrorData(
+                    response.code(),
+                    response.errorBody().toString(),
+                    response.message()
+                )
+            }
         }
     }
 
@@ -63,28 +53,23 @@ class FriendRepositoryImpl(
         token: String,
         username: String
     ): CodeResponse {
-        return try {
-            val response =
-                friendApi.acceptFriendRequest("Bearer $token", FriendRequest(username))
+        val response =
+            friendApi.acceptFriendRequest("Bearer $token", FriendRequest(username))
 
-            when {
-                response.isSuccessful -> {
-                    Timber.tag(TAG).d("Accept friend request successful for user: %s", username)
-                    CodeResponse.SuccessNoContent
-                }
-
-                else -> {
-                    Timber.tag(TAG).e("Accept friend request failed: %s", response.errorBody()?.string())
-                    CodeResponse.ErrorData(
-                        response.code(),
-                        response.errorBody().toString(),
-                        response.message()
-                    )
-                }
+        return when {
+            response.isSuccessful -> {
+                Timber.tag(TAG).d("Accept friend request successful for user: %s", username)
+                CodeResponse.SuccessNoContent
             }
-        } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "Accept friend request failed with exception")
-            CodeResponse.ErrorData(-1, e.message ?: "Unknown error", "Exception")
+
+            else -> {
+                Timber.tag(TAG).e("Accept friend request failed: %s", response.errorBody()?.string())
+                CodeResponse.ErrorData(
+                    response.code(),
+                    response.errorBody().toString(),
+                    response.message()
+                )
+            }
         }
     }
 
@@ -92,28 +77,23 @@ class FriendRepositoryImpl(
         token: String,
         username: String
     ): CodeResponse {
-        return try {
-            val response =
-                friendApi.rejectFriendRequest("Bearer $token", FriendRequest(username))
+        val response =
+            friendApi.rejectFriendRequest("Bearer $token", FriendRequest(username))
 
-            when {
-                response.isSuccessful -> {
-                    Timber.tag(TAG).d("Reject friend request successful for user: %s", username)
-                    CodeResponse.SuccessNoContent
-                }
-
-                else -> {
-                    Timber.tag(TAG).e("Reject friend request failed: %s", response.errorBody()?.string())
-                    CodeResponse.ErrorData(
-                        response.code(),
-                        response.errorBody().toString(),
-                        response.message()
-                    )
-                }
+        return when {
+            response.isSuccessful -> {
+                Timber.tag(TAG).d("Reject friend request successful for user: %s", username)
+                CodeResponse.SuccessNoContent
             }
-        } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "Reject friend request failed with exception")
-            CodeResponse.ErrorData(-1, e.message ?: "Unknown error", "Exception")
+
+            else -> {
+                Timber.tag(TAG).e("Reject friend request failed: %s", response.errorBody()?.string())
+                CodeResponse.ErrorData(
+                    response.code(),
+                    response.errorBody().toString(),
+                    response.message()
+                )
+            }
         }
     }
 

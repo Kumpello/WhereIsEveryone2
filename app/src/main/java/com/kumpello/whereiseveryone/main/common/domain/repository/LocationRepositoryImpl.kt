@@ -19,61 +19,51 @@ class LocationRepositoryImpl(
         accuracy: Float,
         lastUpdate: Instant
     ): CodeResponse {
-        return try {
-            val response = locationApi.sendLocation(
-                "Bearer $token", LocationRequest(
-                    longitude = longitude,
-                    latitude = latitude,
-                    bearing = bearing,
-                    altitude = altitude,
-                    accuracy = accuracy,
-                    lastUpdate = lastUpdate
-                )
+        val response = locationApi.sendLocation(
+            "Bearer $token", LocationRequest(
+                longitude = longitude,
+                latitude = latitude,
+                bearing = bearing,
+                altitude = altitude,
+                accuracy = accuracy,
+                lastUpdate = lastUpdate
             )
-            when {
-                response.isSuccessful -> {
-                    Timber.tag(TAG).d("Location sent successfully")
-                    CodeResponse.SuccessNoContent
-                }
-
-                else -> {
-                    Timber.tag(TAG).e("Error sending location: %s", response.errorBody()?.string())
-                    CodeResponse.ErrorData(
-                        response.code(),
-                        response.errorBody().toString(),
-                        response.message()
-                    )
-                }
+        )
+        return when {
+            response.isSuccessful -> {
+                Timber.tag(TAG).d("Location sent successfully")
+                CodeResponse.SuccessNoContent
             }
-        } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "Error sending location with exception")
-            CodeResponse.ErrorData(-1, e.message ?: "Unknown error", "Exception")
+
+            else -> {
+                Timber.tag(TAG).e("Error sending location: %s", response.errorBody()?.string())
+                CodeResponse.ErrorData(
+                    response.code(),
+                    response.errorBody().toString(),
+                    response.message()
+                )
+            }
         }
     }
 
     override suspend fun wipeLocation(token: String): CodeResponse {
-        return try {
-            val response = locationApi.wipeLocation(
-                "Bearer $token"
-            )
-            when {
-                response.isSuccessful -> {
-                    Timber.tag(TAG).d("Location wiped successfully")
-                    CodeResponse.SuccessNoContent
-                }
-
-                else -> {
-                    Timber.tag(TAG).e("Error wiping location: %s", response.errorBody()?.string())
-                    CodeResponse.ErrorData(
-                        response.code(),
-                        response.errorBody().toString(),
-                        response.message()
-                    )
-                }
+        val response = locationApi.wipeLocation(
+            "Bearer $token"
+        )
+        return when {
+            response.isSuccessful -> {
+                Timber.tag(TAG).d("Location wiped successfully")
+                CodeResponse.SuccessNoContent
             }
-        } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "Error wiping location with exception")
-            CodeResponse.ErrorData(-1, e.message ?: "Unknown error", "Exception")
+
+            else -> {
+                Timber.tag(TAG).e("Error wiping location: %s", response.errorBody()?.string())
+                CodeResponse.ErrorData(
+                    response.code(),
+                    response.errorBody().toString(),
+                    response.message()
+                )
+            }
         }
     }
 
