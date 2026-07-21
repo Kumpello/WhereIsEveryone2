@@ -3,17 +3,15 @@ package com.kumpello.whereiseveryone.main.map.presentation
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Immutable
 import com.kumpello.whereiseveryone.R
-import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
+import com.kumpello.whereiseveryone.common.domain.manager.PreferencesKey
+import com.kumpello.whereiseveryone.common.domain.manager.PreferencesManager
 import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
-import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
-import com.kumpello.whereiseveryone.common.domain.ucecase.SaveKeyUseCase
 import com.kumpello.whereiseveryone.common.presentation.BaseViewModel
 import com.kumpello.whereiseveryone.main.map.domain.usecase.UpdateStatusUseCase
 import timber.log.Timber
 
 class MessageViewModel(
-    private val saveKeyUseCase: SaveKeyUseCase,
-    private val getKeyUseCase: GetKeyUseCase,
+    private val preferencesManager: PreferencesManager,
     private val updateStatusUseCase: UpdateStatusUseCase,
 ) : BaseViewModel<MessageViewModel.State, MessageViewModel.ViewState, MessageViewModel.Event, MessageViewModel.Action>(
     State()
@@ -26,7 +24,7 @@ class MessageViewModel(
     override fun reduce(state: State, event: Event): ReducerResult<State, Event, Action> {
         return when (event) {
             Event.LoadUserMessage -> state.toResult(SideEffect.AsyncWork {
-                val message = getKeyUseCase.getValue(WhereIsEveryoneApplication.USER_MESSAGE_KEY).orEmpty()
+                val message = preferencesManager.get(PreferencesKey.UserMessage).orEmpty()
                 Timber.tag(TAG).d("Loaded user message: %s", message)
                 Event.OnUserMessageLoaded(message)
             })
@@ -40,7 +38,7 @@ class MessageViewModel(
                     val message = state.userMessageField
                     when (updateStatusUseCase.execute(message)) {
                         is CodeResponse.SuccessNoContent -> {
-                            saveKeyUseCase.saveValue(WhereIsEveryoneApplication.USER_MESSAGE_KEY, message)
+                            preferencesManager.save(PreferencesKey.UserMessage, message)
                             Timber.tag(TAG).d("Message saved to DataStore")
                             Event.OnMessageSent(message)
                         }

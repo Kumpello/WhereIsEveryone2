@@ -4,9 +4,9 @@ import androidx.annotation.StringRes
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.viewModelScope
 import com.kumpello.whereiseveryone.R
-import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
+import com.kumpello.whereiseveryone.common.domain.manager.PreferencesKey
+import com.kumpello.whereiseveryone.common.domain.manager.PreferencesManager
 import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
-import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
 import com.kumpello.whereiseveryone.common.presentation.AsyncState
 import com.kumpello.whereiseveryone.common.presentation.BaseViewModel
 import com.kumpello.whereiseveryone.main.common.domain.usecase.GetFriendsDataUseCase
@@ -37,14 +37,14 @@ class FriendsViewModel(
     private val stopSharingUseCase: StopSharingUseCase,
     private val resumeSharingUseCase: ResumeSharingUseCase,
     private val getPausedFriendsUseCase: GetPausedFriendsUseCase,
-    private val getKeyUseCase: GetKeyUseCase
+    private val preferencesManager: PreferencesManager
 ) : BaseViewModel<FriendsViewModel.State, FriendsViewModel.ViewState, FriendsViewModel.Event, FriendsViewModel.Action>(
     State()
 ) {
 
     init {
         viewModelScope.launch {
-            val username = getKeyUseCase.getValue(WhereIsEveryoneApplication.USER_NAME_KEY)
+            val username = preferencesManager.get(PreferencesKey.UserName)
             trigger(Event.OnUsernameLoaded(username ?: ""))
             locationService.observeLocation().collect { location ->
                 trigger(Event.OnLocationUpdate(location?.let {

@@ -1,13 +1,13 @@
 package com.kumpello.whereiseveryone.authentication.login.domain.usecase
 
-import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
+import com.kumpello.whereiseveryone.common.domain.manager.PreferencesKey
+import com.kumpello.whereiseveryone.common.domain.manager.PreferencesManager
 import com.kumpello.whereiseveryone.common.domain.repository.AuthenticationRepository
-import com.kumpello.whereiseveryone.common.domain.ucecase.SaveKeyUseCase
 import com.kumpello.whereiseveryone.common.model.AuthResponse
 
 class LoginUseCase(
     private val authenticationRepository: AuthenticationRepository,
-    private val saveKeyUseCase: SaveKeyUseCase,
+    private val preferencesManager: PreferencesManager,
 ) {
 
     suspend fun execute(
@@ -40,9 +40,9 @@ class LoginUseCase(
 
     private suspend fun saveUserData(responseWithParams: AuthResponseWithParams) {
         if (responseWithParams.authResponse is AuthResponse.AuthData) {
-            saveKeyUseCase.saveValue(WhereIsEveryoneApplication.AUTH_TOKEN_KEY, responseWithParams.authResponse.token)
-            saveKeyUseCase.saveValue(WhereIsEveryoneApplication.AUTH_REFRESH_TOKEN_KEY, responseWithParams.authResponse.refresh_token)
-            saveKeyUseCase.saveValue(WhereIsEveryoneApplication.USER_NAME_KEY, responseWithParams.username)
+            preferencesManager.save(PreferencesKey.AuthToken, responseWithParams.authResponse.token)
+            preferencesManager.save(PreferencesKey.AuthRefreshToken, responseWithParams.authResponse.refresh_token)
+            preferencesManager.save(PreferencesKey.UserName, responseWithParams.username)
         }
     }
 

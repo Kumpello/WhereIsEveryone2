@@ -8,11 +8,10 @@ import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceImpl
 import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceInterface
 import androidx.compose.runtime.Immutable
 import com.kumpello.whereiseveryone.R
-import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
+import com.kumpello.whereiseveryone.common.domain.manager.PreferencesKey
+import com.kumpello.whereiseveryone.common.domain.manager.PreferencesManager
 import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
-import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
-import com.kumpello.whereiseveryone.common.domain.ucecase.LogoutUseCase
-import com.kumpello.whereiseveryone.common.domain.ucecase.SaveKeyUseCase
+import com.kumpello.whereiseveryone.common.domain.usecase.LogoutUseCase
 import com.kumpello.whereiseveryone.common.presentation.BaseViewModel.SideEffect.*
 import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel.Event.*
 import kotlinx.coroutines.Dispatchers
@@ -23,8 +22,7 @@ import timber.log.Timber
 class SettingsViewModel(
     @InjectedParam private val locationServiceInterface: LocationServiceInterface,
     private val wipeLocationUseCase: WipeLocationUseCase,
-    private val saveKeyUseCase: SaveKeyUseCase,
-    private val getKeyUseCase: GetKeyUseCase,
+    private val preferencesManager: PreferencesManager,
     private val logoutUseCase: LogoutUseCase
 ) : BaseViewModel<SettingsViewModel.State, SettingsViewModel.ViewState, SettingsViewModel.Event, SettingsViewModel.Action>(
     State()
@@ -59,10 +57,7 @@ class SettingsViewModel(
                             CodeResponse.SuccessNoContent -> {
                                 Timber.tag(TAG).d("Location wiped successfully")
                                 locationServiceInterface.stopLocationService()
-                                saveKeyUseCase.saveValue(
-                                    WhereIsEveryoneApplication.LOCATION_SHARING_ENABLED_KEY,
-                                    "false"
-                                )
+                                preferencesManager.save(PreferencesKey.LocationSharingEnabled, false)
                                 OnDataCleared
                             }
                         }
@@ -82,10 +77,7 @@ class SettingsViewModel(
                     locationServiceInterface.startLocationService()
                 }
                 state.toResult(AsyncWork {
-                    saveKeyUseCase.saveValue(
-                        WhereIsEveryoneApplication.LOCATION_SHARING_ENABLED_KEY,
-                        newState.toString()
-                    )
+                    preferencesManager.save(PreferencesKey.LocationSharingEnabled, newState)
                     // We don't need to return a command here because LocationServiceImpl.stateFlow will trigger update
                     NoOp
                 })

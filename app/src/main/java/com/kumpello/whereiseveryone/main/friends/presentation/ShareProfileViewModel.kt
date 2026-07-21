@@ -4,20 +4,20 @@ import androidx.annotation.StringRes
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.viewModelScope
 import com.kumpello.whereiseveryone.R
-import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
-import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
+import com.kumpello.whereiseveryone.common.domain.manager.PreferencesKey
+import com.kumpello.whereiseveryone.common.domain.manager.PreferencesManager
 import com.kumpello.whereiseveryone.common.presentation.BaseViewModel
 import kotlinx.coroutines.launch
 
 class ShareProfileViewModel(
-    private val getKeyUseCase: GetKeyUseCase
+    private val preferencesManager: PreferencesManager
 ) : BaseViewModel<ShareProfileViewModel.State, ShareProfileViewModel.ViewState, ShareProfileViewModel.Event, ShareProfileViewModel.Action>(
     State()
 ) {
 
     init {
         viewModelScope.launch {
-            val username = getKeyUseCase.getValue(WhereIsEveryoneApplication.USER_NAME_KEY)
+            val username = preferencesManager.get(PreferencesKey.UserName)
             trigger(Event.OnUsernameLoaded(username ?: ""))
         }
     }

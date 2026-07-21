@@ -1,8 +1,8 @@
 package com.kumpello.whereiseveryone.common.domain.services
 
-import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
-import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
-import com.kumpello.whereiseveryone.common.domain.ucecase.RefreshTokenUseCase
+import com.kumpello.whereiseveryone.common.domain.manager.PreferencesKey
+import com.kumpello.whereiseveryone.common.domain.manager.PreferencesManager
+import com.kumpello.whereiseveryone.common.domain.usecase.RefreshTokenUseCase
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.Response
@@ -10,7 +10,7 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
 class AuthInterceptor(
-    private val getKeyUseCase: GetKeyUseCase
+    private val preferencesManager: PreferencesManager
 ) : Interceptor, KoinComponent {
 
     private val refreshTokenUseCase: RefreshTokenUseCase by inject()
@@ -21,7 +21,7 @@ class AuthInterceptor(
         val isAuthRequest = originalRequest.url.encodedPath.contains("auth/")
 
         val requestWithToken = if (!isAuthRequest && originalRequest.header("Authorization") == null) {
-            val token = runBlocking { getKeyUseCase.getValue(WhereIsEveryoneApplication.AUTH_TOKEN_KEY) }
+            val token = runBlocking { preferencesManager.get(PreferencesKey.AuthToken) }
             if (token != null) {
                 originalRequest.newBuilder()
                     .header("Authorization", "Bearer $token")
@@ -37,7 +37,7 @@ class AuthInterceptor(
 
         if (response.code == 401 && !isAuthRequest) {
             synchronized(this) {
-                val currentToken = runBlocking { getKeyUseCase.getValue(WhereIsEveryoneApplication.AUTH_TOKEN_KEY) }
+                val currentToken = runBlocking { preferencesManager.get(PreferencesKey.AuthToken) }
                 val requestToken = requestWithToken.header("Authorization")?.removePrefix("Bearer ")
 
                 if (currentToken != null && currentToken != requestToken) {
@@ -49,11 +49,11 @@ class AuthInterceptor(
                     )
                 }
 
-                val refreshToken = runBlocking { getKeyUseCase.getValue(WhereIsEveryoneApplication.AUTH_REFRESH_TOKEN_KEY) }
+                val refreshToken = runBlocking { preferencesManager.get(PreferencesKey.AuthRefreshToken) }
                 if (refreshToken != null) {
                     val authData = runBlocking { refreshTokenUseCase.execute() }
                     if (authData == RefreshTokenUseCase.Response.Success) {
-                        val authToken = runBlocking { getKeyUseCase.getValue(WhereIsEveryoneApplication.AUTH_TOKEN_KEY) }
+                        val authToken = runBlocking { preferencesManager.get(PreferencesKey.AuthToken) }
                         response.close()
                         return chain.proceed(
                             requestWithToken.newBuilder()

@@ -4,15 +4,15 @@ import android.nfc.NdefMessage
 import android.nfc.NdefRecord
 import android.nfc.cardemulation.HostApduService
 import android.os.Bundle
-import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
-import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
+import com.kumpello.whereiseveryone.common.domain.manager.PreferencesKey
+import com.kumpello.whereiseveryone.common.domain.manager.PreferencesManager
 import kotlinx.coroutines.runBlocking
 import org.koin.android.ext.android.inject
 import timber.log.Timber
 
 class NdefHceService : HostApduService() {
 
-    private val getKeyUseCase: GetKeyUseCase by inject()
+    private val preferencesManager: PreferencesManager by inject()
 
     private val STATUS_SUCCESS = byteArrayOf(0x90.toByte(), 0x00.toByte())
     private val STATUS_FAILED = byteArrayOf(0x6A.toByte(), 0x82.toByte())
@@ -111,7 +111,7 @@ class NdefHceService : HostApduService() {
 
     private fun prepareNdefFile() {
         val username = runBlocking {
-            getKeyUseCase.getValue(WhereIsEveryoneApplication.USER_NAME_KEY)
+            preferencesManager.get(PreferencesKey.UserName)
         }?.trim() ?: "unknown"
 
         val uri = "whereiseveryone://addfriend/$username"

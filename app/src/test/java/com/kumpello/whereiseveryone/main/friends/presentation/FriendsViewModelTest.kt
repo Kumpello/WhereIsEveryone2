@@ -2,23 +2,19 @@ package com.kumpello.whereiseveryone.main.friends.presentation
 
 import android.location.Location
 import app.cash.turbine.test
-import com.kumpello.whereiseveryone.common.presentation.AsyncState
+import com.kumpello.whereiseveryone.common.domain.manager.PreferencesKey
+import com.kumpello.whereiseveryone.common.domain.manager.PreferencesManager
 import com.kumpello.whereiseveryone.main.common.domain.usecase.GetFriendsDataUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.MapFriendUseCase
-import com.kumpello.whereiseveryone.main.common.entity.Friend
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.AcceptFriendUseCase
+import com.kumpello.whereiseveryone.main.friends.domain.usecase.GetPausedFriendsUseCase
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.RejectFriendUseCase
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.RemoveFriendUseCase
-import com.kumpello.whereiseveryone.main.friends.domain.usecase.StopSharingUseCase
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.ResumeSharingUseCase
-import com.kumpello.whereiseveryone.main.friends.domain.usecase.GetPausedFriendsUseCase
-import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
-import com.kumpello.whereiseveryone.main.map.domain.model.FriendData
+import com.kumpello.whereiseveryone.main.friends.domain.usecase.StopSharingUseCase
 import com.kumpello.whereiseveryone.main.map.domain.model.FriendsResponse
-import com.kumpello.whereiseveryone.main.map.domain.model.UserInfo
 import com.kumpello.whereiseveryone.main.map.presentation.LocationService
 import com.kumpello.whereiseveryone.utils.MainDispatcherRule
-import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -47,12 +43,12 @@ class FriendsViewModelTest {
     private val stopSharingUseCase: StopSharingUseCase = mockk()
     private val resumeSharingUseCase: ResumeSharingUseCase = mockk()
     private val getPausedFriendsUseCase: GetPausedFriendsUseCase = mockk()
-    private val getKeyUseCase: GetKeyUseCase = mockk()
+    private val preferencesManager: PreferencesManager = mockk()
 
     private lateinit var viewModel: FriendsViewModel
 
     private fun setupViewModel(username: String = "testuser") {
-        coEvery { getKeyUseCase.getValue(WhereIsEveryoneApplication.USER_NAME_KEY) } returns username
+        coEvery { preferencesManager.get(PreferencesKey.UserName) } returns username
         coEvery { getFriendsDataUseCase.execute() } returns FriendsResponse.FriendsData(emptyList())
         coEvery { getPausedFriendsUseCase.execute() } returns mockk()
         
@@ -66,7 +62,7 @@ class FriendsViewModelTest {
             stopSharingUseCase,
             resumeSharingUseCase,
             getPausedFriendsUseCase,
-            getKeyUseCase
+            preferencesManager
         )
     }
 

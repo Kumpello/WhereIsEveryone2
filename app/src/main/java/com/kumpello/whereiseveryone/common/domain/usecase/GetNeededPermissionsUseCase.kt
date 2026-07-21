@@ -1,4 +1,4 @@
-package com.kumpello.whereiseveryone.common.domain.ucecase
+package com.kumpello.whereiseveryone.common.domain.usecase
 
 import android.Manifest
 import android.os.Build

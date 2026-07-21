@@ -1,8 +1,8 @@
 package com.kumpello.whereiseveryone.authentication.signUp.domain.usecase
 
-import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
+import com.kumpello.whereiseveryone.common.domain.manager.PreferencesKey
+import com.kumpello.whereiseveryone.common.domain.manager.PreferencesManager
 import com.kumpello.whereiseveryone.common.domain.repository.AuthenticationRepository
-import com.kumpello.whereiseveryone.common.domain.ucecase.SaveKeyUseCase
 import com.kumpello.whereiseveryone.common.model.AuthResponse
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -14,15 +14,15 @@ import org.junit.Test
 class SignUpUseCaseTest {
 
     private val authenticationRepository: AuthenticationRepository = mockk()
-    private val saveKeyUseCase: SaveKeyUseCase = mockk(relaxed = true)
-    private val signUpUseCase = SignUpUseCase(authenticationRepository, saveKeyUseCase)
+    private val preferencesManager: PreferencesManager = mockk(relaxed = true)
+    private val signUpUseCase = SignUpUseCase(authenticationRepository, preferencesManager)
 
     @Test
     fun `execute success saves data and returns Success`() = runTest {
         val authData = AuthResponse.AuthData(
             id = "1",
             refresh_token = "refresh",
-            token = "token"
+            token = "token",
         )
         coEvery { authenticationRepository.signUp("user", "pass") } returns authData
 
@@ -30,9 +30,9 @@ class SignUpUseCaseTest {
 
         assertEquals(SignUpUseCase.Response.Success, result)
         coVerify {
-            saveKeyUseCase.saveValue(WhereIsEveryoneApplication.AUTH_TOKEN_KEY, "token")
-            saveKeyUseCase.saveValue(WhereIsEveryoneApplication.AUTH_REFRESH_TOKEN_KEY, "refresh")
-            saveKeyUseCase.saveValue(WhereIsEveryoneApplication.USER_NAME_KEY, "user")
+            preferencesManager.save(PreferencesKey.AuthToken, "token")
+            preferencesManager.save(PreferencesKey.AuthRefreshToken, "refresh")
+            preferencesManager.save(PreferencesKey.UserName, "user")
         }
     }
 
@@ -44,7 +44,7 @@ class SignUpUseCaseTest {
 
         assertEquals(SignUpUseCase.Response.Error, result)
         coVerify(exactly = 0) {
-            saveKeyUseCase.saveValue(any(), any())
+            preferencesManager.save(any<PreferencesKey<String>>(), any())
         }
     }
 }

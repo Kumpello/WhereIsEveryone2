@@ -3,7 +3,7 @@ package com.kumpello.whereiseveryone.main.map.domain.usecase
 import android.content.Context
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
-import com.kumpello.whereiseveryone.common.domain.ucecase.GetNeededPermissionsUseCase
+import com.kumpello.whereiseveryone.common.domain.usecase.GetNeededPermissionsUseCase
 
 class GetPermissionsStatusUseCase(val getNeededPermissionsUseCase: GetNeededPermissionsUseCase) {
 

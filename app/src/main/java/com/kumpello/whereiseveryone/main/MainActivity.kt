@@ -22,14 +22,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.kumpello.whereiseveryone.app.WhereIsEveryoneApplication
-import androidx.navigation.NavHostController
 import com.kumpello.whereiseveryone.authentication.AuthenticationActivity
-import com.kumpello.whereiseveryone.common.domain.ucecase.GetCurrentAuthTokenUseCase
-import com.kumpello.whereiseveryone.common.domain.ucecase.GetKeyUseCase
+import com.kumpello.whereiseveryone.common.domain.manager.PreferencesKey
+import com.kumpello.whereiseveryone.common.domain.manager.PreferencesManager
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.common.MainRoute
 import com.kumpello.whereiseveryone.main.friends.presentation.AddFriendViewModel
@@ -55,8 +54,7 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
     private val shareProfileViewModel: ShareProfileViewModel by viewModel()
     private val settingsViewModel: SettingsViewModel by viewModel { parametersOf(this@MainActivity) }
 
-    private val getKeyUseCase: GetKeyUseCase by inject()
-    private val getCurrentAuthTokenUseCase: GetCurrentAuthTokenUseCase by inject()
+    private val preferencesManager: PreferencesManager by inject()
 
     private var locationService: LocationService? = null
     private var isLocationServiceBound: Boolean = false
@@ -73,7 +71,7 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
         enableEdgeToEdge()
 
         lifecycleScope.launch {
-            val token = getCurrentAuthTokenUseCase.execute()
+            val token = preferencesManager.get(PreferencesKey.AuthToken)
             if (token.isNullOrEmpty()) {
                 Timber.tag(TAG).d("No auth token found, redirecting to AuthenticationActivity")
                 val intent = Intent(this@MainActivity, AuthenticationActivity::class.java).apply {
@@ -155,8 +153,7 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
                         action.permissions
                     ) {
                         lifecycleScope.launch {
-                            val isEnabled = getKeyUseCase.getValue(WhereIsEveryoneApplication.LOCATION_SHARING_ENABLED_KEY)
-                                ?.toBoolean() ?: true
+                            val isEnabled = preferencesManager.get(PreferencesKey.LocationSharingEnabled) ?: true
                             if (isEnabled) {
                                 startLocationService()
                             }
@@ -191,9 +188,8 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
     override fun onStart() {
         super.onStart()
         lifecycleScope.launch {
-            usernameToShare = getKeyUseCase.getValue(WhereIsEveryoneApplication.USER_NAME_KEY)
-            val isEnabled = getKeyUseCase.getValue(WhereIsEveryoneApplication.LOCATION_SHARING_ENABLED_KEY)
-                ?.toBoolean() ?: true
+            usernameToShare = preferencesManager.get(PreferencesKey.UserName)
+            val isEnabled = preferencesManager.get(PreferencesKey.LocationSharingEnabled) ?: true
 
             if (!isLocationServiceBound
                 && !mapScreenViewModel.state.value.permissions.containsValue(false)

@@ -2,7 +2,7 @@ package com.kumpello.whereiseveryone.main.common.di
 
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
-import com.kumpello.whereiseveryone.common.domain.ucecase.GetNeededPermissionsUseCase
+import com.kumpello.whereiseveryone.common.domain.usecase.GetNeededPermissionsUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.CalculateBearingUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.CalculateDistanceUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertAccuracyUseCase
@@ -71,8 +71,7 @@ val mainModule = module {
     }
     viewModel {
         MessageViewModel(
-            saveKeyUseCase = get(),
-            getKeyUseCase = get(),
+            preferencesManager = get(),
             updateStatusUseCase = get(),
         )
     }
@@ -80,8 +79,7 @@ val mainModule = module {
         SettingsViewModel(
             locationServiceInterface = locationServiceInterface,
             wipeLocationUseCase = get(),
-            saveKeyUseCase = get(),
-            getKeyUseCase = get(),
+            preferencesManager = get(),
             logoutUseCase = get()
         )
     }
