@@ -16,8 +16,8 @@ class MapLocationUseCase(
             bearing = data.bearing,
             alt = AltDifference.SOMEWHAT_SAME,
             accuracy = convertAccuracyUseCase.execute(data.accuracy),
-            lastUpdateTime = formatLastUpdateUseCase.execute(data.last_update),
-            lastUpdateAge = convertLastUpdateUseCase.execute(data.last_update),
+            lastUpdateTime = formatLastUpdateUseCase.execute(data.lastUpdate),
+            lastUpdateAge = convertLastUpdateUseCase.execute(data.lastUpdate),
             rawAlt = data.alt,
             rawAccuracy = data.accuracy
         )

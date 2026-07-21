@@ -4,7 +4,6 @@ import com.kumpello.whereiseveryone.common.domain.model.AuthApi
 import com.kumpello.whereiseveryone.common.domain.repository.AuthenticationRepository
 import com.kumpello.whereiseveryone.common.domain.repository.AuthenticationRepositoryImpl
 import com.kumpello.whereiseveryone.common.domain.services.AuthInterceptor
-import com.kumpello.whereiseveryone.common.domain.services.InstantAdapter
 import com.kumpello.whereiseveryone.common.domain.services.RequestInterceptor
 import com.kumpello.whereiseveryone.main.common.domain.model.FriendsApi
 import com.kumpello.whereiseveryone.main.common.domain.repository.FriendsRepository
@@ -34,7 +33,6 @@ private const val TEMP_BASE_URL = "http://192.168.1.216:8080/api/"
 val networkModule = module {
     single {
         Moshi.Builder()
-            .add(InstantAdapter)
             .addLast(KotlinJsonAdapterFactory())
             .build()
     }

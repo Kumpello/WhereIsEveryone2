@@ -35,8 +35,8 @@ class MapFriendUseCase(
                     rawAlt = loc.alt,
                     accuracy = convertAccuracyUseCase.execute(loc.accuracy),
                     rawAccuracy = loc.accuracy,
-                    lastUpdateTime = formatLastUpdateUseCase.execute(loc.last_update),
-                    lastUpdateAge = convertLastUpdateUseCase.execute(loc.last_update)
+                    lastUpdateTime = formatLastUpdateUseCase.execute(loc.lastUpdate),
+                    lastUpdateAge = convertLastUpdateUseCase.execute(loc.lastUpdate)
                 )
             },
             distance = dist,

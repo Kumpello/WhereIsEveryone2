@@ -23,8 +23,6 @@ import com.kumpello.whereiseveryone.main.map.domain.model.FriendsResponse
 import com.kumpello.whereiseveryone.main.map.entity.MapSettings
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import kotlin.time.Clock
-import kotlin.time.Instant
 
 class MapViewModel(
     private val locationService: LocationService,
@@ -49,7 +47,7 @@ class MapViewModel(
                         bearing = it.bearing,
                         alt = it.altitude,
                         accuracy = it.accuracy,
-                        last_update = Clock.System.now(),
+                        lastUpdate = System.currentTimeMillis(),
                     )
                 }))
             }
@@ -98,10 +96,10 @@ class MapViewModel(
                                         bearing = loc.bearing,
                                         alt = loc.altitude,
                                         accuracy = loc.accuracy,
-                                        last_update = Instant.parse(loc.last_update),
+                                        lastUpdate = loc.last_update,
                                     )
                                 },
-                                friendSince = friendData.friend_since?.let { Instant.parse(it) }
+                                friendSince = friendData.friend_since
                             )
                         }
                         state.copy(friends = friends).toResult()

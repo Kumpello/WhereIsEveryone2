@@ -7,7 +7,6 @@ import io.mockk.every
 import io.mockk.mockk
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import kotlin.time.Clock
 
 class MapLocationUseCaseTest {
 
@@ -23,7 +22,7 @@ class MapLocationUseCaseTest {
 
     @Test
     fun `execute maps LocationData correctly`() {
-        val lastUpdate = Clock.System.now()
+        val lastUpdate = System.currentTimeMillis()
         val data = LocationData(1.0, 2.0, 0f, 3.0, 4f, lastUpdate)
 
         every { convertAccuracyUseCase.execute(any()) } returns AccuracyLevel.HIGH

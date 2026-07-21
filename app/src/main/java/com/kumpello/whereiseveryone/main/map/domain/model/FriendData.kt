@@ -8,5 +8,5 @@ data class FriendData(
     val status: String,
     val state: String,
     val location: UserInfo?,
-    val friend_since: String?
+    val friend_since: Long?
 )

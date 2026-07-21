@@ -9,5 +9,5 @@ data class UserInfo(
     val bearing: Float?,
     val altitude: Double?,
     val accuracy: Float?,
-    val last_update: String
+    val last_update: Long
 )

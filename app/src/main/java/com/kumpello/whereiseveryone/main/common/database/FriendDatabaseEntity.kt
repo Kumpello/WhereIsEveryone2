@@ -12,7 +12,7 @@ data class FriendDatabaseEntity(
     val status: String,
     val state: String,
     @Embedded val location: UserInfoEntity?,
-    val friendSince: String?
+    val friendSince: Long?
 )
 
 data class UserInfoEntity(
@@ -21,7 +21,7 @@ data class UserInfoEntity(
     val bearing: Float?,
     val altitude: Double?,
     val accuracy: Float?,
-    val lastUpdate: String
+    val lastUpdate: Long
 )
 
 fun FriendData.toDatabaseEntity() = FriendDatabaseEntity(

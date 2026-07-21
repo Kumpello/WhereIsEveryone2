@@ -4,7 +4,6 @@ import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
 import com.kumpello.whereiseveryone.main.map.domain.api.LocationApi
 import com.kumpello.whereiseveryone.main.map.domain.model.LocationRequest
 import timber.log.Timber
-import kotlin.time.Instant
 
 class LocationRepositoryImpl(
     private val locationApi: LocationApi
@@ -17,7 +16,7 @@ class LocationRepositoryImpl(
         bearing: Float,
         altitude: Double,
         accuracy: Float,
-        lastUpdate: Instant
+        lastUpdate: Long
     ): CodeResponse {
         val response = locationApi.sendLocation(
             "Bearer $token", LocationRequest(
@@ -26,7 +25,7 @@ class LocationRepositoryImpl(
                 bearing = bearing,
                 altitude = altitude,
                 accuracy = accuracy,
-                lastUpdate = lastUpdate
+                last_update = lastUpdate
             )
         )
         return when {

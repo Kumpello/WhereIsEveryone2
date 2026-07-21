@@ -3,9 +3,6 @@ package com.kumpello.whereiseveryone.main.common.domain.usecase
 import com.kumpello.whereiseveryone.main.common.entity.LastUpdateAge
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.Instant
 
 class ConvertLastUpdateUseCaseTest {
 
@@ -13,15 +10,15 @@ class ConvertLastUpdateUseCaseTest {
 
     @Test
     fun `execute returns FRESH for very recent updates`() {
-        val now = Instant.parse("2023-01-01T12:00:00Z")
-        val lastUpdate = now.minus(30.seconds)
+        val now = 1000000000000L
+        val lastUpdate = now - 30 * 1000L
         assertEquals(LastUpdateAge.FRESH, useCase.execute(lastUpdate, now))
     }
 
     @Test
     fun `execute returns OLD_AS_FUCK for very old updates`() {
-        val now = Instant.parse("2023-01-01T12:00:00Z")
-        val lastUpdate = now.minus(120.minutes)
+        val now = 1000000000000L
+        val lastUpdate = now - 120 * 60 * 1000L
         assertEquals(LastUpdateAge.OLD_AS_FUCK, useCase.execute(lastUpdate, now))
     }
 }

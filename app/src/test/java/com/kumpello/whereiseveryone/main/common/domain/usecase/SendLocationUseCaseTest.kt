@@ -8,7 +8,6 @@ import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import kotlin.time.Clock
 
 class SendLocationUseCaseTest {
 
@@ -18,7 +17,7 @@ class SendLocationUseCaseTest {
 
     @Test
     fun `execute returns data from repository`() = runTest {
-        val lastUpdate = Clock.System.now()
+        val lastUpdate = System.currentTimeMillis()
         coEvery { getCurrentAuthTokenUseCase.execute() } returns "token"
         coEvery { 
             locationRepository.sendPosition("token", 1.0, 2.0, 0f, 3.0, 4f, lastUpdate) 

@@ -44,9 +44,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import timber.log.Timber
-import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Instant
 
 class LocationServiceImpl : Service(), LocationService {
     private val fusedLocationClient: FusedLocationProviderClient by inject()
@@ -95,7 +93,7 @@ class LocationServiceImpl : Service(), LocationService {
                 val location = locationSendChannel.receive()
 
                 // Process and send the location
-                val now = Clock.System.now()
+                val now = System.currentTimeMillis()
                 userLocationDao.updateUserLocation(
                     UserLocationEntity(
                         latitude = location.latitude,
@@ -103,7 +101,7 @@ class LocationServiceImpl : Service(), LocationService {
                         bearing = location.bearing,
                         altitude = location.altitude,
                         accuracy = location.accuracy,
-                        lastUpdate = now.toEpochMilliseconds()
+                        lastUpdate = now
                     )
                 )
                 sendLocation(
@@ -265,7 +263,7 @@ class LocationServiceImpl : Service(), LocationService {
         }
     }
 
-    private suspend fun sendLocation(location: Location, lastUpdate: Instant) {
+    private suspend fun sendLocation(location: Location, lastUpdate: Long) {
         runCatching {
             Timber.tag(TAG).d("Sending location to backend")
             val response = sendLocationUseCase.execute(

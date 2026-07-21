@@ -1,7 +1,6 @@
 package com.kumpello.whereiseveryone.main.common.domain.repository
 
 import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
-import kotlin.time.Instant
 
 sealed interface LocationRepository {
     suspend fun sendPosition(
@@ -11,7 +10,7 @@ sealed interface LocationRepository {
         bearing: Float,
         altitude: Double,
         accuracy: Float,
-        lastUpdate: Instant
+        lastUpdate: Long
     ): CodeResponse
 
     suspend fun wipeLocation(

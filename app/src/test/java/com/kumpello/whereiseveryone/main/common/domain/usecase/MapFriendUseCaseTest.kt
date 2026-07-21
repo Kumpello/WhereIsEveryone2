@@ -11,7 +11,6 @@ import io.mockk.mockk
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import kotlin.time.Clock
 
 class MapFriendUseCaseTest {
 
@@ -33,7 +32,7 @@ class MapFriendUseCaseTest {
 
     @Test
     fun `execute maps FriendLocalData to Friend correctly`() {
-        val lastUpdate = Clock.System.now()
+        val lastUpdate = System.currentTimeMillis()
         val friendLocalData = FriendLocalData(
             username = "friend1",
             status = "status",
@@ -60,7 +59,7 @@ class MapFriendUseCaseTest {
 
     @Test
     fun `execute handles null friend location`() {
-        val lastUpdate = Clock.System.now()
+        val lastUpdate = System.currentTimeMillis()
         val friendLocalData = FriendLocalData(
             username = "friend1",
             status = "status",

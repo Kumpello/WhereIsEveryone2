@@ -1,14 +1,11 @@
 package com.kumpello.whereiseveryone.main.common.domain.usecase
 
 import com.kumpello.whereiseveryone.main.common.entity.LastUpdateAge
-import kotlin.time.Clock
-import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Instant
 
 class ConvertLastUpdateUseCase {
 
-    fun execute(lastUpdate: Instant, now: Instant = Clock.System.now()): LastUpdateAge {
-        val duration = now.minus(lastUpdate)
+    fun execute(lastUpdate: Long, now: Long = System.currentTimeMillis()): LastUpdateAge {
+        val duration = now - lastUpdate
         
         return when {
             duration < FRESH_LIMIT -> LastUpdateAge.FRESH
@@ -21,10 +18,10 @@ class ConvertLastUpdateUseCase {
     }
 
     companion object {
-        val FRESH_LIMIT = 1.minutes
-        val NEW_LIMIT = 5.minutes
-        val SOMEWHAT_NEW_LIMIT = 15.minutes
-        val SOMEWHAT_OLD_LIMIT = 30.minutes
-        val OLD_LIMIT = 60.minutes
+        const val FRESH_LIMIT = 60 * 1000L
+        const val NEW_LIMIT = 5 * 60 * 1000L
+        const val SOMEWHAT_NEW_LIMIT = 15 * 60 * 1000L
+        const val SOMEWHAT_OLD_LIMIT = 30 * 60 * 1000L
+        const val OLD_LIMIT = 60 * 60 * 1000L
     }
 }
