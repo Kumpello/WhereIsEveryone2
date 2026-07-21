@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalInspectionMode
@@ -174,6 +175,7 @@ fun FriendsSymbolLayer(
     val friendsById = remember(friends) {
         friends.associateBy { it.username }
     }
+    val friendsByIdState = rememberUpdatedState(friendsById)
 
     val featureCollection = remember(friends) {
         FeatureCollection.fromFeatures(
@@ -249,15 +251,15 @@ fun FriendsSymbolLayer(
                 textOffset = DoubleListValue(listOf(0.0, -2.5))
 
                 interactionsState.onClicked { feature, _ ->
-                    feature.properties.getString("id")
-                        .let(friendsById::get)
-                        ?.let(onFriendClick)
+                    val id = feature.properties.getString("id")
+                    val friend = friendsByIdState.value[id]
+                    friend?.let(onFriendClick)
                     true
                 }
                 interactionsState.onLongClicked { feature, _ ->
-                    feature.properties.getString("id")
-                        .let(friendsById::get)
-                        ?.let(onFriendLongClick)
+                    val id = feature.properties.getString("id")
+                    val friend = friendsByIdState.value[id]
+                    friend?.let(onFriendLongClick)
                     true
                 }
             }
