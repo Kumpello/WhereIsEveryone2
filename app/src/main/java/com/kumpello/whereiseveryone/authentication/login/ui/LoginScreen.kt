@@ -32,6 +32,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.kumpello.whereiseveryone.R
+import com.kumpello.whereiseveryone.authentication.AuthenticationActivity
 import com.kumpello.whereiseveryone.authentication.common.AuthenticationRoute
 import com.kumpello.whereiseveryone.authentication.common.ui.TextField
 import com.kumpello.whereiseveryone.authentication.login.presentation.LoginViewModel
@@ -48,6 +49,7 @@ fun LoginScreen(
     viewModel: LoginViewModel = viewModel()
 ) {
     val context = LocalContext.current
+    val activity = context as? AuthenticationActivity
     val state by viewModel.state.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
 
@@ -64,7 +66,10 @@ fun LoginScreen(
                 is LoginViewModel.Action.MakeToast -> Toast.makeText(context, action.string, Toast.LENGTH_SHORT)
                     .show()
 
-                LoginViewModel.Action.NavigateMain -> context.startActivity(Intent(context, MainActivity::class.java))
+                LoginViewModel.Action.NavigateMain -> {
+                    context.startActivity(Intent(context, MainActivity::class.java))
+                    activity?.finish()
+                }
                 LoginViewModel.Action.NavigateSignUp -> navController.navigate(AuthenticationRoute.SignUp)
             }
         }

@@ -70,6 +70,8 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        enableEdgeToEdge()
+
         lifecycleScope.launch {
             val token = getCurrentAuthTokenUseCase.execute()
             if (token.isNullOrEmpty()) {
@@ -82,8 +84,6 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
                 return@launch
             }
         }
-
-        enableEdgeToEdge()
 
         nfcAdapter = NfcAdapter.getDefaultAdapter(this)
         if (nfcAdapter == null) {
