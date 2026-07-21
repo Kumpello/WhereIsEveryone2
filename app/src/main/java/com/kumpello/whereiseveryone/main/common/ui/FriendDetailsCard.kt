@@ -62,15 +62,13 @@ private fun FriendDetailsContent(
 ) {
     Card(
         modifier = Modifier
-            .fillMaxWidth()
             .padding(16.dp),
         shape = Shapes.large,
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
         Column(
             modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(

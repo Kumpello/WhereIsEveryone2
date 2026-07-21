@@ -54,7 +54,6 @@ fun DeleteFriendDialog(
             Text(text = stringResource(R.string.delete_friend_confirmation_format, friend.username))
         },
         modifier = Modifier
-            .fillMaxWidth()
             .padding(32.dp),
         shape = Shapes.small
     )

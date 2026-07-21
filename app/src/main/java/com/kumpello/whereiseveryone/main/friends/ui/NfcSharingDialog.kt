@@ -41,7 +41,7 @@ fun NfcSharingDialog(
             )
         ) {
             Column(
-                modifier = Modifier.padding(24.dp).fillMaxWidth(),
+                modifier = Modifier.padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
