@@ -13,6 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.main.common.entity.Friend
@@ -68,7 +69,7 @@ fun Map(
                 .background(androidx.compose.ui.graphics.Color.DarkGray),
             contentAlignment = Alignment.Center
         ) {
-            Text(text = "Map Placeholder", color = androidx.compose.ui.graphics.Color.White)
+            Text(text = stringResource(R.string.map_placeholder), color = androidx.compose.ui.graphics.Color.White)
         }
         return
     }

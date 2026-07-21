@@ -107,14 +107,14 @@ fun SignUpScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                text = "Sign up",
+                text = stringResource(R.string.signup_title),
                 style = MaterialTheme.typography.headlineLarge
             )
 
             Spacer(modifier = Modifier.height(20.dp))
 
             TextField.Regular(
-                label = "Username",
+                label = stringResource(R.string.username_label),
                 value = viewState.username,
                 onValueChange = { value ->
                     trigger(SignUpViewModel.Event.SetUsername(value))
@@ -124,7 +124,7 @@ fun SignUpScreen(
             Spacer(modifier = Modifier.height(20.dp))
 
             TextField.Password(
-                label = "Password",
+                label = stringResource(R.string.password_label),
                 value = viewState.password,
                 onValueChange = { password ->
                     trigger(SignUpViewModel.Event.SetPassword(password))
@@ -146,7 +146,7 @@ fun SignUpScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 40.dp),
                 enabled = viewState.passwordState.successful && !viewState.signUpState.isLoading,
-                text = "Sign up",
+                text = stringResource(R.string.signup_title),
                 textSize = 26,
                 height = 50,
             ) { trigger(SignUpViewModel.Event.OnSignUpClick) }
@@ -156,7 +156,7 @@ fun SignUpScreen(
             Button.Animated(
                 modifier = Modifier
                     .padding(horizontal = 40.dp),
-                text = "Log in here",
+                text = stringResource(R.string.login_here),
             ) { trigger(SignUpViewModel.Event.NavigateLogin) }
         }
     }
@@ -196,7 +196,7 @@ fun ConditionItem(checked: Boolean, condition: String) {
         Icon(
             modifier = Modifier.size(20.dp),
             imageVector = if (checked) Icons.Default.Check else Icons.Default.Close,
-            contentDescription = "Condition",
+            contentDescription = stringResource(R.string.condition_cd),
             tint = if (checked) Color.Green else Color.Red
         )
         Text(

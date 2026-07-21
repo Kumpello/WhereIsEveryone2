@@ -24,8 +24,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.common.ui.theme.Shapes
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.common.entity.AccuracyLevel
@@ -113,7 +115,7 @@ private fun AcceptedButtons(
         Icon(
             modifier = Modifier.size(size = 50.dp),
             imageVector = Icons.Outlined.Delete,
-            contentDescription = "Delete",
+            contentDescription = stringResource(R.string.delete_cd),
             tint = Color.Red
         )
     }
@@ -133,7 +135,7 @@ private fun PendingIncomingButtons(
         Icon(
             modifier = Modifier.size(size = 50.dp),
             imageVector = Icons.Outlined.Done,
-            contentDescription = "Accept",
+            contentDescription = stringResource(R.string.accept_cd),
             tint = Color.Green
         )
     }
@@ -146,7 +148,7 @@ private fun PendingIncomingButtons(
         Icon(
             modifier = Modifier.size(size = 50.dp),
             imageVector = Icons.Outlined.Clear,
-            contentDescription = "Reject",
+            contentDescription = stringResource(R.string.reject_cd),
             tint = Color.Red
         )
     }
@@ -166,7 +168,7 @@ private fun PendingOutgoingButtons(
         Icon(
             modifier = Modifier.size(size = 50.dp),
             imageVector = Icons.Outlined.Clear,
-            contentDescription = "Reject",
+            contentDescription = stringResource(R.string.reject_cd),
             tint = Color.Red
         )
     }

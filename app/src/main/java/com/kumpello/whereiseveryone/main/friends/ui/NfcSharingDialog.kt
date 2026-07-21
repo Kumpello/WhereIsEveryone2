@@ -33,7 +33,6 @@ fun NfcSharingDialog(
     Dialog(onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier
-                .fillMaxWidth()
                 .padding(16.dp),
             shape = Shapes.large,
             colors = CardDefaults.cardColors(
@@ -42,7 +41,7 @@ fun NfcSharingDialog(
             )
         ) {
             Column(
-                modifier = Modifier.padding(24.dp),
+                modifier = Modifier.padding(24.dp).fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
@@ -60,7 +59,7 @@ fun NfcSharingDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "Your device is now acting as an NFC tag. Bring another device closer to share your profile.",
+                    text = stringResource(R.string.nfc_sharing_message_active),
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center
                 )

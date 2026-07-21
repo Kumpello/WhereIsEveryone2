@@ -39,8 +39,8 @@ fun MessageFloatingCard(
         MessageFloatingCard(
             modifier = modifier,
             viewState = MessageViewModel.ViewState(
-                userMessage = "Status",
-                userMessageField = "Draft"
+                userMessage = stringResource(R.string.status_label),
+                userMessageField = stringResource(R.string.draft_label)
             ),
             onEvent = {}
         )
@@ -131,8 +131,8 @@ fun MessageFloatingCardPreview() {
     WhereIsEveryoneTheme {
         MessageFloatingCard(
             viewState = MessageViewModel.ViewState(
-                userMessage = "Status",
-                userMessageField = "Draft"
+                userMessage = stringResource(R.string.status_label),
+                userMessageField = stringResource(R.string.draft_label)
             ),
             onEvent = {}
         )

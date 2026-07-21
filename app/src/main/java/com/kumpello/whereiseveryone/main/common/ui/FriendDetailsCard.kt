@@ -87,7 +87,7 @@ private fun FriendDetailsContent(
             )
             friend.formattedDistance?.let {
                 Text(
-                    text = "Distance: $it",
+                    text = stringResource(R.string.distance_format, it),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold
@@ -96,31 +96,31 @@ private fun FriendDetailsContent(
             HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
             friend.location?.let { loc ->
-                DetailItem(label = "Latitude", value = loc.lat.toString())
-                DetailItem(label = "Longitude", value = loc.lon.toString())
+                DetailItem(label = stringResource(R.string.latitude_label), value = loc.lat.toString())
+                DetailItem(label = stringResource(R.string.longitude_label), value = loc.lon.toString())
                 loc.bearing?.let {
-                    DetailItem(label = "Bearing", value = "$it°")
+                    DetailItem(label = stringResource(R.string.bearing_label), value = "$it°")
                 }
                 loc.rawAlt?.let {
                     DetailItem(
-                        label = "Altitude",
+                        label = stringResource(R.string.altitude_label),
                         value = "${loc.alt.displayName} (${it.toInt()}m)"
                     )
                 }
                 loc.rawAccuracy?.let {
                     DetailItem(
-                        label = "Accuracy",
+                        label = stringResource(R.string.accuracy_label),
                         value = "${loc.accuracy.displayName} (${String.format("%.2f", it)}m)"
                     )
                 }
-                DetailItem(label = "Last Update", value = loc.lastUpdateTime)
+                DetailItem(label = stringResource(R.string.last_update_label), value = loc.lastUpdateTime)
                 DetailItem(
-                    label = "Data Age",
+                    label = stringResource(R.string.data_age_label),
                     value = loc.lastUpdateAge.displayName
                 )
             }
             friend.friendSince?.let {
-                DetailItem(label = "Friend since", value = it)
+                DetailItem(label = stringResource(R.string.friend_since_label), value = it)
             }
 
             Spacer(modifier = Modifier.size(16.dp))
@@ -141,14 +141,14 @@ private fun FriendDetailsContent(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Button.Animated(
-                    text = "Close",
+                    text = stringResource(R.string.close),
                     width = 130
                 ) {
                     onDismiss()
                 }
                 Spacer(modifier = Modifier.size(8.dp))
                 Button.Animated(
-                    text = "Navigate!",
+                    text = stringResource(R.string.navigate_action),
                     width = 130
                 ) {
                     onNavigate(friend)

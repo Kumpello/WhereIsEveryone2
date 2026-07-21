@@ -13,7 +13,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.kumpello.whereiseveryone.R
 
 @Composable
 fun ConditionRow(
@@ -22,7 +24,7 @@ fun ConditionRow(
 ) {
     val color by animateColorAsState(
         targetValue = if (checked) Color.Green else Color.Red,
-        label = "text color"
+        label = stringResource(R.string.text_color_label)
     )
 
     val icon = if (checked) {
@@ -34,7 +36,7 @@ fun ConditionRow(
     Row {
         Icon(
             imageVector = icon,
-            contentDescription = "status icon",
+            contentDescription = stringResource(R.string.status_icon_cd),
             tint = color
         )
         Spacer(modifier = Modifier.width(10.dp))

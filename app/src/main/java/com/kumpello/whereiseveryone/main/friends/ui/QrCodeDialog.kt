@@ -16,8 +16,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.common.ui.entity.Button
 import com.kumpello.whereiseveryone.common.ui.theme.Shapes
 
@@ -29,7 +31,6 @@ fun QrCodeDialog(
     Dialog(onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier
-                .fillMaxWidth()
                 .padding(16.dp),
             shape = Shapes.large,
             colors = CardDefaults.cardColors(
@@ -38,11 +39,11 @@ fun QrCodeDialog(
             )
         ) {
             Column(
-                modifier = Modifier.padding(24.dp),
+                modifier = Modifier.padding(24.dp).fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Your QR Code",
+                    text = stringResource(R.string.your_qr_code),
                     style = MaterialTheme.typography.headlineSmall
                 )
                 Spacer(modifier = Modifier.height(16.dp))
@@ -55,18 +56,18 @@ fun QrCodeDialog(
                 qrBitmap?.let {
                     Image(
                         bitmap = it.asImageBitmap(),
-                        contentDescription = "QR Code",
+                        contentDescription = stringResource(R.string.qr_code_cd),
                         modifier = Modifier.size(200.dp)
                     )
-                } ?: Text("Error generating QR")
+                } ?: Text(stringResource(R.string.error_generating_qr))
 
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "Scan this to add me as a friend",
+                    text = stringResource(R.string.scan_this_to_add_me_as_a_friend),
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                Button.Animated(text = "Close", width = 150) {
+                Button.Animated(text = stringResource(R.string.close), width = 150) {
                     onDismiss()
                 }
             }

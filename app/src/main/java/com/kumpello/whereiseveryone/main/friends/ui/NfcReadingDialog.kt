@@ -33,7 +33,6 @@ fun NfcReadingDialog(
     Dialog(onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier
-                .fillMaxWidth()
                 .padding(16.dp),
             shape = Shapes.large,
             colors = CardDefaults.cardColors(
@@ -42,11 +41,11 @@ fun NfcReadingDialog(
             )
         ) {
             Column(
-                modifier = Modifier.padding(24.dp),
+                modifier = Modifier.padding(24.dp).fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Reading NFC Tag",
+                    text = stringResource(R.string.reading_nfc_tag_title),
                     style = MaterialTheme.typography.headlineSmall
                 )
                 Spacer(modifier = Modifier.height(16.dp))
@@ -60,7 +59,7 @@ fun NfcReadingDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "Bring another device or NFC tag closer to read friend information.",
+                    text = stringResource(R.string.reading_nfc_tag_message),
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center
                 )

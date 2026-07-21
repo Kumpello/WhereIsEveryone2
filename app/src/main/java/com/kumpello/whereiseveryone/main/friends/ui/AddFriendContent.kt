@@ -78,7 +78,7 @@ fun AddFriendContent(
                             }
                         }
                         .addOnFailureListener {
-                            Toast.makeText(context, "Scanning failed", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.scanning_failed), Toast.LENGTH_SHORT).show()
                         }
                 }
             }
@@ -138,7 +138,7 @@ fun AddFriendContent(
             ) {
                 Icon(
                     imageVector = Icons.Default.QrCodeScanner,
-                    contentDescription = "Scan QR Code",
+                    contentDescription = stringResource(R.string.scan_qr_code_cd),
                     modifier = Modifier.size(32.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
@@ -150,7 +150,7 @@ fun AddFriendContent(
             ) {
                 Icon(
                     imageVector = Icons.Default.Contactless,
-                    contentDescription = "Read NFC",
+                    contentDescription = stringResource(R.string.read_nfc_cd),
                     modifier = Modifier.size(32.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )

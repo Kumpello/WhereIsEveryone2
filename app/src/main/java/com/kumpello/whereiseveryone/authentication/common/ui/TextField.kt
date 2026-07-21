@@ -17,10 +17,12 @@ import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.common.ui.theme.Shapes
 
 object TextField {
@@ -79,7 +81,11 @@ object TextField {
                         Icons.Filled.Visibility
                     else Icons.Filled.VisibilityOff
 
-                    val description = if (passwordVisible) "Hide password" else "Show password"
+                    val description = if (passwordVisible) {
+                        stringResource(R.string.hide_password_cd)
+                    } else {
+                        stringResource(R.string.show_password_cd)
+                    }
 
                     IconButton(onClick = onTogglePasswordVisibility) {
                         Icon(imageVector = image, contentDescription = description)

@@ -9,6 +9,16 @@
     <string name="ticker_text">dupa</string>
 
     <!-- Map & Markers -->
+    <string name="map_placeholder">Map Placeholder</string>
+    <string name="zoom_out_cd">Zoom out</string>
+    <string name="zoom_in_cd">Zoom in</string>
+    <string name="center_cd">Center</string>
+    <string name="direction_to_format">Direction to %s</string>
+    <string name="message_cd">Message</string>
+    <string name="friends_cd">Friends</string>
+    <string name="settings_cd">Settings</string>
+    <string name="status_label">Status</string>
+    <string name="draft_label">Draft</string>
     <string name="user_marker">That\'s you!</string>
     <string name="click_here_to_go_to_map">Click here to go to map!</string>
     <string name="your_message">Your message</string>
@@ -32,6 +42,24 @@
     <string name="error_deleting_friend">Error occurred during deleting friend</string>
     <string name="error_occurred_during_accepting_friend">Error occurred during accepting friend</string>
     <string name="error_during_reject">Error during reject</string>
+    <string name="delete_cd">Delete</string>
+    <string name="accept_cd">Accept</string>
+    <string name="reject_cd">Reject</string>
+    <string name="profile_shared_successfully">Profile shared successfully!</string>
+    <string name="ready_to_share">Ready to share!</string>
+    <string name="could_not_start_sharing">Could not start sharing priority</string>
+    <string name="scanning_failed">Scanning failed</string>
+    <string name="scan_qr_code_cd">Scan QR Code</string>
+    <string name="read_nfc_cd">Read NFC</string>
+    <string name="confirmation_title">Confirmation</string>
+    <string name="delete_friend_confirmation_format">Are you sure you want to delete %s from your friends?</string>
+    <string name="qr_code_cd">QR Code</string>
+    <string name="your_username_format">Your username: %s</string>
+    <string name="show_my_qr_cd">Show My QR</string>
+    <string name="nfc_share_cd">NFC Share</string>
+    <string name="reading_nfc_tag_title">Reading NFC Tag</string>
+    <string name="reading_nfc_tag_message">Bring another device or NFC tag closer to read friend information.</string>
+    <string name="nfc_sharing_message_active">Your device is now acting as an NFC tag. Bring another device closer to share your profile.</string>
 
     <!-- Sharing Controls -->
     <string name="stop_sharing">Stop sharing</string>
@@ -42,6 +70,18 @@
     <string name="error_resuming_sharing">Error occurred during resuming sharing</string>
 
     <!-- Authentication & Validation -->
+    <string name="login_title">Login</string>
+    <string name="signup_title">Sign up</string>
+    <string name="username_label">Username</string>
+    <string name="password_label">Password</string>
+    <string name="login_here">Log in here</string>
+    <string name="signup_here">Sign up here</string>
+    <string name="condition_cd">Condition</string>
+    <string name="status_icon_cd">status icon</string>
+    <string name="text_color_label">text color</string>
+    <string name="splash_screen_cd">Splash screen</string>
+    <string name="hide_password_cd">Hide password</string>
+    <string name="show_password_cd">Show password</string>
     <string name="minimum_8_characters">Minimum 8 characters</string>
     <string name="minimum_1_special_character">Minimum 1 special character</string>
     <string name="minimum_1_capitalized_letter">Minimum 1 capitalized letter</string>
@@ -56,6 +96,18 @@
     <string name="confirm">Confirm</string>
     <string name="dismiss">Dismiss</string>
     <string name="expand_colapse_icon">Expand/Colapse icon</string>
+    <string name="app_name_full">Where is Everyone!?</string>
+    <string name="app_name_cd">App name</string>
+    <string name="distance_format">Distance: %s</string>
+    <string name="latitude_label">Latitude</string>
+    <string name="longitude_label">Longitude</string>
+    <string name="bearing_label">Bearing</string>
+    <string name="altitude_label">Altitude</string>
+    <string name="accuracy_label">Accuracy</string>
+    <string name="last_update_label">Last Update</string>
+    <string name="data_age_label">Data Age</string>
+    <string name="friend_since_label">Friend since</string>
+    <string name="navigate_action">Navigate!</string>
     <string name="location_wiped_correctly_sharing_stoped">Location wiped correctly, sharing stoped!</string>
     <string name="error_wiping_location">Error wiping location!</string>
     <string name="settings_stop_sharing_location">Stop sharing location</string>
@@ -73,4 +125,8 @@
     <string name="version_format">Version: %s</string>
     <string name="settings_logout">Logout</string>
     <string name="server_unreachable">Server unreachable</string>
+    <string name="your_qr_code">Your QR Code</string>
+    <string name="scan_this_to_add_me_as_a_friend">Scan this to add me as a friend</string>
+    <string name="error_generating_qr">Error generating QR</string>
+    <string name="close">Close</string>
 </resources>

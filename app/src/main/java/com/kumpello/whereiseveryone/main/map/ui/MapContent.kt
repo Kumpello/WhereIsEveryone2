@@ -33,9 +33,11 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.main.common.ui.FriendDetailsCard
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
 import kotlinx.coroutines.coroutineScope
@@ -53,7 +55,7 @@ fun MapContent(
                 .background(Color.Gray),
             contentAlignment = Alignment.Center
         ) {
-            Text("Map Placeholder")
+            Text(stringResource(R.string.map_placeholder))
         }
         return
     }
@@ -143,7 +145,7 @@ private fun NavigationCompass(
         ) {
             Icon(
                 imageVector = Icons.Default.KeyboardArrowUp,
-                contentDescription = "Direction to $friendName",
+                contentDescription = stringResource(R.string.direction_to_format, friendName),
                 modifier = Modifier
                     .size(32.dp)
                     .rotate(bearing),

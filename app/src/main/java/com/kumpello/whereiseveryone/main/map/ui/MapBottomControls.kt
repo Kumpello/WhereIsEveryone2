@@ -7,7 +7,9 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
 import org.koin.compose.viewmodel.koinViewModel
@@ -39,17 +41,17 @@ fun MapBottomControls(
     ControlBar(modifier = modifier) {
         ControlButton(
             imageVector = Icons.Default.KeyboardArrowUp,
-            contentDescription = "Zoom out",
+            contentDescription = stringResource(R.string.zoom_out_cd),
             onClick = { onEvent(MapViewModel.Event.ZoomOut) }
         )
         ControlButton(
             imageVector = Icons.Default.KeyboardArrowDown,
-            contentDescription = "Zoom in",
+            contentDescription = stringResource(R.string.zoom_in_cd),
             onClick = { onEvent(MapViewModel.Event.ZoomIn) }
         )
         ControlButton(
             imageVector = Icons.Default.LocationOn,
-            contentDescription = "Center",
+            contentDescription = stringResource(R.string.center_cd),
             onClick = { onEvent(MapViewModel.Event.CenterMap) }
         )
     }

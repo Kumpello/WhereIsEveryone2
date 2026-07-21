@@ -48,10 +48,10 @@ fun DeleteFriendDialog(
             }
         },
         title = {
-            Text(text = "Confirmation")
+            Text(text = stringResource(R.string.confirmation_title))
         },
         text = {
-            Text(text = "Are you sure you want to delete ${friend.username} from your friends?")
+            Text(text = stringResource(R.string.delete_friend_confirmation_format, friend.username))
         },
         modifier = Modifier
             .fillMaxWidth()

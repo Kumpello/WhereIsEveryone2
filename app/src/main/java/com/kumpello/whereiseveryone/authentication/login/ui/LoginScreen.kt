@@ -25,11 +25,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.authentication.common.AuthenticationRoute
 import com.kumpello.whereiseveryone.authentication.common.ui.TextField
 import com.kumpello.whereiseveryone.authentication.login.presentation.LoginViewModel
@@ -96,14 +98,14 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                text = "Login",
+                text = stringResource(R.string.login_title),
                 style = MaterialTheme.typography.headlineLarge
             )
 
             Spacer(modifier = Modifier.height(20.dp))
 
             TextField.Regular(
-                label = "Username",
+                label = stringResource(R.string.username_label),
                 value = viewState.username,
                 onValueChange = { value ->
                     trigger(LoginViewModel.Event.SetUsername(value))
@@ -113,7 +115,7 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(20.dp))
 
             TextField.Password(
-                label = "Password",
+                label = stringResource(R.string.password_label),
                 value = viewState.password,
                 onValueChange = { value ->
                     trigger(LoginViewModel.Event.SetPassword(value))
@@ -131,7 +133,7 @@ fun LoginScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 40.dp),
                 enabled = !viewState.loginState.isLoading,
-                text = "Login",
+                text = stringResource(R.string.login_title),
                 textSize = 26,
                 height = 50,
             ) { trigger(LoginViewModel.Event.OnLoginClick) }
@@ -141,7 +143,7 @@ fun LoginScreen(
             Button.Animated(
                 modifier = Modifier
                     .padding(horizontal = 40.dp),
-                text = "Sign up here",
+                text = stringResource(R.string.signup_here),
             ) { trigger(LoginViewModel.Event.NavigateSignUp) }
         }
     }

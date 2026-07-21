@@ -109,7 +109,7 @@ fun FriendsScreen(
                 Timber.tag(TAG).d("Broadcast received: ${intent?.action}")
                 if (intent?.action == "com.kumpello.whereiseveryone.NFC_SUCCESS") {
                     friendsViewModel.trigger(FriendsViewModel.Event.CloseNfcSharingDialog)
-                    Toast.makeText(context, "Profile shared successfully!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context?.getString(R.string.profile_shared_successfully), Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -363,9 +363,9 @@ private fun triggerNfcSharing(context: Context) {
             val success = cardEmulation.setPreferredService(context as Activity, componentName)
             Timber.tag(TAG).d("SetPreferredService success: $success")
             if (success) {
-                Toast.makeText(context, "Ready to share!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.ready_to_share), Toast.LENGTH_SHORT).show()
             } else {
-                Toast.makeText(context, "Could not start sharing priority", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.could_not_start_sharing), Toast.LENGTH_SHORT).show()
             }
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Error calling setPreferredService")

@@ -6,7 +6,9 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.map.presentation.MapScreenViewModel
 
@@ -18,17 +20,17 @@ fun MapTopControls(
     ControlBar(modifier = modifier) {
         ControlButton(
             imageVector = Icons.Default.Edit,
-            contentDescription = "Message",
+            contentDescription = stringResource(R.string.message_cd),
             onClick = { onEvent(MapScreenViewModel.Event.NavigateMessage) }
         )
         ControlButton(
             imageVector = Icons.Default.Person,
-            contentDescription = "Friends",
+            contentDescription = stringResource(R.string.friends_cd),
             onClick = { onEvent(MapScreenViewModel.Event.NavigateFriends) }
         )
         ControlButton(
             imageVector = Icons.Default.Settings,
-            contentDescription = "Settings",
+            contentDescription = stringResource(R.string.settings_cd),
             onClick = { onEvent(MapScreenViewModel.Event.NavigateSettings) }
         )
     }
