@@ -1,5 +1,6 @@
 package com.kumpello.whereiseveryone.main.map.ui
 
+import android.graphics.Color.GREEN
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,10 +14,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.graphics.ColorUtils
+import androidx.core.graphics.alpha
 import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.main.common.entity.Friend
 import com.kumpello.whereiseveryone.main.common.entity.Location
@@ -53,6 +57,7 @@ import com.mapbox.maps.MapboxDelicateApi
 import com.mapbox.maps.extension.compose.style.standard.MapboxStandardStyle
 import kotlinx.coroutines.flow.Flow
 import timber.log.Timber
+import kotlin.math.roundToInt
 
 @OptIn(MapboxExperimental::class)
 @Composable
@@ -71,7 +76,10 @@ fun Map(
                 .background(androidx.compose.ui.graphics.Color.DarkGray),
             contentAlignment = Alignment.Center
         ) {
-            Text(text = stringResource(R.string.map_placeholder), color = androidx.compose.ui.graphics.Color.White)
+            Text(
+                text = stringResource(R.string.map_placeholder),
+                color = androidx.compose.ui.graphics.Color.White
+            )
         }
         return
     }
@@ -143,9 +151,9 @@ fun Map(
                 modifier = Modifier
                     .safeDrawingPadding()
                     .padding(
-                    start = 64.dp,
-                    bottom = 4.dp
-                )
+                        start = 64.dp,
+                        bottom = 4.dp
+                    )
             )
         },
         attribution = {
@@ -155,7 +163,7 @@ fun Map(
                     .padding(
                         start = 64.dp,
                         bottom = 4.dp
-                )
+                    )
             )
         },
         style = {
@@ -164,7 +172,13 @@ fun Map(
                     FriendsSymbolLayer(
                         friends = friendsPositions,
                         onFriendClick = { friend -> event(MapViewModel.Event.OnFriendClick(friend)) },
-                        onFriendLongClick = { friend -> event(MapViewModel.Event.OnFriendLongClick(friend)) }
+                        onFriendLongClick = { friend ->
+                            event(
+                                MapViewModel.Event.OnFriendLongClick(
+                                    friend
+                                )
+                            )
+                        }
                     )
                 }
             )
@@ -250,15 +264,22 @@ fun FriendsSymbolLayer(
                 iconRotationAlignment = IconRotationAlignmentValue.MAP
                 iconOpacity = DoubleValue(Expression.get("opacity"))
                 iconColor = ColorValue(Expression.color(android.graphics.Color.BLACK))
-                
+
                 iconHaloColor = ColorValue(
                     Expression.match(
                         Expression.get("haloWidth"),
                         Expression.literal(-1.0), Expression.color(android.graphics.Color.RED),
-                        Expression.color(android.graphics.Color.GREEN)
+                        Expression.color(
+                            ColorUtils.setAlphaComponent(
+                                GREEN, iconOpacity.doubleOrNull?.coerceIn(
+                                    0.0, 1.0 * 255
+                                )?.roundToInt() ?: 255
+                            )
+                        ),
                     )
                 )
                 iconHaloWidth = DoubleValue(Expression.get("haloWidth"))
+                iconHaloBlur = DoubleValue(2.0)
 
                 iconAllowOverlap = BooleanValue(true)
                 iconIgnorePlacement = BooleanValue(true)
