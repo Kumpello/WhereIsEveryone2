@@ -90,6 +90,12 @@ class LocationServiceImpl : Service(), LocationService {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Timber.tag(TAG).d("LocationService onStartCommand")
 
+        if (intent?.action == ACTION_STOP_SERVICE) {
+            Timber.tag(TAG).d("Received stop action")
+            stopLocationService()
+            return START_NOT_STICKY
+        }
+
         startService()
         return START_STICKY
     }
@@ -146,12 +152,28 @@ class LocationServiceImpl : Service(), LocationService {
             420, notificationIntent, PendingIntent.FLAG_IMMUTABLE
         )
 
+        val stopIntent = Intent(this, LocationServiceImpl::class.java).apply {
+            action = ACTION_STOP_SERVICE
+        }
+        val stopPendingIntent = PendingIntent.getService(
+            this,
+            421,
+            stopIntent,
+            PendingIntent.FLAG_IMMUTABLE
+        )
+
         val notification: Notification = NotificationCompat.Builder(this, channelID)
             .setContentTitle(getText(R.string.notification_title))
             .setContentText(getString(R.string.click_here_to_go_to_map))
             .setSubText(getString(R.string.notification_subtext))
             .setSmallIcon(R.drawable.ic_share_location)
             .setContentIntent(pendingIntent)
+            .setOngoing(true)
+            .addAction(
+                R.drawable.ic_share_location,
+                getString(R.string.stop_sharing),
+                stopPendingIntent
+            )
             .build()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -445,6 +467,7 @@ class LocationServiceImpl : Service(), LocationService {
         private val state: MutableStateFlow<Boolean> = MutableStateFlow(false)
         val stateFlow: StateFlow<Boolean> = state.asStateFlow()
         private const val TAG = "LOCATION_SERVICE"
+        const val ACTION_STOP_SERVICE = "STOP_LOCATION_SERVICE"
     }
 
 }
