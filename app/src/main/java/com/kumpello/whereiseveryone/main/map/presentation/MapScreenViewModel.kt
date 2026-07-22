@@ -17,8 +17,8 @@ class MapScreenViewModel(
 
     init {
         viewModelScope.launch {
-            locationService.observeForcedForeground().collect { enabled ->
-                trigger(Event.OnForcedForegroundStatusChanged(enabled))
+            locationService.observeForcedForegroundStatus().collect { status ->
+                trigger(Event.OnForcedForegroundStatusChanged(status))
             }
         }
     }
@@ -44,7 +44,7 @@ class MapScreenViewModel(
             is Event.EnableForcedForeground -> state.copy(showFindMeDialog = false).toResult(
                 SideEffect.Effect(Action.Toast(R.string.forced_foreground_enabled_msg)),
                 SideEffect.AsyncWork {
-                    locationService.setForcedForeground(event.minutes)
+                    locationService.setForcedForeground(event.seconds)
                     Event.NoOp
                 }
             )
@@ -57,7 +57,10 @@ class MapScreenViewModel(
                 }
             )
 
-            is Event.OnForcedForegroundStatusChanged -> state.copy(isForcedForegroundEnabled = event.enabled).toResult()
+            is Event.OnForcedForegroundStatusChanged -> state.copy(
+                isForcedForegroundEnabled = event.status.isEnabled,
+                forcedForegroundEndTime = event.status.endTime
+            ).toResult()
 
             Event.NoOp -> state.toResult()
         }
@@ -71,7 +74,8 @@ class MapScreenViewModel(
             ),
             permissions = permissionsState,
             showFindMeDialog = showFindMeDialog,
-            isForcedForegroundEnabled = isForcedForegroundEnabled
+            isForcedForegroundEnabled = isForcedForegroundEnabled,
+            forcedForegroundEndTime = forcedForegroundEndTime
         )
     }
 
@@ -97,9 +101,9 @@ class MapScreenViewModel(
 
         data object FindMeClicked : Event()
         data object DismissFindMeDialog : Event()
-        data class EnableForcedForeground(val minutes: Int?) : Event()
+        data class EnableForcedForeground(val seconds: Long?) : Event()
         data object DisableForcedForeground : Event()
-        data class OnForcedForegroundStatusChanged(val enabled: Boolean) : Event()
+        data class OnForcedForegroundStatusChanged(val status: LocationService.ForcedForegroundStatus) : Event()
         data object NoOp : Event()
     }
 
@@ -108,7 +112,8 @@ class MapScreenViewModel(
         val permissionNotificationShown: Boolean = false,
         val screenState: ScreenState = ScreenState.Map,
         val showFindMeDialog: Boolean = false,
-        val isForcedForegroundEnabled: Boolean = false
+        val isForcedForegroundEnabled: Boolean = false,
+        val forcedForegroundEndTime: Long? = null
     )
 
     @Immutable
@@ -117,6 +122,7 @@ class MapScreenViewModel(
         val permissions: Map<String, Boolean>,
         val screenState: ScreenState,
         val showFindMeDialog: Boolean,
-        val isForcedForegroundEnabled: Boolean
+        val isForcedForegroundEnabled: Boolean,
+        val forcedForegroundEndTime: Long?
     )
 }

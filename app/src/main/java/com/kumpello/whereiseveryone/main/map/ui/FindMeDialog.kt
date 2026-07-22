@@ -14,7 +14,9 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -29,22 +31,34 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.common.ui.entity.Button
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun FindMeDialog(
     modifier: Modifier = Modifier,
     isForcedEnabled: Boolean,
+    endTime: Long?,
     onDismiss: () -> Unit,
-    onEnable: (Int?) -> Unit,
+    onEnable: (Long?) -> Unit,
     onDisable: () -> Unit
 ) {
     val options = listOf(
-        30 to stringResource(R.string.find_me_duration_30),
-        60 to stringResource(R.string.find_me_duration_60),
-        90 to stringResource(R.string.find_me_duration_90),
+        1800L to stringResource(R.string.find_me_duration_30),
+        3600L to stringResource(R.string.find_me_duration_60),
+        5400L to stringResource(R.string.find_me_duration_90),
         null to stringResource(R.string.find_me_duration_indefinite)
     )
     var selectedOption by remember { mutableStateOf(options[0]) }
+
+    var currentTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
+
+    LaunchedEffect(isForcedEnabled) {
+        while (isForcedEnabled) {
+            currentTime = System.currentTimeMillis()
+            delay(1.seconds)
+        }
+    }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -74,18 +88,37 @@ fun FindMeDialog(
                     color = MaterialTheme.colorScheme.error
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                Column(Modifier.selectableGroup()) {
-                    options.forEach { option ->
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .height(48.dp)
-                                .selectable(
-                                    selected = (option == selectedOption),
-                                    onClick = { selectedOption = option },
-                                    role = Role.RadioButton
-                                )
-                                .padding(horizontal = 16.dp),
+
+                if (isForcedEnabled) {
+                    val timeLeftText = if (endTime != null) {
+                        val remainingMillis = (endTime - currentTime).coerceAtLeast(0)
+                        val totalSeconds = remainingMillis / 1000
+                        val minutes = totalSeconds / 60
+                        val seconds = totalSeconds % 60
+                        stringResource(R.string.time_left_format, minutes, seconds)
+                    } else {
+                        stringResource(R.string.time_left_indefinite)
+                    }
+
+                    Text(
+                        text = timeLeftText,
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                } else {
+                    Column(Modifier.selectableGroup()) {
+                        options.forEach { option ->
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .height(48.dp)
+                                    .selectable(
+                                        selected = (option == selectedOption),
+                                        onClick = { selectedOption = option },
+                                        role = Role.RadioButton
+                                    )
+                                    .padding(horizontal = 16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             RadioButton(
@@ -102,6 +135,8 @@ fun FindMeDialog(
                         }
                     }
                 }
+                }
+
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Row(
@@ -116,20 +151,9 @@ fun FindMeDialog(
                     }
                     Button.Animated(
                         modifier = Modifier.weight(1f),
-                        text = stringResource(R.string.confirm)
+                        text = stringResource(if (isForcedEnabled) R.string.disable else R.string.confirm)
                     ) {
-                        onEnable(selectedOption.first)
-                    }
-                }
-
-                if (isForcedEnabled) {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button.Animated(
-                        modifier = Modifier.fillMaxWidth(),
-                        width = 300,
-                        text = stringResource(R.string.disable_forced_foreground)
-                    ) {
-                        onDisable()
+                        if (isForcedEnabled) onDisable() else onEnable(selectedOption.first)
                     }
                 }
             }

@@ -45,7 +45,7 @@ import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import timber.log.Timber
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 class LocationServiceImpl : Service(), LocationService {
     private val fusedLocationClient: FusedLocationProviderClient by inject()
@@ -60,19 +60,21 @@ class LocationServiceImpl : Service(), LocationService {
     private val locationFlow = MutableStateFlow<Location?>(null)
     private val exposedLocationFlow = locationFlow.asStateFlow()
 
-    private val isForcedForeground = MutableStateFlow(false)
-    private val exposedIsForcedForeground = isForcedForeground.asStateFlow()
+    private val forcedForegroundStatus = MutableStateFlow(LocationService.ForcedForegroundStatus())
+    private val exposedForcedForegroundStatus = forcedForegroundStatus.asStateFlow()
 
-    private val desiredUpdateType = MutableStateFlow<LocationService.UpdateType>(LocationService.UpdateType.Foreground)
+    private val desiredUpdateType =
+        MutableStateFlow<LocationService.UpdateType>(LocationService.UpdateType.Foreground)
 
     private val binder: IBinder = LocationBinder()
     private val channelID = "WhereIsEveryone"
     private val job = SupervisorJob()
     private val scope = CoroutineScope(Dispatchers.IO + job)
 
-    private val serviceThread = HandlerThread("LocationThread", Process.THREAD_PRIORITY_BACKGROUND).apply {
-        start()
-    }
+    private val serviceThread =
+        HandlerThread("LocationThread", Process.THREAD_PRIORITY_BACKGROUND).apply {
+            start()
+        }
     private val handler = Handler(serviceThread.looper)
 
     override fun onCreate() {
@@ -128,12 +130,12 @@ class LocationServiceImpl : Service(), LocationService {
             stopSelf()
             return
         }
-        
+
         if (state.value.isLocationUpdatesStarted) {
             Timber.tag(TAG).d("LocationService already running")
             return
         }
-        
+
         Timber.tag(TAG).d("LocationService starting")
 
         val manager = getSystemService(NotificationManager::class.java)
@@ -222,8 +224,11 @@ class LocationServiceImpl : Service(), LocationService {
 
     override fun changeUpdateType(updateType: LocationService.UpdateType) {
         desiredUpdateType.value = updateType
-        if (isForcedForeground.value) {
-            Timber.tag(TAG).d("Change ignored due to forced foreground mode, but saved as desired: %s", updateType)
+        if (forcedForegroundStatus.value.isEnabled) {
+            Timber.tag(TAG).d(
+                "Change ignored due to forced foreground mode, but saved as desired: %s",
+                updateType
+            )
             return
         }
         Timber.tag(TAG).d("Changing update type to: %s", updateType)
@@ -244,16 +249,19 @@ class LocationServiceImpl : Service(), LocationService {
         }
     }
 
-    override fun setForcedForeground(durationMinutes: Int?) {
-        Timber.tag(TAG).d("Setting forced foreground for %s minutes", durationMinutes)
-        isForcedForeground.value = true
+    override fun setForcedForeground(durationSeconds: Long?) {
+        Timber.tag(TAG).d("Setting forced foreground for %s minutes", durationSeconds?.div(60))
+        forcedForegroundStatus.value = LocationService.ForcedForegroundStatus(
+            isEnabled = true,
+            endTime = durationSeconds?.let { System.currentTimeMillis() + it.seconds.inWholeMilliseconds }
+        )
         stopUpdates()
         applyUpdateType(LocationService.UpdateType.Foreground)
 
-        durationMinutes?.let { minutes ->
+        durationSeconds?.let { seconds ->
             scope.launch {
-                delay(minutes.minutes)
-                if (isForcedForeground.value) {
+                delay(seconds.seconds)
+                if (forcedForegroundStatus.value.isEnabled) {
                     Timber.tag(TAG).d("Forced foreground duration expired")
                     disableForcedForeground()
                 }
@@ -263,12 +271,13 @@ class LocationServiceImpl : Service(), LocationService {
 
     override fun disableForcedForeground() {
         Timber.tag(TAG).d("Disabling forced foreground")
-        isForcedForeground.value = false
+        forcedForegroundStatus.value =
+            LocationService.ForcedForegroundStatus(isEnabled = false, endTime = null)
         applyUpdateType(desiredUpdateType.value)
     }
 
-    override fun observeForcedForeground(): StateFlow<Boolean> {
-        return exposedIsForcedForeground
+    override fun observeForcedForegroundStatus(): StateFlow<LocationService.ForcedForegroundStatus> {
+        return exposedForcedForegroundStatus
     }
 
     private fun startLocationUpdates(updateType: LocationService.UpdateType) {
@@ -320,6 +329,7 @@ class LocationServiceImpl : Service(), LocationService {
                 is CodeResponse.ErrorData -> {
                     Timber.tag(TAG).e("Error sending location: %s", response.toString())
                 }
+
                 CodeResponse.SuccessNoContent -> {
                     Timber.tag(TAG).d("Location sent successfully")
                 }

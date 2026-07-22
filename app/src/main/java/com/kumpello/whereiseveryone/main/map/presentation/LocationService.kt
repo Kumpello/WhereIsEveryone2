@@ -13,9 +13,14 @@ interface LocationService {
 
     fun changeUpdateType(updateType: UpdateType)
 
-    fun setForcedForeground(durationMinutes: Int?)
+    fun setForcedForeground(durationSeconds: Long?)
     fun disableForcedForeground()
-    fun observeForcedForeground(): StateFlow<Boolean>
+    fun observeForcedForegroundStatus(): StateFlow<ForcedForegroundStatus>
+
+    data class ForcedForegroundStatus(
+        val isEnabled: Boolean = false,
+        val endTime: Long? = null
+    )
 
     sealed interface UpdateType {
         data object Foreground : UpdateType
