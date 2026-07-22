@@ -92,6 +92,15 @@ private fun MapScreenContent(
             )
         }
 
+        if (screenViewState.showFindMeDialog) {
+            FindMeDialog(
+                isForcedEnabled = screenViewState.isForcedForegroundEnabled,
+                onDismiss = { onScreenEvent(MapScreenViewModel.Event.DismissFindMeDialog) },
+                onEnable = { minutes -> onScreenEvent(MapScreenViewModel.Event.EnableForcedForeground(minutes)) },
+                onDisable = { onScreenEvent(MapScreenViewModel.Event.DisableForcedForeground) }
+            )
+        }
+
         MapBottomControls(modifier = Modifier.align(Alignment.BottomEnd))
     }
 }
@@ -104,7 +113,9 @@ fun MapScreenPreview() {
             screenViewState = MapScreenViewModel.ViewState(
                 showPermissionNotification = true,
                 permissions = emptyMap(),
-                screenState = ScreenState.Map
+                screenState = ScreenState.Map,
+                showFindMeDialog = false,
+                isForcedForegroundEnabled = false
             ),
             onScreenEvent = {}
         )
@@ -119,7 +130,9 @@ fun MapScreenMessagePreview() {
             screenViewState = MapScreenViewModel.ViewState(
                 showPermissionNotification = false,
                 permissions = emptyMap(),
-                screenState = ScreenState.Message
+                screenState = ScreenState.Message,
+                showFindMeDialog = false,
+                isForcedForegroundEnabled = false
             ),
             onScreenEvent = {}
         )

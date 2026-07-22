@@ -45,6 +45,7 @@ import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import timber.log.Timber
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 
 class LocationServiceImpl : Service(), LocationService {
     private val fusedLocationClient: FusedLocationProviderClient by inject()
@@ -58,6 +59,11 @@ class LocationServiceImpl : Service(), LocationService {
     private val exposedState = state.asStateFlow()
     private val locationFlow = MutableStateFlow<Location?>(null)
     private val exposedLocationFlow = locationFlow.asStateFlow()
+
+    private val isForcedForeground = MutableStateFlow(false)
+    private val exposedIsForcedForeground = isForcedForeground.asStateFlow()
+
+    private val desiredUpdateType = MutableStateFlow<LocationService.UpdateType>(LocationService.UpdateType.Foreground)
 
     private val binder: IBinder = LocationBinder()
     private val channelID = "WhereIsEveryone"
@@ -215,7 +221,16 @@ class LocationServiceImpl : Service(), LocationService {
     }
 
     override fun changeUpdateType(updateType: LocationService.UpdateType) {
+        desiredUpdateType.value = updateType
+        if (isForcedForeground.value) {
+            Timber.tag(TAG).d("Change ignored due to forced foreground mode, but saved as desired: %s", updateType)
+            return
+        }
         Timber.tag(TAG).d("Changing update type to: %s", updateType)
+        applyUpdateType(updateType)
+    }
+
+    private fun applyUpdateType(updateType: LocationService.UpdateType) {
         when (updateType) {
             LocationService.UpdateType.Background -> {
                 stopUpdates()
@@ -227,6 +242,33 @@ class LocationServiceImpl : Service(), LocationService {
                 startLocationUpdates(updateType)
             }
         }
+    }
+
+    override fun setForcedForeground(durationMinutes: Int?) {
+        Timber.tag(TAG).d("Setting forced foreground for %s minutes", durationMinutes)
+        isForcedForeground.value = true
+        stopUpdates()
+        applyUpdateType(LocationService.UpdateType.Foreground)
+
+        durationMinutes?.let { minutes ->
+            scope.launch {
+                delay(minutes.minutes)
+                if (isForcedForeground.value) {
+                    Timber.tag(TAG).d("Forced foreground duration expired")
+                    disableForcedForeground()
+                }
+            }
+        }
+    }
+
+    override fun disableForcedForeground() {
+        Timber.tag(TAG).d("Disabling forced foreground")
+        isForcedForeground.value = false
+        applyUpdateType(desiredUpdateType.value)
+    }
+
+    override fun observeForcedForeground(): StateFlow<Boolean> {
+        return exposedIsForcedForeground
     }
 
     private fun startLocationUpdates(updateType: LocationService.UpdateType) {

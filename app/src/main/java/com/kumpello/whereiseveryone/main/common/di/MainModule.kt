@@ -66,7 +66,8 @@ val mainModule = module {
     }
     viewModel {
         MapScreenViewModel(
-            getPermissionsStatusUseCase = get()
+            getPermissionsStatusUseCase = get(),
+            locationService = get()
         )
     }
     viewModel {

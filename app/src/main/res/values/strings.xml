@@ -129,4 +129,16 @@
     <string name="scan_this_to_add_me_as_a_friend">Scan this to add me as a friend</string>
     <string name="error_generating_qr">Error generating QR</string>
     <string name="close">Close</string>
+
+    <!-- Find Me / Forced Foreground -->
+    <string name="find_me_cd">Find me</string>
+    <string name="find_me_dialog_title">Force Foreground Mode</string>
+    <string name="find_me_warning">Warning: This will significantly increase power consumption as the app will maintain high-precision location updates even in the background.</string>
+    <string name="find_me_duration_30">30 Minutes</string>
+    <string name="find_me_duration_60">60 Minutes</string>
+    <string name="find_me_duration_90">90 Minutes</string>
+    <string name="find_me_duration_indefinite">Indefinite (Caution!)</string>
+    <string name="disable_forced_foreground">Disable Foreground Enforcement</string>
+    <string name="forced_foreground_enabled_msg">Forced foreground mode enabled</string>
+    <string name="forced_foreground_disabled_msg">Forced foreground mode disabled</string>
 </resources>
