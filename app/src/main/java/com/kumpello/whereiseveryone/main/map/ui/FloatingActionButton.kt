@@ -21,7 +21,7 @@ fun FloatingActionButton(
     icon: @Composable () -> Unit
 ) {
     SmallFloatingActionButton(
-        modifier = Modifier.size(48.dp),
+        modifier = Modifier.size(52.dp),
         onClick = { onClick() },
         shape = CircleShape,
         containerColor = MaterialTheme.colorScheme.secondaryContainer,

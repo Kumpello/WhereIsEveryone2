@@ -23,7 +23,7 @@ fun ControlBar(
             .safeDrawingPadding()
             .padding(8.dp)
             .zIndex(1000f),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
         content = content
     )
 }

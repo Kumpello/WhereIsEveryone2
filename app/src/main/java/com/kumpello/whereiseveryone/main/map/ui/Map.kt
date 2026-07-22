@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.main.common.entity.Friend
 import com.kumpello.whereiseveryone.main.common.entity.Location
@@ -123,22 +124,37 @@ fun Map(
         scaleBar = {
             ScaleBar(
                 modifier = Modifier
-                    .safeDrawingPadding()
+                    .safeDrawingPadding(),
+                ratio = 0.3F,
+                height = 4.dp,
+                textSize = 16.sp
             )
         },
         compass = {
             Compass(
                 modifier = Modifier
                     .safeDrawingPadding()
-                    .size(54.dp),
+                    .size(58.dp),
                 alignment = Alignment.BottomStart
             )
         },
         logo = {
             Logo(
-                modifier = Modifier.padding(
-                    start = 6.dp,
-                    bottom = 2.dp
+                modifier = Modifier
+                    .safeDrawingPadding()
+                    .padding(
+                    start = 64.dp,
+                    bottom = 4.dp
+                )
+            )
+        },
+        attribution = {
+            Attribution(
+                modifier = Modifier
+                    .safeDrawingPadding()
+                    .padding(
+                        start = 64.dp,
+                        bottom = 4.dp
                 )
             )
         },
