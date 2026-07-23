@@ -179,6 +179,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
+        locationService.changeUpdateType(LocationService.UpdateType.Foreground)
         lifecycleScope.launch {
             usernameToShare = preferencesManager.get(PreferencesKey.UserName)
             val isEnabled = preferencesManager.get(PreferencesKey.LocationSharingEnabled) ?: true
