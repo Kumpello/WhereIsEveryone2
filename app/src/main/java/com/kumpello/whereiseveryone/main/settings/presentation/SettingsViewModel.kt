@@ -4,8 +4,7 @@ import androidx.annotation.StringRes
 import androidx.lifecycle.viewModelScope
 import com.kumpello.whereiseveryone.common.presentation.BaseViewModel
 import com.kumpello.whereiseveryone.main.common.domain.usecase.WipeLocationUseCase
-import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceImpl
-import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceInterface
+import com.kumpello.whereiseveryone.main.map.presentation.LocationService
 import androidx.compose.runtime.Immutable
 import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.common.domain.manager.PreferencesKey
@@ -16,11 +15,10 @@ import com.kumpello.whereiseveryone.common.presentation.BaseViewModel.SideEffect
 import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel.Event.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.koin.core.annotation.InjectedParam
 import timber.log.Timber
 
 class SettingsViewModel(
-    @InjectedParam private val locationServiceInterface: LocationServiceInterface,
+    private val locationService: LocationService,
     private val wipeLocationUseCase: WipeLocationUseCase,
     private val preferencesManager: PreferencesManager,
     private val logoutUseCase: LogoutUseCase
@@ -30,8 +28,8 @@ class SettingsViewModel(
 
     init {
         viewModelScope.launch(Dispatchers.Main) {
-            LocationServiceImpl.stateFlow.collect { state ->
-                trigger(OnLocationServiceStateUpdate(state))
+            locationService.observeIsServiceRunning().collect { isRunning ->
+                trigger(OnLocationServiceStateUpdate(isRunning))
             }
         }
     }
@@ -56,7 +54,7 @@ class SettingsViewModel(
 
                             CodeResponse.SuccessNoContent -> {
                                 Timber.tag(TAG).d("Location wiped successfully")
-                                locationServiceInterface.stopLocationService()
+                                locationService.stopLocationService()
                                 preferencesManager.save(PreferencesKey.LocationSharingEnabled, false)
                                 OnDataCleared
                             }
@@ -72,13 +70,12 @@ class SettingsViewModel(
                 val newState = !state.locationServiceState
                 Timber.tag(TAG).d("Switching location service state, new state: %s", newState)
                 if (state.locationServiceState) {
-                    locationServiceInterface.stopLocationService()
+                    locationService.stopLocationService()
                 } else {
-                    locationServiceInterface.startLocationService()
+                    locationService.startLocationService()
                 }
                 state.toResult(AsyncWork {
                     preferencesManager.save(PreferencesKey.LocationSharingEnabled, newState)
-                    // We don't need to return a command here because LocationServiceImpl.stateFlow will trigger update
                     NoOp
                 })
             }
@@ -86,7 +83,7 @@ class SettingsViewModel(
             Logout -> {
                 Timber.tag(TAG).d("Logging out user")
                 state.toResult(AsyncWork {
-                    locationServiceInterface.stopLocationService()
+                    locationService.stopLocationService()
                     logoutUseCase.execute()
                     OnLogoutComplete
                 })

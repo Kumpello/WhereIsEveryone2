@@ -36,7 +36,7 @@
             android:value="@integer/google_play_services_version" />
 
         <service
-            android:name=".main.map.presentation.LocationServiceImpl"
+            android:name=".main.map.presentation.LocationForegroundService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="location|dataSync"></service>

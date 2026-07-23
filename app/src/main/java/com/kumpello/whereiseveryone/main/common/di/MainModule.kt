@@ -31,8 +31,7 @@ import androidx.room.Room
 import com.kumpello.whereiseveryone.common.database.AppDatabase
 import com.kumpello.whereiseveryone.main.common.domain.manager.FriendsManager
 import com.kumpello.whereiseveryone.main.map.presentation.LocationService
-import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceImpl
-import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceInterface
+import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceProxy
 import com.kumpello.whereiseveryone.main.map.presentation.MapScreenViewModel
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
 import com.kumpello.whereiseveryone.main.map.presentation.MessageViewModel
@@ -76,9 +75,9 @@ val mainModule = module {
             updateStatusUseCase = get(),
         )
     }
-    viewModel { (locationServiceInterface: LocationServiceInterface) ->
+    viewModel {
         SettingsViewModel(
-            locationServiceInterface = locationServiceInterface,
+            locationService = get(),
             wipeLocationUseCase = get(),
             preferencesManager = get(),
             logoutUseCase = get()
@@ -98,9 +97,8 @@ val mainModule = module {
     ) }
     viewModel { AddFriendViewModel(get()) }
     viewModel { ShareProfileViewModel(get()) }
-    single<LocationService> {
-        LocationServiceImpl()
-    }
+    single { LocationServiceProxy() }
+    single<LocationService> { get<LocationServiceProxy>() }
     single<FusedLocationProviderClient> {
         LocationServices.getFusedLocationProviderClient(androidContext())
     }

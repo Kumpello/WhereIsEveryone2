@@ -4,10 +4,13 @@ import android.location.Location
 import kotlinx.coroutines.flow.StateFlow
 
 interface LocationService {
+    fun startLocationService()
+    fun stopLocationService()
+    fun toggleSharing()
+    fun observeIsServiceRunning(): StateFlow<Boolean>
+
     fun changeForegroundUpdateInterval(interval: Long)
     fun changeBackgroundUpdateInterval(interval: Long)
-
-    fun stopLocationService()
 
     fun observeLocation() : StateFlow<Location?>
 
@@ -26,5 +29,4 @@ interface LocationService {
         data object Foreground : UpdateType
         data object Background : UpdateType
     }
-
 }

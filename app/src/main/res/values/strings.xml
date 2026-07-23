@@ -8,6 +8,13 @@
     <string name="notification_subtext">This is service sharing location to your friends in WhereIsEveryone app</string>
     <string name="ticker_text">dupa</string>
 
+    <string name="notification_status_running">Status: Running</string>
+    <string name="notification_status_stopped">Status: Stopped</string>
+    <string name="last_sent_format">Last sent: %s ago</string>
+    <string name="last_sent_just_now">Last sent: just now</string>
+    <string name="last_sent_never">Last sent: never</string>
+    <string name="kill_service">Kill Service</string>
+
     <!-- Map & Markers -->
     <string name="map_placeholder">Map Placeholder</string>
     <string name="zoom_out_cd">Zoom out</string>

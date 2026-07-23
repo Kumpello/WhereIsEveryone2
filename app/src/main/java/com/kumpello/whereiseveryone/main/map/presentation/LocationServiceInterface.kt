@@ -1,6 +1,1 @@
-package com.kumpello.whereiseveryone.main.map.presentation
-
-interface LocationServiceInterface {
-    fun startLocationService()
-    fun stopLocationService()
-}
+// This file is no longer used. Logic merged into LocationService.kt.

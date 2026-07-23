@@ -1,14 +1,11 @@
 package com.kumpello.whereiseveryone.main
 
 import android.Manifest.permission.ACCESS_BACKGROUND_LOCATION
-import android.content.ComponentName
 import android.content.Intent
-import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.nfc.NfcAdapter
 import android.os.Build
 import android.os.Bundle
-import android.os.IBinder
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -35,8 +32,6 @@ import com.kumpello.whereiseveryone.main.friends.presentation.AddFriendViewModel
 import com.kumpello.whereiseveryone.main.friends.presentation.ShareProfileViewModel
 import com.kumpello.whereiseveryone.main.friends.ui.FriendsScreen
 import com.kumpello.whereiseveryone.main.map.presentation.LocationService
-import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceImpl
-import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceInterface
 import com.kumpello.whereiseveryone.main.map.presentation.MapScreenViewModel
 import com.kumpello.whereiseveryone.main.map.ui.MapScreen
 import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel
@@ -44,20 +39,17 @@ import com.kumpello.whereiseveryone.main.settings.ui.SettingsScreen
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import org.koin.core.parameter.parametersOf
 import timber.log.Timber
 
-class MainActivity : ComponentActivity(), LocationServiceInterface {
+class MainActivity : ComponentActivity() {
 
     private val mapScreenViewModel: MapScreenViewModel by viewModel()
     private val addFriendViewModel: AddFriendViewModel by viewModel()
     private val shareProfileViewModel: ShareProfileViewModel by viewModel()
-    private val settingsViewModel: SettingsViewModel by viewModel { parametersOf(this@MainActivity) }
+    private val settingsViewModel: SettingsViewModel by viewModel()
 
     private val preferencesManager: PreferencesManager by inject()
-
-    private var locationService: LocationService? = null
-    private var isLocationServiceBound: Boolean = false
+    private val locationService: LocationService by inject()
 
     private lateinit var permissionsLauncher: ActivityResultLauncher<Array<String>>
 
@@ -155,7 +147,7 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
                         lifecycleScope.launch {
                             val isEnabled = preferencesManager.get(PreferencesKey.LocationSharingEnabled) ?: true
                             if (isEnabled) {
-                                startLocationService()
+                                locationService.startLocationService()
                             }
                         }
                     }
@@ -191,81 +183,34 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
             usernameToShare = preferencesManager.get(PreferencesKey.UserName)
             val isEnabled = preferencesManager.get(PreferencesKey.LocationSharingEnabled) ?: true
 
-            if (!isLocationServiceBound
-                && !mapScreenViewModel.state.value.permissions.containsValue(false)
+            if (!mapScreenViewModel.state.value.permissions.containsValue(false)
                 && isEnabled
             ) {
-                startLocationService()
+                locationService.startLocationService()
             }
         }
     }
 
     override fun onStop() {
         super.onStop()
-        if (isLocationServiceBound) {
-            setLocationService(LocationService.UpdateType.Background)
-        }
+        locationService.changeUpdateType(LocationService.UpdateType.Background)
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        if (isLocationServiceBound) {
-            setLocationService(LocationService.UpdateType.Background)
-        }
-    }
-
-    fun startForegroundLocationService() {
-        val serviceIntent = Intent(applicationContext, LocationServiceImpl::class.java)
-        //TODO: Add value to extra
-        serviceIntent.putExtra(STATUS_PARAM, "test value")
-        ContextCompat.startForegroundService(applicationContext, serviceIntent)
-    }
-
-    private fun setLocationService(type: LocationService.UpdateType) {
-        when (type) {
-            LocationService.UpdateType.Background -> locationService?.changeUpdateType(type)
-            LocationService.UpdateType.Foreground -> locationService?.changeUpdateType(type)
-        }
-    }
-
-    override fun stopLocationService() {
-        Timber.tag(TAG).d("Stopping location service")
-        locationService?.stopLocationService()
-        unbindLocationService()
-    }
-
-    private fun bindLocationService() {
-        if (!isLocationServiceBound) {
-            Intent(this, LocationServiceImpl::class.java).also { intent ->
-                isLocationServiceBound = bindService(intent, locationServiceConnection, BIND_AUTO_CREATE)
-            }
-        }
-    }
-
-    private fun unbindLocationService() {
-        if (isLocationServiceBound) {
-            unbindService(locationServiceConnection)
-            isLocationServiceBound = false
-            locationService = null
-        }
+        locationService.changeUpdateType(LocationService.UpdateType.Background)
     }
 
     private fun getPermissionsLauncher(): ActivityResultLauncher<Array<String>> {
         return registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissionsResult ->
             if (!permissionsResult.containsValue(false)) {
-                startLocationService()
+                locationService.startLocationService()
                 requestBackgroundPermissionIfNeeded(permissionsLauncher)
             } else {
                 //TODO: Action when user deny permissions
             }
             mapScreenViewModel.trigger(MapScreenViewModel.Event.SetPermissions(mapScreenViewModel.getPermissions(this)))
         }
-    }
-
-    override fun startLocationService() {
-        startForegroundLocationService()
-        bindLocationService()
-        setLocationService(LocationService.UpdateType.Foreground)
     }
 
     private fun requestPermissionsOrStart(
@@ -333,22 +278,7 @@ class MainActivity : ComponentActivity(), LocationServiceInterface {
         }
     }
 
-    private val locationServiceConnection = object : ServiceConnection {
-        override fun onServiceConnected(className: ComponentName, iBinder: IBinder) {
-            Timber.tag(TAG).d("LocationServiceConnection: connected to service.")
-            val binder = iBinder as LocationServiceImpl.LocationBinder
-            locationService = binder.service
-            // Do stuff
-        }
-
-        override fun onServiceDisconnected(arg0: ComponentName) {
-            Timber.tag(TAG).d("LocationServiceConnection: disconnected from service.")
-            locationService = null
-        }
-    }
-
     companion object {
-        const val STATUS_PARAM = "STATUS"
         private const val TAG = "MAIN_ACTIVITY"
     }
 }
