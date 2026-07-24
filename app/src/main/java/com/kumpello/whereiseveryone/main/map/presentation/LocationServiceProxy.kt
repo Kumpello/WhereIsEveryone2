@@ -33,17 +33,11 @@ class LocationServiceProxy : LocationService, KoinComponent {
         Timber.tag(TAG).d("Unregistering service delegate")
         this.delegate = null
         _isServiceRunning.value = false
-    }
-
-    fun requestUnbind() {
-        Timber.tag(TAG).d("Unbind requested by service")
         try {
             context.unbindService(connection)
         } catch (e: IllegalArgumentException) {
-            Timber.tag(TAG).e("Service already unbound or not bound: %s", e.message)
+            Timber.tag(TAG).e("Service not bound during unregister: %s", e.message)
         }
-        _isServiceRunning.value = false
-        delegate = null
     }
 
     fun updateLocation(location: Location?) {
@@ -71,7 +65,6 @@ class LocationServiceProxy : LocationService, KoinComponent {
         }
         val intent = Intent(context, LocationForegroundService::class.java)
         context.stopService(intent)
-        _isServiceRunning.value = false
     }
 
     override fun toggleSharing() {
@@ -113,6 +106,7 @@ class LocationServiceProxy : LocationService, KoinComponent {
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             Timber.tag(TAG).d("Service bound")
+            _isServiceRunning.value = true
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {

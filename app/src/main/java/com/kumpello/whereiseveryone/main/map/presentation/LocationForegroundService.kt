@@ -107,7 +107,7 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
         Timber.tag(TAG).d("LocationForegroundService onStartCommand: action = %s", intent?.action)
 
         when (intent?.action) {
-            ACTION_STOP_SERVICE, ACTION_KILL_SERVICE -> {
+            ACTION_KILL_SERVICE -> {
                 Timber.tag(TAG).d("Received stop/kill action")
                 stopService()
                 return START_NOT_STICKY
@@ -338,7 +338,6 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
     override fun stopService() {
         Timber.tag(TAG).d("stopService called")
         stopUpdates()
-        locationServiceProxy.requestUnbind()
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
@@ -464,7 +463,6 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
 
     companion object {
         private const val TAG = "LOCATION_SERVICE"
-        const val ACTION_STOP_SERVICE = "STOP_LOCATION_SERVICE"
         const val ACTION_TOGGLE_SHARING = "TOGGLE_SHARING"
         const val ACTION_KILL_SERVICE = "KILL_LOCATION_SERVICE"
     }

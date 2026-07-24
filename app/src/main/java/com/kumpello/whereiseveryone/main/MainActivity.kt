@@ -175,13 +175,10 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private var usernameToShare: String? = null
-
     override fun onStart() {
         super.onStart()
         locationService.changeUpdateType(LocationService.UpdateType.Foreground)
         lifecycleScope.launch {
-            usernameToShare = preferencesManager.get(PreferencesKey.UserName)
             val isEnabled = preferencesManager.get(PreferencesKey.LocationSharingEnabled) ?: true
 
             if (!mapScreenViewModel.state.value.permissions.containsValue(false)
@@ -199,7 +196,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        locationService.changeUpdateType(LocationService.UpdateType.Background)
     }
 
     private fun getPermissionsLauncher(): ActivityResultLauncher<Array<String>> {
@@ -217,22 +213,18 @@ class MainActivity : ComponentActivity() {
     private fun requestPermissionsOrStart(
         permissionLauncher: ActivityResultLauncher<Array<String>>,
         permissions: Map<String, Boolean>,
-        function: () -> Unit
+        onAllPermissionsGranted: () -> Unit
     ) {
         val neededPermissions = permissions
-            .filter { permission ->
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    permission.key != ACCESS_BACKGROUND_LOCATION
-                } else {
-                    true
-                }
+            .filter { (permission, granted) ->
+                val isBackground = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && permission == ACCESS_BACKGROUND_LOCATION
+                !granted && !isBackground
             }
-            .filter { permission -> !permission.value }
             .keys
         if (neededPermissions.isNotEmpty()) {
             permissionLauncher.launch(neededPermissions.toTypedArray())
         } else {
-            function()
+            onAllPermissionsGranted()
         }
     }
 
