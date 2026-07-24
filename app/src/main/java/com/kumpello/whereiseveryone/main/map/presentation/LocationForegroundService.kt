@@ -139,11 +139,20 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
         val contentText = getString(R.string.proximity_alert_content, nearbyFriends.joinToString(", "))
         val fullText = if (lastChange != null) "$lastChange\n\n$contentText" else contentText
 
+        val notificationIntent = Intent(this, MainActivity::class.java)
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            proximityNotificationID,
+            notificationIntent,
+            PendingIntent.FLAG_IMMUTABLE
+        )
+
         val notification = NotificationCompat.Builder(this, proximityChannelID)
             .setContentTitle(getString(R.string.proximity_alert_title))
             .setContentText(lastChange ?: contentText)
             .setSmallIcon(R.drawable.ic_share_location)
             .setStyle(NotificationCompat.BigTextStyle().bigText(fullText))
+            .setContentIntent(pendingIntent)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setOnlyAlertOnce(false) // Allow alerting on each friend entering/leaving
@@ -278,7 +287,7 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
         val fullText = "$statusText\n$lastSharedText"
 
         return NotificationCompat.Builder(this, channelID)
-            .setContentTitle(getString(R.string.app_name))
+            .setContentTitle(getString(R.string.location_sharing))
             .setContentText(fullText)
             .setStyle(NotificationCompat.BigTextStyle().bigText(fullText))
             .setSubText(getString(R.string.notification_subtext))

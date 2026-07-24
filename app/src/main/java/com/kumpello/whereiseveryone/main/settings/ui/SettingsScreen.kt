@@ -41,6 +41,8 @@ import com.kumpello.whereiseveryone.authentication.AuthenticationActivity
 import com.kumpello.whereiseveryone.common.ui.entity.Button
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel
+import kotlin.math.ln
+import kotlin.math.pow
 
 @Composable
 fun SettingsScreen(
@@ -79,6 +81,10 @@ private fun SettingsScreen(
     viewState: SettingsViewModel.ViewState,
     trigger: (SettingsViewModel.Event) -> Unit,
 ) {
+    val minDistance = 10f
+    val maxDistance = 2000f
+    val sliderValue = ln(viewState.proximityDistance.toFloat().coerceAtLeast(minDistance) / minDistance) / ln(maxDistance / minDistance)
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -120,9 +126,12 @@ private fun SettingsScreen(
                         color = MaterialTheme.colorScheme.primary
                     )
                     Slider(
-                        value = viewState.proximityDistance.toFloat(),
-                        onValueChange = { trigger(SettingsViewModel.Event.ChangeProximityDistance(it.toInt())) },
-                        valueRange = 10f..2000f
+                        value = sliderValue,
+                        onValueChange = { normalizedValue ->
+                            val distance = minDistance * (maxDistance / minDistance).pow(normalizedValue)
+                            trigger(SettingsViewModel.Event.ChangeProximityDistance(distance.toInt().coerceIn(10, 2000)))
+                        },
+                        valueRange = 0f..1f
                     )
                 }
 

@@ -7,6 +7,7 @@ import com.kumpello.whereiseveryone.main.map.domain.model.FriendsResponse
 import com.kumpello.whereiseveryone.main.map.presentation.LocationService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
 class ProximityManager(
@@ -37,7 +38,7 @@ class ProximityManager(
                 } else {
                     false
                 }
-            }.map { it.username }
-        }
+            }.map { it.username }.sorted()
+        }.distinctUntilChanged()
     }
 }

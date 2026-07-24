@@ -159,4 +159,5 @@
     <string name="time_left_format">Time left: %1$02d:%2$02d</string>
     <string name="time_left_indefinite">Time left: Indefinite</string>
     <string name="disable">Disable</string>
+    <string name="location_sharing">Location sharing</string>
 </resources>

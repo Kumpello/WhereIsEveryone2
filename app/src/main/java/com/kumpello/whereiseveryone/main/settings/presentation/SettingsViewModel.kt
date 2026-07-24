@@ -14,9 +14,15 @@ import com.kumpello.whereiseveryone.common.domain.usecase.LogoutUseCase
 import com.kumpello.whereiseveryone.common.presentation.BaseViewModel.SideEffect.*
 import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel.Event.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import kotlin.time.Duration.Companion.milliseconds
 
+@OptIn(FlowPreview::class)
 class SettingsViewModel(
     private val locationService: LocationService,
     private val wipeLocationUseCase: WipeLocationUseCase,
@@ -26,6 +32,8 @@ class SettingsViewModel(
     State()
 ) {
 
+    private val proximityDistanceFlow = MutableStateFlow<Int?>(null)
+
     init {
         viewModelScope.launch(Dispatchers.Main) {
             locationService.observeIsServiceRunning().collect { isRunning ->
@@ -34,8 +42,21 @@ class SettingsViewModel(
         }
         viewModelScope.launch(Dispatchers.Main) {
             preferencesManager.observe(PreferencesKey.ProximityDistance).collect { distance ->
-                trigger(OnProximityDistanceUpdate(distance ?: 50))
+                if (proximityDistanceFlow.value == null) {
+                    trigger(OnProximityDistanceUpdate(distance ?: 50))
+                }
             }
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            proximityDistanceFlow
+                .debounce(250.milliseconds)
+                .distinctUntilChanged()
+                .collect { distance ->
+                    distance?.let {
+                        Timber.tag(TAG).d("Debounced saving proximity distance: %d", it)
+                        preferencesManager.save(PreferencesKey.ProximityDistance, it)
+                    }
+                }
         }
     }
 
@@ -51,10 +72,8 @@ class SettingsViewModel(
             }
 
             is ChangeProximityDistance -> {
-                state.toResult(AsyncWork {
-                    preferencesManager.save(PreferencesKey.ProximityDistance, event.distance)
-                    NoOp
-                })
+                proximityDistanceFlow.value = event.distance
+                state.copy(proximityDistance = event.distance).toResult()
             }
 
             ClearData -> {
