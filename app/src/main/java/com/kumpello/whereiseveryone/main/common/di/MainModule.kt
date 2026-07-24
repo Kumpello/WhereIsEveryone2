@@ -30,6 +30,7 @@ import com.kumpello.whereiseveryone.main.map.domain.usecase.UpdateStatusUseCase
 import androidx.room.Room
 import com.kumpello.whereiseveryone.common.database.AppDatabase
 import com.kumpello.whereiseveryone.main.common.domain.manager.FriendsManager
+import com.kumpello.whereiseveryone.main.common.domain.manager.ProximityManager
 import com.kumpello.whereiseveryone.main.map.presentation.LocationService
 import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceProxy
 import com.kumpello.whereiseveryone.main.map.presentation.MapScreenViewModel
@@ -103,6 +104,7 @@ val mainModule = module {
         LocationServices.getFusedLocationProviderClient(androidContext())
     }
     single { FriendsManager(get(), get()) }
+    single { ProximityManager(get(), get(), get(), get()) }
     single { GetPermissionsStatusUseCase(get()) }
     single { GetNeededPermissionsUseCase() }
     single { WipeLocationUseCase(get(), get()) }

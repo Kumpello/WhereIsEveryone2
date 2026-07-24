@@ -32,6 +32,11 @@ class SettingsViewModel(
                 trigger(OnLocationServiceStateUpdate(isRunning))
             }
         }
+        viewModelScope.launch(Dispatchers.Main) {
+            preferencesManager.observe(PreferencesKey.ProximityDistance).collect { distance ->
+                trigger(OnProximityDistanceUpdate(distance ?: 50))
+            }
+        }
     }
 
     override fun reduce(state: State, event: Event): ReducerResult<State, Event, Action> {
@@ -39,6 +44,17 @@ class SettingsViewModel(
             is OnLocationServiceStateUpdate -> {
                 Timber.tag(TAG).d("Location service state updated: %s", event.isRunning)
                 state.copy(locationServiceState = event.isRunning).toResult()
+            }
+
+            is OnProximityDistanceUpdate -> {
+                state.copy(proximityDistance = event.distance).toResult()
+            }
+
+            is ChangeProximityDistance -> {
+                state.toResult(AsyncWork {
+                    preferencesManager.save(PreferencesKey.ProximityDistance, event.distance)
+                    NoOp
+                })
             }
 
             ClearData -> {
@@ -114,7 +130,8 @@ class SettingsViewModel(
                 R.string.settings_start_sharing_location
             },
             deleteLocationDataId = R.string.settings_delete_location_data,
-            logoutTextId = R.string.settings_logout
+            logoutTextId = R.string.settings_logout,
+            proximityDistance = proximityDistance
         )
     }
 
@@ -126,6 +143,8 @@ class SettingsViewModel(
 
     sealed class Event {
         data class OnLocationServiceStateUpdate(val isRunning: Boolean) : Event()
+        data class OnProximityDistanceUpdate(val distance: Int) : Event()
+        data class ChangeProximityDistance(val distance: Int) : Event()
         data object ClearData : Event()
         data object SwitchLocationServiceState : Event()
         data object Logout : Event()
@@ -137,6 +156,7 @@ class SettingsViewModel(
 
     data class State(
         val locationServiceState: Boolean = true,
+        val proximityDistance: Int = 50
     )
 
     @Immutable
@@ -145,6 +165,7 @@ class SettingsViewModel(
         @param:StringRes val locationSwitchTextId: Int,
         @param:StringRes val deleteLocationDataId: Int,
         @param:StringRes val logoutTextId: Int,
+        val proximityDistance: Int
     )
 
     companion object {

@@ -30,6 +30,7 @@ import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
 import com.kumpello.whereiseveryone.main.MainActivity
 import com.kumpello.whereiseveryone.main.common.database.UserLocationDao
 import com.kumpello.whereiseveryone.main.common.database.UserLocationEntity
+import com.kumpello.whereiseveryone.main.common.domain.manager.ProximityManager
 import com.kumpello.whereiseveryone.main.common.domain.usecase.SendLocationUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -51,6 +52,7 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
     private val userLocationDao: UserLocationDao by inject()
     private val sendLocationUseCase: SendLocationUseCase by inject()
     private val locationServiceProxy: LocationServiceProxy by inject()
+    private val proximityManager: ProximityManager by inject()
 
     private val locationSendChannel = Channel<Location>(
         capacity = Channel.CONFLATED
@@ -67,6 +69,11 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
 
     private val binder: IBinder = LocationBinder()
     private val channelID = "WhereIsEveryone_Silent"
+    private val proximityChannelID = "WhereIsEveryone_Proximity"
+    private val proximityNotificationID = 422
+
+    private var previousNearbyFriends = emptySet<String>()
+
     private val job = SupervisorJob()
     private val scope = CoroutineScope(Dispatchers.IO + job)
 
@@ -94,12 +101,65 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
             }
         }
 
-        // Periodic notification refresh to update "time since last share"
         scope.launch {
-            while (isActive) {
-                delay(60.seconds) // Refresh every minute
-                updateNotification()
+            proximityManager.observeNearbyFriends().collect { nearbyFriends ->
+                updateProximityNotification(nearbyFriends)
             }
+        }
+    }
+
+    private fun updateProximityNotification(nearbyFriends: List<String>) {
+        val currentSet = nearbyFriends.toSet()
+        val manager = getSystemService(NotificationManager::class.java)
+        
+        if (currentSet.isEmpty()) {
+            if (previousNearbyFriends.isNotEmpty()) {
+                manager.cancel(proximityNotificationID)
+                previousNearbyFriends = emptySet()
+            }
+            return
+        }
+
+        val joined = currentSet - previousNearbyFriends
+        val left = previousNearbyFriends - currentSet
+        
+        val lastChange = when {
+            joined.isNotEmpty() -> getString(R.string.proximity_alert_joined, joined.joinToString(", "))
+            left.isNotEmpty() -> getString(R.string.proximity_alert_left, left.joinToString(", "))
+            else -> null
+        }
+
+        // Only update previousNearbyFriends if there was a change to avoid losing lastChange context on same-set updates
+        if (lastChange != null) {
+            previousNearbyFriends = currentSet
+        }
+
+        createProximityNotificationChannel(manager)
+
+        val contentText = getString(R.string.proximity_alert_content, nearbyFriends.joinToString(", "))
+        val fullText = if (lastChange != null) "$lastChange\n\n$contentText" else contentText
+
+        val notification = NotificationCompat.Builder(this, proximityChannelID)
+            .setContentTitle(getString(R.string.proximity_alert_title))
+            .setContentText(lastChange ?: contentText)
+            .setSmallIcon(R.drawable.ic_share_location)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(fullText))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setOnlyAlertOnce(false) // Allow alerting on each friend entering/leaving
+            .build()
+
+        manager.notify(proximityNotificationID, notification)
+    }
+
+    private fun createProximityNotificationChannel(notificationManager: NotificationManager) {
+        if (notificationManager.getNotificationChannel(proximityChannelID) == null) {
+            val serviceChannel = NotificationChannel(
+                proximityChannelID,
+                getString(R.string.proximity_channel_name),
+                NotificationManager.IMPORTANCE_HIGH
+            )
+            notificationManager.createNotificationChannel(serviceChannel)
         }
     }
 

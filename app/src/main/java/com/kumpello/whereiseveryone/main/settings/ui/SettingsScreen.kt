@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -105,6 +106,26 @@ private fun SettingsScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.proximity_distance_label),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                    )
+                    Text(
+                        text = stringResource(R.string.distance_m_format, viewState.proximityDistance),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Slider(
+                        value = viewState.proximityDistance.toFloat(),
+                        onValueChange = { trigger(SettingsViewModel.Event.ChangeProximityDistance(it.toInt())) },
+                        valueRange = 10f..2000f
+                    )
+                }
+
                 Button.Animated(
                     text = stringResource(viewState.locationSwitchTextId),
                     textSize = 18
@@ -194,7 +215,8 @@ fun SettingsPreview() {
                 isLocationServiceRunning = true,
                 locationSwitchTextId = R.string.settings_stop_sharing_location,
                 deleteLocationDataId = R.string.settings_delete_location_data,
-                logoutTextId = R.string.settings_logout
+                logoutTextId = R.string.settings_logout,
+                proximityDistance = 50
             )
         ) {}
     }
