@@ -109,7 +109,7 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
         when (intent?.action) {
             ACTION_KILL_SERVICE -> {
                 Timber.tag(TAG).d("Received stop/kill action")
-                stopService()
+                locationServiceProxy.stopLocationService()
                 return START_NOT_STICKY
             }
             ACTION_TOGGLE_SHARING -> {
