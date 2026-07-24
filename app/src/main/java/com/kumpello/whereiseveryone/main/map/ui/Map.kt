@@ -12,15 +12,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.ColorUtils
-import androidx.core.graphics.alpha
 import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.main.common.entity.Friend
 import com.kumpello.whereiseveryone.main.common.entity.Location
@@ -29,17 +28,12 @@ import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.FeatureCollection
 import com.mapbox.geojson.Point
+import com.mapbox.maps.MapboxDelicateApi
 import com.mapbox.maps.MapboxExperimental
 import com.mapbox.maps.extension.compose.MapEffect
 import com.mapbox.maps.extension.compose.MapboxMap
 import com.mapbox.maps.extension.compose.animation.viewport.rememberMapViewportState
 import com.mapbox.maps.extension.compose.rememberMapState
-import com.mapbox.maps.extension.compose.style.rememberStyleImage
-import com.mapbox.maps.extension.compose.style.layers.generated.SymbolLayer
-import com.mapbox.maps.extension.compose.style.layers.generated.SymbolLayerState
-import com.mapbox.maps.extension.compose.style.sources.GeoJSONData
-import com.mapbox.maps.extension.compose.style.sources.generated.rememberGeoJsonSourceState
-import com.mapbox.maps.extension.style.expressions.generated.Expression
 import com.mapbox.maps.extension.compose.style.BooleanValue
 import com.mapbox.maps.extension.compose.style.ColorValue
 import com.mapbox.maps.extension.compose.style.DoubleListValue
@@ -47,15 +41,22 @@ import com.mapbox.maps.extension.compose.style.DoubleValue
 import com.mapbox.maps.extension.compose.style.layers.FormattedValue
 import com.mapbox.maps.extension.compose.style.layers.ImageValue
 import com.mapbox.maps.extension.compose.style.layers.generated.IconRotationAlignmentValue
+import com.mapbox.maps.extension.compose.style.layers.generated.SymbolLayer
+import com.mapbox.maps.extension.compose.style.layers.generated.SymbolLayerState
+import com.mapbox.maps.extension.compose.style.rememberStyleImage
+import com.mapbox.maps.extension.compose.style.sources.GeoJSONData
+import com.mapbox.maps.extension.compose.style.sources.generated.rememberGeoJsonSourceState
+import com.mapbox.maps.extension.compose.style.standard.MapboxStandardStyle
+import com.mapbox.maps.extension.style.expressions.generated.Expression
 import com.mapbox.maps.plugin.PuckBearing
 import com.mapbox.maps.plugin.gestures.generated.GesturesSettings
 import com.mapbox.maps.plugin.locationcomponent.createDefault2DPuck
 import com.mapbox.maps.plugin.locationcomponent.location
 import com.mapbox.maps.plugin.viewport.data.DefaultViewportTransitionOptions
 import com.mapbox.maps.plugin.viewport.data.FollowPuckViewportStateOptions
-import com.mapbox.maps.MapboxDelicateApi
-import com.mapbox.maps.extension.compose.style.standard.MapboxStandardStyle
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import timber.log.Timber
 import kotlin.math.roundToInt
 
@@ -96,6 +97,15 @@ fun Map(
             pinchToZoomEnabled = true
             pitchEnabled = true
         }
+    }
+
+    LaunchedEffect(mapViewportState) {
+        snapshotFlow { mapViewportState.cameraState?.bearing ?: 0.0 }
+            .map { it.roundToInt() }
+            .distinctUntilChanged()
+            .collect { bearing ->
+                event(MapViewModel.Event.OnCameraUpdate(bearing.toDouble()))
+            }
     }
 
     LaunchedEffect(actions) {

@@ -1,45 +1,24 @@
 package com.kumpello.whereiseveryone.main.map.ui
 
-import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.main.common.ui.FriendDetailsCard
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
-import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
-import kotlin.math.roundToInt
 
 @Composable
 fun MapContent(
@@ -97,84 +76,14 @@ fun MapContent(
                     .align(Alignment.TopStart)
                     .safeDrawingPadding()
                     .padding(
-                        top = 44.dp,
+                        top = 64.dp,
                         start = 4.dp
                     ),
                 bearing = state.bearingToFriend!!,
                 friendName = state.navigatingFriend!!.username,
+                distance = state.navigatingFriend!!.formattedDistance,
                 onCancel = { viewModel.trigger(MapViewModel.Event.CancelNavigation) }
             )
-        }
-    }
-}
-
-@Composable
-private fun NavigationCompass(
-    modifier: Modifier = Modifier,
-    bearing: Float,
-    friendName: String,
-    onCancel: () -> Unit
-) {
-    val offsetX = remember { Animatable(0f) }
-    val scope = rememberCoroutineScope()
-
-    Card(
-        modifier = modifier
-            .zIndex(1001f)
-            .offset { IntOffset(offsetX.value.roundToInt(), 0) }
-            .pointerInput(Unit) {
-                detectHorizontalDragGestures(
-                    onDragEnd = {
-                        if (offsetX.value < -100f) {
-                            onCancel()
-                        } else {
-                            scope.launch {
-                                offsetX.animateTo(0f)
-                            }
-                        }
-                    },
-                    onDragCancel = {
-                        scope.launch {
-                            offsetX.animateTo(0f)
-                        }
-                    },
-                    onHorizontalDrag = { _, dragAmount ->
-                        scope.launch {
-                            offsetX.snapTo((offsetX.value + dragAmount).coerceAtMost(0f))
-                        }
-                    }
-                )
-            },
-        shape = com.kumpello.whereiseveryone.common.ui.theme.Shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f)
-        )
-    ) {
-        Row(
-            modifier = Modifier.padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.KeyboardArrowUp,
-                contentDescription = stringResource(R.string.direction_to_format, friendName),
-                modifier = Modifier
-                    .size(32.dp)
-                    .rotate(bearing),
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Column {
-                Text(
-                    text = friendName,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "${bearing.toInt()}°",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
         }
     }
 }

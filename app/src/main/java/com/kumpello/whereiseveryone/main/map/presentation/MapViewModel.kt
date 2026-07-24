@@ -194,6 +194,9 @@ class MapViewModel(
             ).toResult()
 
             Event.CancelNavigation -> state.copy(navigatingFriend = null).toResult()
+            is Event.OnCameraUpdate -> state.copy(
+                mapSettings = state.mapSettings.copy(bearing = event.bearing)
+            ).toResult()
         }
     }
 
@@ -206,12 +209,13 @@ class MapViewModel(
         }
         val bearing = if (mappedUser != null && navigatingFriend != null) {
             navigatingFriend.location?.let { loc ->
-                calculateBearingUseCase.execute(
+                val geographicBearing = calculateBearingUseCase.execute(
                     mappedUser.lat,
                     mappedUser.lon,
                     loc.lat,
                     loc.lon
                 )
+                ((geographicBearing - mapSettings.bearing + 360) % 360).toFloat()
             }
         } else null
 
@@ -247,6 +251,7 @@ class MapViewModel(
         data object DismissFriendDetails : Event()
         data class NavigateToFriend(val friend: Friend) : Event()
         data object CancelNavigation : Event()
+        data class OnCameraUpdate(val bearing: Double) : Event()
     }
 
     data class State(
