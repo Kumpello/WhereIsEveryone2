@@ -10,9 +10,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalInspectionMode
@@ -21,12 +25,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.ColorUtils
 import com.kumpello.whereiseveryone.R
+import com.kumpello.whereiseveryone.common.extension.lerp
+import com.kumpello.whereiseveryone.common.extension.lerpBearing
 import com.kumpello.whereiseveryone.main.common.entity.Friend
 import com.kumpello.whereiseveryone.main.common.entity.Location
 import com.kumpello.whereiseveryone.main.map.entity.MapSettings
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
 import com.mapbox.geojson.Feature
-import com.mapbox.geojson.FeatureCollection
 import com.mapbox.geojson.Point
 import com.mapbox.maps.MapboxDelicateApi
 import com.mapbox.maps.MapboxExperimental
@@ -217,44 +222,78 @@ fun FriendsSymbolLayer(
     }
     val friendsByIdState = rememberUpdatedState(friendsById)
 
-    val featureCollection = remember(friends) {
-        FeatureCollection.fromFeatures(
-            friends.mapNotNull { friend ->
-                friend.location?.let { loc ->
-                    Feature.fromGeometry(
-                        Point.fromLngLat(
-                            loc.lon,
-                            loc.lat
-                        )
-                    ).apply {
-                        addStringProperty(
-                            "id",
-                            friend.username
-                        )
-                        addNumberProperty(
-                            "bearing",
-                            loc.bearing ?: 0.0
-                        )
-                        addNumberProperty(
-                            "opacity",
-                            loc.lastUpdateAge.opacity
-                        )
-                        addNumberProperty(
-                            "haloWidth",
-                            loc.accuracy.haloSize
-                        )
-                    }
-                }
+    var displayedFriends by remember { mutableStateOf<Map<String, AnimatedFriendData>>(emptyMap()) }
+
+    LaunchedEffect(friends) {
+        val duration = 1000L // 1 second transition
+        val startTime = withFrameNanos { it } / 1_000_000
+        val startStates = displayedFriends
+
+        val targetStates = friends.mapNotNull { friend ->
+            friend.location?.let { loc ->
+                friend.username to AnimatedFriendData(
+                    lat = loc.lat,
+                    lon = loc.lon,
+                    bearing = loc.bearing?.toDouble() ?: 0.0,
+                    opacity = loc.lastUpdateAge.opacity,
+                    haloWidth = loc.accuracy.haloSize
+                )
             }
-        )
+        }.toMap()
+
+        if (startStates.isEmpty()) {
+            displayedFriends = targetStates
+            return@LaunchedEffect
+        }
+
+        var playTime = 0L
+        while (playTime < duration) {
+            playTime = (withFrameNanos { it } / 1_000_000) - startTime
+            val fraction = (playTime.toFloat() / duration).coerceIn(0f, 1f)
+
+            displayedFriends = targetStates.mapValues { (id, target) ->
+                val start = startStates[id] ?: target
+                AnimatedFriendData(
+                    lat = lerp(start.lat, target.lat, fraction.toDouble()),
+                    lon = lerp(start.lon, target.lon, fraction.toDouble()),
+                    bearing = lerpBearing(start.bearing, target.bearing, fraction.toDouble()),
+                    opacity = lerp(start.opacity, target.opacity, fraction.toDouble()),
+                    haloWidth = lerp(start.haloWidth, target.haloWidth, fraction.toDouble())
+                )
+            }
+        }
+        displayedFriends = targetStates
     }
 
-    val sourceState = rememberGeoJsonSourceState {
-        data = GeoJSONData(featureCollection.features()!!)
-    }
+    val sourceState = rememberGeoJsonSourceState()
 
-    LaunchedEffect(featureCollection) {
-        sourceState.data = GeoJSONData(featureCollection.features()!!)
+    LaunchedEffect(displayedFriends) {
+        val features = displayedFriends.map { (id, data) ->
+            Feature.fromGeometry(
+                Point.fromLngLat(
+                    data.lon,
+                    data.lat
+                )
+            ).apply {
+                addStringProperty(
+                    "id",
+                    id
+                )
+                addNumberProperty(
+                    "bearing",
+                    data.bearing
+                )
+                addNumberProperty(
+                    "opacity",
+                    data.opacity
+                )
+                addNumberProperty(
+                    "haloWidth",
+                    data.haloWidth
+                )
+            }
+        }
+        sourceState.data = GeoJSONData(features)
     }
 
     val friendMarker = rememberStyleImage(
@@ -313,3 +352,4 @@ fun FriendsSymbolLayer(
         }
     )
 }
+
