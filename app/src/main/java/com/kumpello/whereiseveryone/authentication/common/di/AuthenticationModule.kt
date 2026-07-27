@@ -17,6 +17,6 @@ val authenticationModule = module {
     viewModel { SignUpViewModel(get(), get(), get()) }
     single { ValidateLoginInputUseCase() }
     single { ValidatePasswordUseCase() }
-    single { LoginUseCase(get(), get()) }
-    single { SignUpUseCase(get(), get()) }
+    single { LoginUseCase(get(), get(), get()) }
+    single { SignUpUseCase(get(), get(), get()) }
 }

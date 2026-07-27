@@ -84,6 +84,8 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
 
     implementation(libs.play.services.location)
+    implementation(libs.play.services.appset)
+    implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.play.services.code.scanner)
     implementation(libs.androidx.security.crypto)
     implementation(libs.androidx.datastore)

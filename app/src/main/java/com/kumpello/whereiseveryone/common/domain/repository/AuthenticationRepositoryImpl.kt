@@ -11,8 +11,8 @@ class AuthenticationRepositoryImpl(
     private val authApi: AuthApi
 ) : AuthenticationRepository {
 
-    override suspend fun signUp(username: String, password: String): AuthResponse {
-        val authResponse = authApi.signUp(SignUpRequest(username, password))
+    override suspend fun signUp(username: String, password: String, deviceToken: String?): AuthResponse {
+        val authResponse = authApi.signUp(SignUpRequest(username, password, deviceToken))
 
         return when {
             authResponse.isSuccessful -> {
@@ -31,8 +31,8 @@ class AuthenticationRepositoryImpl(
         }
     }
 
-    override suspend fun logIn(username: String, password: String): AuthResponse {
-        val authResponse = authApi.login(LogInRequest(username, password))
+    override suspend fun logIn(username: String, password: String, deviceToken: String?): AuthResponse {
+        val authResponse = authApi.login(LogInRequest(username, password, deviceToken))
 
         return when {
             authResponse.isSuccessful -> {
@@ -51,8 +51,8 @@ class AuthenticationRepositoryImpl(
         }
     }
 
-    override suspend fun refreshToken(refreshToken: String): AuthResponse {
-        val authResponse = authApi.refresh(RefreshRequest(refreshToken))
+    override suspend fun refreshToken(refreshToken: String, deviceToken: String?): AuthResponse {
+        val authResponse = authApi.refresh(RefreshRequest(refreshToken, deviceToken))
 
         return when {
             authResponse.isSuccessful -> {

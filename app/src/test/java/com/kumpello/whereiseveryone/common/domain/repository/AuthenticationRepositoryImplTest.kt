@@ -19,9 +19,9 @@ class AuthenticationRepositoryImplTest {
     @Test
     fun `signUp success returns AuthData`() = runTest {
         val authData = AuthResponse.AuthData("1", "refresh", "token")
-        coEvery { authApi.signUp(any()) } returns Response.success(authData)
+        coEvery { authApi.signUp(match { it.device_token == "device_id" }) } returns Response.success(authData)
 
-        val result = repository.signUp("user", "pass")
+        val result = repository.signUp("user", "pass", "device_id")
 
         assertEquals(authData, result)
     }
@@ -30,7 +30,7 @@ class AuthenticationRepositoryImplTest {
     fun `signUp failure returns ErrorData`() = runTest {
         coEvery { authApi.signUp(any()) } returns Response.error(400, "Bad Request".toResponseBody(null))
 
-        val result = repository.signUp("user", "pass")
+        val result = repository.signUp("user", "pass", "device_id")
 
         assertTrue(result is AuthResponse.ErrorData)
         assertEquals(400, (result as AuthResponse.ErrorData).code)
@@ -39,9 +39,9 @@ class AuthenticationRepositoryImplTest {
     @Test
     fun `logIn success returns AuthData`() = runTest {
         val authData = AuthResponse.AuthData("1", "refresh", "token")
-        coEvery { authApi.login(any()) } returns Response.success(authData)
+        coEvery { authApi.login(match { it.device_token == "device_id" }) } returns Response.success(authData)
 
-        val result = repository.logIn("user", "pass")
+        val result = repository.logIn("user", "pass", "device_id")
 
         assertEquals(authData, result)
     }
@@ -50,7 +50,7 @@ class AuthenticationRepositoryImplTest {
     fun `logIn failure returns ErrorData`() = runTest {
         coEvery { authApi.login(any()) } returns Response.error(401, "Unauthorized".toResponseBody(null))
 
-        val result = repository.logIn("user", "pass")
+        val result = repository.logIn("user", "pass", "device_id")
 
         assertTrue(result is AuthResponse.ErrorData)
         assertEquals(401, (result as AuthResponse.ErrorData).code)
@@ -59,9 +59,9 @@ class AuthenticationRepositoryImplTest {
     @Test
     fun `refreshToken success returns AuthData`() = runTest {
         val authData = AuthResponse.AuthData("1", "refresh", "token")
-        coEvery { authApi.refresh(any()) } returns Response.success(authData)
+        coEvery { authApi.refresh(match { it.device_token == "device_id" }) } returns Response.success(authData)
 
-        val result = repository.refreshToken("refresh_token")
+        val result = repository.refreshToken("refresh_token", "device_id")
 
         assertEquals(authData, result)
     }
@@ -70,7 +70,7 @@ class AuthenticationRepositoryImplTest {
     fun `refreshToken failure returns ErrorData`() = runTest {
         coEvery { authApi.refresh(any()) } returns Response.error(401, "Unauthorized".toResponseBody(null))
 
-        val result = repository.refreshToken("refresh_token")
+        val result = repository.refreshToken("refresh_token", "device_id")
 
         assertTrue(result is AuthResponse.ErrorData)
         assertEquals(401, (result as AuthResponse.ErrorData).code)

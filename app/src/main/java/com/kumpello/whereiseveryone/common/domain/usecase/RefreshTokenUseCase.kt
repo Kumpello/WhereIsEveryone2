@@ -2,19 +2,22 @@ package com.kumpello.whereiseveryone.common.domain.usecase
 
 import com.kumpello.whereiseveryone.common.domain.manager.PreferencesKey
 import com.kumpello.whereiseveryone.common.domain.manager.PreferencesManager
+import com.kumpello.whereiseveryone.common.domain.provider.DeviceIdProvider
 import com.kumpello.whereiseveryone.common.domain.repository.AuthenticationRepository
 import com.kumpello.whereiseveryone.common.model.AuthResponse
 
 class RefreshTokenUseCase(
     private val authenticationRepository: AuthenticationRepository,
     private val preferencesManager: PreferencesManager,
+    private val deviceIdProvider: DeviceIdProvider,
 ) {
 
     suspend fun execute(): Response {
         val refreshToken = preferencesManager.get(PreferencesKey.AuthRefreshToken)
         if (refreshToken.isNullOrEmpty()) return Response.Error
 
-        val response = authenticationRepository.refreshToken(refreshToken)
+        val deviceToken = deviceIdProvider.getDeviceId()
+        val response = authenticationRepository.refreshToken(refreshToken, deviceToken)
 
         if (response is AuthResponse.AuthData) {
             saveUserData(response)

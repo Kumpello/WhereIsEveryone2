@@ -2,12 +2,14 @@ package com.kumpello.whereiseveryone.authentication.signUp.domain.usecase
 
 import com.kumpello.whereiseveryone.common.domain.manager.PreferencesKey
 import com.kumpello.whereiseveryone.common.domain.manager.PreferencesManager
+import com.kumpello.whereiseveryone.common.domain.provider.DeviceIdProvider
 import com.kumpello.whereiseveryone.common.domain.repository.AuthenticationRepository
 import com.kumpello.whereiseveryone.common.model.AuthResponse
 
 class SignUpUseCase(
     private val authenticationRepository: AuthenticationRepository,
     private val preferencesManager: PreferencesManager,
+    private val deviceIdProvider: DeviceIdProvider,
 ) {
 
     suspend fun execute(
@@ -28,12 +30,14 @@ class SignUpUseCase(
     }
 
     private suspend fun signUp(username: String, password: String): AuthResponseWithParams {
+        val deviceToken = deviceIdProvider.getDeviceId()
         return AuthResponseWithParams(
             username = username,
             password = password,
             authResponse = authenticationRepository.signUp(
                 username,
-                password
+                password,
+                deviceToken
             )
         )
     }

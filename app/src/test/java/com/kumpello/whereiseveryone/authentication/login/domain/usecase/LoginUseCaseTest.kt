@@ -2,20 +2,30 @@ package com.kumpello.whereiseveryone.authentication.login.domain.usecase
 
 import com.kumpello.whereiseveryone.common.domain.manager.PreferencesKey
 import com.kumpello.whereiseveryone.common.domain.manager.PreferencesManager
+import com.kumpello.whereiseveryone.common.domain.provider.DeviceIdProvider
 import com.kumpello.whereiseveryone.common.domain.repository.AuthenticationRepository
 import com.kumpello.whereiseveryone.common.model.AuthResponse
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Before
 import org.junit.Test
 
 class LoginUseCaseTest {
 
     private val authenticationRepository: AuthenticationRepository = mockk()
     private val preferencesManager: PreferencesManager = mockk(relaxed = true)
-    private val loginUseCase = LoginUseCase(authenticationRepository, preferencesManager)
+    private val deviceIdProvider: DeviceIdProvider = mockk()
+    private lateinit var loginUseCase: LoginUseCase
+
+    @Before
+    fun setup() {
+        loginUseCase = LoginUseCase(authenticationRepository, preferencesManager, deviceIdProvider)
+        coEvery { deviceIdProvider.getDeviceId() } returns "device_id"
+    }
 
     @Test
     fun `execute success saves data and returns Success`() = runTest {
@@ -24,7 +34,7 @@ class LoginUseCaseTest {
             refresh_token = "refresh",
             token = "token"
         )
-        coEvery { authenticationRepository.logIn("user", "pass") } returns authData
+        coEvery { authenticationRepository.logIn("user", "pass", "device_id") } returns authData
 
         val result = loginUseCase.execute("user", "pass")
 
@@ -38,7 +48,7 @@ class LoginUseCaseTest {
 
     @Test
     fun `execute failure returns Error`() = runTest {
-        coEvery { authenticationRepository.logIn("user", "pass") } returns AuthResponse.ErrorData(401, "Error", "Unauthorized")
+        coEvery { authenticationRepository.logIn("user", "pass", "device_id") } returns AuthResponse.ErrorData(401, "Error", "Unauthorized")
 
         val result = loginUseCase.execute("user", "pass")
 

@@ -15,6 +15,8 @@ android-gradle = "9.3.1"
 kotlin-android = "2.4.10"
 ksp = "2.3.9"
 play-services-location = "21.4.0"
+play-services-appset = "16.1.0"
+kotlinx-coroutines-play-services = "1.11.0"
 koin = "4.2.2"
 koin-plugin = "1.0.2"
 room = "2.8.4"
@@ -64,6 +66,8 @@ mapbox-compose = { group = "com.mapbox.extension", name = "maps-compose", versio
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "play-services-location" }
+play-services-appset = { group = "com.google.android.gms", name = "play-services-appset", version.ref = "play-services-appset" }
+kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "kotlinx-coroutines-play-services" }
 androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "crypto" }
 androidx-datastore = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 tink-android = { group = "com.google.crypto.tink", name = "tink-android", version.ref = "tink" }
