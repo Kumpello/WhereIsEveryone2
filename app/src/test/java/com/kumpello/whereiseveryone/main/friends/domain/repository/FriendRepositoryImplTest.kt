@@ -18,45 +18,45 @@ class FriendRepositoryImplTest {
 
     @Test
     fun `addFriend success returns SuccessNoContent`() = runTest {
-        coEvery { friendApi.addFriend(any(), any()) } returns Response.success(null)
+        coEvery { friendApi.addFriend(any()) } returns Response.success(null)
 
-        val result = repository.addFriend("token", "user")
+        val result = repository.addFriend("user")
 
         assertEquals(CodeResponse.SuccessNoContent, result)
     }
 
     @Test
     fun `addFriend failure returns ErrorData`() = runTest {
-        coEvery { friendApi.addFriend(any(), any()) } returns Response.error(400, "Error".toResponseBody(null))
+        coEvery { friendApi.addFriend(any()) } returns Response.error(400, "Error".toResponseBody(null))
 
-        val result = repository.addFriend("token", "user")
+        val result = repository.addFriend("user")
 
         assertTrue(result is CodeResponse.ErrorData)
     }
 
     @Test
     fun `removeFriend success returns SuccessNoContent`() = runTest {
-        coEvery { friendApi.removeFriend(any(), any()) } returns Response.success(null)
+        coEvery { friendApi.removeFriend(any()) } returns Response.success(null)
 
-        val result = repository.removeFriend("token", "user")
+        val result = repository.removeFriend("user")
 
         assertEquals(CodeResponse.SuccessNoContent, result)
     }
 
     @Test
     fun `acceptFriendRequest success returns SuccessNoContent`() = runTest {
-        coEvery { friendApi.acceptFriendRequest(any(), any()) } returns Response.success(null)
+        coEvery { friendApi.acceptFriendRequest(any()) } returns Response.success(null)
 
-        val result = repository.acceptFriendRequest("token", "user")
+        val result = repository.acceptFriendRequest("user")
 
         assertEquals(CodeResponse.SuccessNoContent, result)
     }
 
     @Test
     fun `rejectFriendRequest success returns SuccessNoContent`() = runTest {
-        coEvery { friendApi.rejectFriendRequest(any(), any()) } returns Response.success(null)
+        coEvery { friendApi.rejectFriendRequest(any()) } returns Response.success(null)
 
-        val result = repository.rejectFriendRequest("token", "user")
+        val result = repository.rejectFriendRequest("user")
 
         assertEquals(CodeResponse.SuccessNoContent, result)
     }

@@ -4,7 +4,7 @@ import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
 import com.kumpello.whereiseveryone.main.friends.domain.model.SharingResponse
 
 interface SharingRepository {
-    suspend fun stopSharing(token: String, username: String): CodeResponse
-    suspend fun resumeSharing(token: String, username: String): CodeResponse
-    suspend fun getPausedFriends(token: String): SharingResponse
+    suspend fun stopSharing(username: String): CodeResponse
+    suspend fun resumeSharing(username: String): CodeResponse
+    suspend fun getPausedFriends(): SharingResponse
 }

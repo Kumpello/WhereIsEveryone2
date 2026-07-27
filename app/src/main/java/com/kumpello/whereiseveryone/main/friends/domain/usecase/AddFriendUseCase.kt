@@ -1,17 +1,13 @@
 package com.kumpello.whereiseveryone.main.friends.domain.usecase
 
-import com.kumpello.whereiseveryone.common.domain.manager.PreferencesKey
-import com.kumpello.whereiseveryone.common.domain.manager.PreferencesManager
 import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
 import com.kumpello.whereiseveryone.main.friends.domain.repository.FriendRepository
 
 class AddFriendUseCase(
-    private val friendRepository: FriendRepository,
-    private val preferencesManager: PreferencesManager
+    private val friendRepository: FriendRepository
 ) {
     suspend fun execute(username: String): CodeResponse {
         return friendRepository.addFriend(
-            token = preferencesManager.get(PreferencesKey.AuthToken).toString(),
             username = username
         )
     }

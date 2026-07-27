@@ -1,7 +1,6 @@
 plugins {
     id(libs.plugins.android.application.get().pluginId)
     id(libs.plugins.ksp.get().pluginId) version (libs.plugins.ksp.get().version.toString())
-    id(libs.plugins.kotlin.parcelize.get().pluginId)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
 }
@@ -41,13 +40,13 @@ android {
     productFlavors {
         create("production") {
             dimension = "version"
-            buildConfigField("String", "BASE_URL", "\"https://release.com/\"")
+            buildConfigField("String", "BASE_URL", "\"http://192.168.1.216:8080/api/\"")
         }
         create("development") {
             dimension = "version"
             applicationIdSuffix = ".development"
             versionNameSuffix = "-development"
-            buildConfigField("String", "BASE_URL", "\"https://test.com/\"")
+            buildConfigField("String", "BASE_URL", "\"http://192.168.1.216:8080/api/\"")
         }
     }
     compileOptions {

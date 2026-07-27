@@ -18,9 +18,9 @@ class FriendsRepositoryImplTest {
 
     @Test
     fun `getFriends success returns FriendsData`() = runTest {
-        coEvery { friendsApi.getFriends(any()) } returns Response.success(emptyList())
+        coEvery { friendsApi.getFriends() } returns Response.success(emptyList())
 
-        val result = repository.getFriends("token")
+        val result = repository.getFriends()
 
         assertTrue(result is FriendsResponse.FriendsData)
         assertEquals(0, (result as FriendsResponse.FriendsData).positions.size)
@@ -28,9 +28,9 @@ class FriendsRepositoryImplTest {
 
     @Test
     fun `getFriends failure returns ErrorData`() = runTest {
-        coEvery { friendsApi.getFriends(any()) } returns Response.error(500, "Internal Server Error".toResponseBody(null))
+        coEvery { friendsApi.getFriends() } returns Response.error(500, "Internal Server Error".toResponseBody(null))
 
-        val result = repository.getFriends("token")
+        val result = repository.getFriends()
 
         assertTrue(result is FriendsResponse.ErrorData)
         assertEquals(500, (result as FriendsResponse.ErrorData).code)

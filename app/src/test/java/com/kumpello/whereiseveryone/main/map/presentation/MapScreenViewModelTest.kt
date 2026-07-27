@@ -4,7 +4,10 @@ import app.cash.turbine.test
 import com.kumpello.whereiseveryone.common.entity.ScreenState
 import com.kumpello.whereiseveryone.main.map.domain.usecase.GetPermissionsStatusUseCase
 import com.kumpello.whereiseveryone.utils.MainDispatcherRule
+import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -18,10 +21,15 @@ class MapScreenViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val getPermissionsStatusUseCase: GetPermissionsStatusUseCase = mockk()
+    private val locationService: LocationService = mockk {
+        every { observeForcedForegroundStatus() } returns MutableStateFlow(
+            LocationService.ForcedForegroundStatus(false, null)
+        ).asStateFlow()
+    }
     private lateinit var viewModel: MapScreenViewModel
 
     private fun setupViewModel() {
-        viewModel = MapScreenViewModel(getPermissionsStatusUseCase)
+        viewModel = MapScreenViewModel(getPermissionsStatusUseCase, locationService)
     }
 
     @Test

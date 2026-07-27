@@ -1,7 +1,5 @@
 package com.kumpello.whereiseveryone.main.friends.domain.usecase
 
-import com.kumpello.whereiseveryone.common.domain.manager.PreferencesKey
-import com.kumpello.whereiseveryone.common.domain.manager.PreferencesManager
 import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
 import com.kumpello.whereiseveryone.main.friends.domain.repository.FriendRepository
 import io.mockk.coEvery
@@ -13,14 +11,12 @@ import org.junit.Test
 class RejectFriendUseCaseTest {
 
     private val friendRepository: FriendRepository = mockk()
-    private val preferencesManager: PreferencesManager = mockk()
-    private val useCase = RejectFriendUseCase(friendRepository, preferencesManager)
+    private val useCase = RejectFriendUseCase(friendRepository)
 
     @Test
     fun `execute returns data from repository`() = runTest {
         val expectedResponse = CodeResponse.SuccessNoContent
-        coEvery { preferencesManager.get(PreferencesKey.AuthToken) } returns "token"
-        coEvery { friendRepository.rejectFriendRequest("token", "friend1") } returns expectedResponse
+        coEvery { friendRepository.rejectFriendRequest("friend1") } returns expectedResponse
 
         val result = useCase.execute("friend1")
 

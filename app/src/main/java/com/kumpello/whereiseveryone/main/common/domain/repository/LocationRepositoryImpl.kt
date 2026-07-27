@@ -10,7 +10,6 @@ class LocationRepositoryImpl(
 ) : LocationRepository {
 
     override suspend fun sendPosition(
-        token: String,
         longitude: Double,
         latitude: Double,
         bearing: Float,
@@ -19,7 +18,7 @@ class LocationRepositoryImpl(
         lastUpdate: Long
     ): CodeResponse {
         val response = locationApi.sendLocation(
-            "Bearer $token", LocationRequest(
+            LocationRequest(
                 longitude = longitude,
                 latitude = latitude,
                 bearing = bearing,
@@ -45,10 +44,8 @@ class LocationRepositoryImpl(
         }
     }
 
-    override suspend fun wipeLocation(token: String): CodeResponse {
-        val response = locationApi.wipeLocation(
-            "Bearer $token"
-        )
+    override suspend fun wipeLocation(): CodeResponse {
+        val response = locationApi.wipeLocation()
         return when {
             response.isSuccessful -> {
                 Timber.tag(TAG).d("Location wiped successfully")

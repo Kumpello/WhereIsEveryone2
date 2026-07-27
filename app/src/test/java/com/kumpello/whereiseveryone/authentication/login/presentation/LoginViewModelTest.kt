@@ -67,16 +67,15 @@ class LoginViewModelTest {
         coEvery { loginUseCase.execute(any(), any()) } returns LoginUseCase.Response.Success
         setupViewModel()
 
-        viewModel.state.test {
-            assertTrue(awaitItem().loginState is AsyncState.Idle) // Initial
-            viewModel.trigger(LoginViewModel.Event.OnLoginClick)
-            // Loading state
-            assertTrue(awaitItem().loginState is AsyncState.Loading)
-            // Success state
-            assertTrue(awaitItem().loginState is AsyncState.Success)
-        }
-
         viewModel.action.test {
+            viewModel.state.test {
+                assertTrue(awaitItem().loginState is AsyncState.Idle) // Initial
+                viewModel.trigger(LoginViewModel.Event.OnLoginClick)
+                // Loading state
+                assertTrue(awaitItem().loginState is AsyncState.Loading)
+                // Success state
+                assertTrue(awaitItem().loginState is AsyncState.Success)
+            }
             assertEquals(LoginViewModel.Action.NavigateMain, awaitItem())
         }
     }
@@ -86,16 +85,15 @@ class LoginViewModelTest {
         coEvery { loginUseCase.execute(any(), any()) } returns LoginUseCase.Response.Error
         setupViewModel()
 
-        viewModel.state.test {
-            assertTrue(awaitItem().loginState is AsyncState.Idle) // Initial
-            viewModel.trigger(LoginViewModel.Event.OnLoginClick)
-            // Loading state
-            assertTrue(awaitItem().loginState is AsyncState.Loading)
-            // Error state
-            assertTrue(awaitItem().loginState is AsyncState.Error)
-        }
-
         viewModel.action.test {
+            viewModel.state.test {
+                assertTrue(awaitItem().loginState is AsyncState.Idle) // Initial
+                viewModel.trigger(LoginViewModel.Event.OnLoginClick)
+                // Loading state
+                assertTrue(awaitItem().loginState is AsyncState.Loading)
+                // Error state
+                assertTrue(awaitItem().loginState is AsyncState.Error)
+            }
             val action = awaitItem()
             assertTrue(action is LoginViewModel.Action.MakeToast)
             assertEquals("Login failed!", (action as LoginViewModel.Action.MakeToast).string)

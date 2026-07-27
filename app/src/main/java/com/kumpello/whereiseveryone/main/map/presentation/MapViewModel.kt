@@ -7,7 +7,7 @@ import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
 import com.kumpello.whereiseveryone.common.presentation.BaseViewModel
 import com.kumpello.whereiseveryone.main.common.domain.manager.FriendsManager
-import com.kumpello.whereiseveryone.main.common.domain.usecase.CalculateBearingUseCase
+import com.kumpello.whereiseveryone.main.common.util.LocationUtils
 import com.kumpello.whereiseveryone.main.common.domain.usecase.MapFriendUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.MapLocationUseCase
 import com.kumpello.whereiseveryone.main.common.entity.Friend
@@ -29,7 +29,6 @@ class MapViewModel(
     private val friendsManager: FriendsManager,
     private val mapLocationUseCase: MapLocationUseCase,
     private val mapFriendUseCase: MapFriendUseCase,
-    private val calculateBearingUseCase: CalculateBearingUseCase,
     private val stopSharingUseCase: StopSharingUseCase,
     private val resumeSharingUseCase: ResumeSharingUseCase,
     private val getPausedFriendsUseCase: GetPausedFriendsUseCase
@@ -209,7 +208,7 @@ class MapViewModel(
         }
         val bearing = if (mappedUser != null && navigatingFriend != null) {
             navigatingFriend.location?.let { loc ->
-                val geographicBearing = calculateBearingUseCase.execute(
+                val geographicBearing = LocationUtils.calculateBearing(
                     mappedUser.lat,
                     mappedUser.lon,
                     loc.lat,

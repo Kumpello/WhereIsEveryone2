@@ -21,15 +21,20 @@ class SplashViewModel(
             return AuthStatus.NoToken
         }
 
-        return when (refreshTokenUseCase.execute()) {
-            RefreshTokenUseCase.Response.Success -> {
-                Timber.tag(TAG).d("Token refresh successful")
-                AuthStatus.RefreshSuccess
+        return try {
+            when (refreshTokenUseCase.execute()) {
+                RefreshTokenUseCase.Response.Success -> {
+                    Timber.tag(TAG).d("Token refresh successful")
+                    AuthStatus.RefreshSuccess
+                }
+                RefreshTokenUseCase.Response.Error -> {
+                    Timber.tag(TAG).d("Token refresh failed")
+                    AuthStatus.RefreshFailed
+                }
             }
-            RefreshTokenUseCase.Response.Error -> {
-                Timber.tag(TAG).d("Token refresh failed")
-                AuthStatus.RefreshFailed
-            }
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "Error during token refresh")
+            AuthStatus.RefreshFailed
         }
     }
 

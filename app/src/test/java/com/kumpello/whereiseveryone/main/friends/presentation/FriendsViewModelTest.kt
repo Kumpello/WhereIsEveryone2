@@ -6,6 +6,7 @@ import com.kumpello.whereiseveryone.common.domain.manager.PreferencesKey
 import com.kumpello.whereiseveryone.common.domain.manager.PreferencesManager
 import com.kumpello.whereiseveryone.main.common.domain.usecase.GetFriendsDataUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.MapFriendUseCase
+import com.kumpello.whereiseveryone.main.friends.domain.model.SharingResponse
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.AcceptFriendUseCase
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.GetPausedFriendsUseCase
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.RejectFriendUseCase
@@ -50,7 +51,7 @@ class FriendsViewModelTest {
     private fun setupViewModel(username: String = "testuser") {
         coEvery { preferencesManager.get(PreferencesKey.UserName) } returns username
         coEvery { getFriendsDataUseCase.execute() } returns FriendsResponse.FriendsData(emptyList())
-        coEvery { getPausedFriendsUseCase.execute() } returns mockk()
+        coEvery { getPausedFriendsUseCase.execute() } returns SharingResponse.PausedFriends(emptyList())
         
         viewModel = FriendsViewModel(
             removeFriendUseCase,
@@ -62,7 +63,7 @@ class FriendsViewModelTest {
             stopSharingUseCase,
             resumeSharingUseCase,
             getPausedFriendsUseCase,
-            preferencesManager
+            preferencesManager,
         )
     }
 
@@ -79,15 +80,15 @@ class FriendsViewModelTest {
     @Test
     fun `OpenNfcSharingDialog event updates state and triggers action`() = runTest {
         setupViewModel("testuser")
-        viewModel.state.test {
-            awaitItem() // Initial
-            viewModel.trigger(FriendsViewModel.Event.OpenNfcSharingDialog)
-            val state = awaitItem()
-            assertTrue(state.isNfcSharingDialogOpen)
-            assertEquals("testuser", state.username)
-        }
-
+        
         viewModel.action.test {
+            viewModel.state.test {
+                awaitItem() // Initial
+                viewModel.trigger(FriendsViewModel.Event.OpenNfcSharingDialog)
+                val state = awaitItem()
+                assertTrue(state.isNfcSharingDialogOpen)
+                assertEquals("testuser", state.username)
+            }
             val action = awaitItem()
             assertTrue(action is FriendsViewModel.Action.TriggerNfcSharing)
             assertEquals("testuser", (action as FriendsViewModel.Action.TriggerNfcSharing).username)
@@ -98,15 +99,15 @@ class FriendsViewModelTest {
     fun `CloseNfcSharingDialog event updates state and triggers StopNfcSharing action`() = runTest {
         setupViewModel("testuser")
         
-        viewModel.trigger(FriendsViewModel.Event.OpenNfcSharingDialog)
-
-        viewModel.state.test {
-            assertTrue(awaitItem().isNfcSharingDialogOpen)
-            viewModel.trigger(FriendsViewModel.Event.CloseNfcSharingDialog)
-            assertFalse(awaitItem().isNfcSharingDialogOpen)
-        }
-
         viewModel.action.test {
+            viewModel.trigger(FriendsViewModel.Event.OpenNfcSharingDialog)
+
+            viewModel.state.test {
+                assertTrue(awaitItem().isNfcSharingDialogOpen)
+                viewModel.trigger(FriendsViewModel.Event.CloseNfcSharingDialog)
+                assertFalse(awaitItem().isNfcSharingDialogOpen)
+            }
+
             assertTrue(awaitItem() is FriendsViewModel.Action.TriggerNfcSharing)
             assertTrue(awaitItem() is FriendsViewModel.Action.StopNfcSharing)
         }

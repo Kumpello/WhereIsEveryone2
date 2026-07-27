@@ -28,7 +28,7 @@ import org.koin.dsl.module
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 
-private const val TEMP_BASE_URL = "http://192.168.1.216:8080/api/"
+import com.kumpello.whereiseveryone.BuildConfig
 
 val networkModule = module {
     single {
@@ -50,7 +50,7 @@ val networkModule = module {
 
     single {
         Retrofit.Builder()
-            .baseUrl(TEMP_BASE_URL)
+            .baseUrl(BuildConfig.BASE_URL)
             .client(get())
             .addConverterFactory(MoshiConverterFactory.create(get()))
             .build()

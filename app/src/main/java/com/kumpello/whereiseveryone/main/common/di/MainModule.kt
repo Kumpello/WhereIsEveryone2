@@ -1,15 +1,12 @@
 package com.kumpello.whereiseveryone.main.common.di
 
+import androidx.room.Room
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import com.kumpello.whereiseveryone.common.database.AppDatabase
 import com.kumpello.whereiseveryone.common.domain.usecase.GetNeededPermissionsUseCase
-import com.kumpello.whereiseveryone.main.common.domain.usecase.CalculateBearingUseCase
-import com.kumpello.whereiseveryone.main.common.domain.usecase.CalculateDistanceUseCase
-import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertAccuracyUseCase
-import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertAltUseCase
-import com.kumpello.whereiseveryone.main.common.domain.usecase.ConvertLastUpdateUseCase
-import com.kumpello.whereiseveryone.main.common.domain.usecase.FormatDateUseCase
-import com.kumpello.whereiseveryone.main.common.domain.usecase.FormatLastUpdateUseCase
+import com.kumpello.whereiseveryone.main.common.domain.manager.FriendsManager
+import com.kumpello.whereiseveryone.main.common.domain.manager.ProximityManager
 import com.kumpello.whereiseveryone.main.common.domain.usecase.GetFriendsDataUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.MapFriendUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.MapLocationUseCase
@@ -27,10 +24,6 @@ import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
 import com.kumpello.whereiseveryone.main.friends.presentation.ShareProfileViewModel
 import com.kumpello.whereiseveryone.main.map.domain.usecase.GetPermissionsStatusUseCase
 import com.kumpello.whereiseveryone.main.map.domain.usecase.UpdateStatusUseCase
-import androidx.room.Room
-import com.kumpello.whereiseveryone.common.database.AppDatabase
-import com.kumpello.whereiseveryone.main.common.domain.manager.FriendsManager
-import com.kumpello.whereiseveryone.main.common.domain.manager.ProximityManager
 import com.kumpello.whereiseveryone.main.map.presentation.LocationService
 import com.kumpello.whereiseveryone.main.map.presentation.LocationServiceProxy
 import com.kumpello.whereiseveryone.main.map.presentation.MapScreenViewModel
@@ -44,10 +37,10 @@ import org.koin.dsl.module
 val mainModule = module {
     single {
         Room.databaseBuilder(
-            androidContext(),
-            AppDatabase::class.java,
-            "where-is-everyone-db"
-        ).fallbackToDestructiveMigration().build()
+                androidContext(),
+                AppDatabase::class.java,
+                "where-is-everyone-db"
+            ).fallbackToDestructiveMigration(false).build()
     }
     single { get<AppDatabase>().friendDao() }
     single { get<AppDatabase>().userLocationDao() }
@@ -58,7 +51,6 @@ val mainModule = module {
             friendsManager = get(),
             mapLocationUseCase = get(),
             mapFriendUseCase = get(),
-            calculateBearingUseCase = get(),
             stopSharingUseCase = get(),
             resumeSharingUseCase = get(),
             getPausedFriendsUseCase = get()
@@ -84,47 +76,49 @@ val mainModule = module {
             logoutUseCase = get()
         )
     }
-    viewModel { FriendsViewModel(
-        get(),
-        get(),
-        get(),
-        get(),
-        get(),
-        get(),
-        get(),
-        get(),
-        get(),
-        get()
-    ) }
+    viewModel {
+        FriendsViewModel(
+            removeFriendUseCase = get(),
+            getFriendsDataUseCase = get(),
+            acceptFriendUseCase = get(),
+            rejectFriendUseCase = get(),
+            locationService = get(),
+            mapFriendUseCase = get(),
+            stopSharingUseCase = get(),
+            resumeSharingUseCase = get(),
+            getPausedFriendsUseCase = get(),
+            preferencesManager = get()
+        )
+    }
     viewModel { AddFriendViewModel(get()) }
     viewModel { ShareProfileViewModel(get()) }
+
     single { LocationServiceProxy() }
     single<LocationService> { get<LocationServiceProxy>() }
     single<FusedLocationProviderClient> {
         LocationServices.getFusedLocationProviderClient(androidContext())
     }
+
     single { FriendsManager(get(), get()) }
-    single { ProximityManager(get(), get(), get(), get()) }
+    single { ProximityManager(get(), get(), get()) }
+
     single { GetPermissionsStatusUseCase(get()) }
     single { GetNeededPermissionsUseCase() }
-    single { WipeLocationUseCase(get(), get()) }
-    single { SendLocationUseCase(get(), get()) }
-    single { GetFriendsDataUseCase(get(), get()) }
-    single { AddFriendUseCase(get(), get()) }
-    single { RemoveFriendUseCase(get(), get()) }
-    single { AcceptFriendUseCase(get(), get()) }
-    single { RejectFriendUseCase(get(), get()) }
-    single { StopSharingUseCase(get(), get()) }
-    single { ResumeSharingUseCase(get(), get()) }
-    single { GetPausedFriendsUseCase(get(), get()) }
-    single { UpdateStatusUseCase(get(), get()) }
-    single { ConvertAccuracyUseCase() }
-    single { ConvertAltUseCase() }
-    single { ConvertLastUpdateUseCase() }
-    single { FormatLastUpdateUseCase() }
-    single { FormatDateUseCase() }
-    single { MapLocationUseCase(get(), get(), get()) }
-    single { MapFriendUseCase(get(), get(), get(), get(), get(), get()) }
-    single { CalculateBearingUseCase() }
-    single { CalculateDistanceUseCase() }
+
+    single { WipeLocationUseCase(get()) }
+    single { SendLocationUseCase(get()) }
+    single { GetFriendsDataUseCase(get()) }
+
+    single { AddFriendUseCase(get()) }
+    single { RemoveFriendUseCase(get()) }
+    single { AcceptFriendUseCase(get()) }
+    single { RejectFriendUseCase(get()) }
+
+    single { StopSharingUseCase(get()) }
+    single { ResumeSharingUseCase(get()) }
+    single { GetPausedFriendsUseCase(get()) }
+    single { UpdateStatusUseCase(get()) }
+
+    single { MapLocationUseCase() }
+    single { MapFriendUseCase() }
 }

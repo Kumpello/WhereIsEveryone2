@@ -10,8 +10,8 @@ class SharingRepositoryImpl(
     private val sharingApi: SharingApi
 ) : SharingRepository {
 
-    override suspend fun stopSharing(token: String, username: String): CodeResponse {
-        val response = sharingApi.stopSharing("Bearer $token", FriendRequest(username))
+    override suspend fun stopSharing(username: String): CodeResponse {
+        val response = sharingApi.stopSharing(FriendRequest(username))
 
         return when {
             response.isSuccessful -> {
@@ -30,8 +30,8 @@ class SharingRepositoryImpl(
         }
     }
 
-    override suspend fun resumeSharing(token: String, username: String): CodeResponse {
-        val response = sharingApi.resumeSharing("Bearer $token", FriendRequest(username))
+    override suspend fun resumeSharing(username: String): CodeResponse {
+        val response = sharingApi.resumeSharing(FriendRequest(username))
 
         return when {
             response.isSuccessful -> {
@@ -50,8 +50,8 @@ class SharingRepositoryImpl(
         }
     }
 
-    override suspend fun getPausedFriends(token: String): SharingResponse {
-        val response = sharingApi.getPaused("Bearer $token")
+    override suspend fun getPausedFriends(): SharingResponse {
+        val response = sharingApi.getPaused()
 
         return if (response.isSuccessful) {
             SharingResponse.PausedFriends(

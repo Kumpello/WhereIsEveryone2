@@ -1,7 +1,5 @@
 package com.kumpello.whereiseveryone.main.friends.domain.usecase
 
-import com.kumpello.whereiseveryone.common.domain.manager.PreferencesKey
-import com.kumpello.whereiseveryone.common.domain.manager.PreferencesManager
 import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
 import com.kumpello.whereiseveryone.main.friends.domain.model.SharingResponse
 import com.kumpello.whereiseveryone.main.friends.domain.repository.SharingRepository
@@ -14,14 +12,12 @@ import org.junit.Test
 class SharingUseCasesTest {
 
     private val sharingRepository: SharingRepository = mockk()
-    private val preferencesManager: PreferencesManager = mockk()
 
     @Test
     fun `StopSharingUseCase execute returns data from repository`() = runTest {
-        val useCase = StopSharingUseCase(sharingRepository, preferencesManager)
+        val useCase = StopSharingUseCase(sharingRepository)
         val expectedResponse = CodeResponse.SuccessNoContent
-        coEvery { preferencesManager.get(PreferencesKey.AuthToken) } returns "token"
-        coEvery { sharingRepository.stopSharing("token", "friend1") } returns expectedResponse
+        coEvery { sharingRepository.stopSharing("friend1") } returns expectedResponse
 
         val result = useCase.execute("friend1")
 
@@ -30,10 +26,9 @@ class SharingUseCasesTest {
 
     @Test
     fun `ResumeSharingUseCase execute returns data from repository`() = runTest {
-        val useCase = ResumeSharingUseCase(sharingRepository, preferencesManager)
+        val useCase = ResumeSharingUseCase(sharingRepository)
         val expectedResponse = CodeResponse.SuccessNoContent
-        coEvery { preferencesManager.get(PreferencesKey.AuthToken) } returns "token"
-        coEvery { sharingRepository.resumeSharing("token", "friend1") } returns expectedResponse
+        coEvery { sharingRepository.resumeSharing("friend1") } returns expectedResponse
 
         val result = useCase.execute("friend1")
 
@@ -42,10 +37,9 @@ class SharingUseCasesTest {
 
     @Test
     fun `GetPausedFriendsUseCase execute returns data from repository`() = runTest {
-        val useCase = GetPausedFriendsUseCase(sharingRepository, preferencesManager)
+        val useCase = GetPausedFriendsUseCase(sharingRepository)
         val expectedResponse = SharingResponse.PausedFriends(listOf("friend1", "friend2"))
-        coEvery { preferencesManager.get(PreferencesKey.AuthToken) } returns "token"
-        coEvery { sharingRepository.getPausedFriends("token") } returns expectedResponse
+        coEvery { sharingRepository.getPausedFriends() } returns expectedResponse
 
         val result = useCase.execute()
 

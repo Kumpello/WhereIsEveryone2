@@ -6,18 +6,13 @@ import com.kumpello.whereiseveryone.main.common.entity.FriendLocalData
 import com.kumpello.whereiseveryone.main.common.entity.Location
 import com.kumpello.whereiseveryone.main.common.entity.LocationData
 
-class MapFriendUseCase(
-    private val calculateDistanceUseCase: CalculateDistanceUseCase,
-    private val convertAltUseCase: ConvertAltUseCase,
-    private val convertAccuracyUseCase: ConvertAccuracyUseCase,
-    private val convertLastUpdateUseCase: ConvertLastUpdateUseCase,
-    private val formatLastUpdateUseCase: FormatLastUpdateUseCase,
-    private val formatDateUseCase: FormatDateUseCase
-) {
+import com.kumpello.whereiseveryone.main.common.util.LocationUtils
+
+class MapFriendUseCase {
     fun execute(friend: FriendLocalData, userLocation: LocationData?): Friend {
         val friendLocation = friend.location
         val dist = if (userLocation != null && friendLocation != null) {
-            calculateDistanceUseCase.execute(
+            LocationUtils.calculateDistance(
                 userLocation.lat, userLocation.lon, userLocation.alt,
                 friendLocation.lat, friendLocation.lon, friendLocation.alt
             )
@@ -31,17 +26,17 @@ class MapFriendUseCase(
                     lat = loc.lat,
                     lon = loc.lon,
                     bearing = loc.bearing,
-                    alt = convertAltUseCase.execute(userLocation?.alt, loc.alt),
+                    alt = LocationUtils.convertAlt(userLocation?.alt, loc.alt),
                     rawAlt = loc.alt,
-                    accuracy = convertAccuracyUseCase.execute(loc.accuracy),
+                    accuracy = LocationUtils.convertAccuracy(loc.accuracy),
                     rawAccuracy = loc.accuracy,
-                    lastUpdateTime = formatLastUpdateUseCase.execute(loc.lastUpdate),
-                    lastUpdateAge = convertLastUpdateUseCase.execute(loc.lastUpdate)
+                    lastUpdateTime = LocationUtils.formatLastUpdate(loc.lastUpdate),
+                    lastUpdateAge = LocationUtils.convertLastUpdate(loc.lastUpdate)
                 )
             },
             distance = dist,
             formattedDistance = dist?.let { formatDistance(it) },
-            friendSince = friend.friendSince?.let { formatDateUseCase.execute(it) }
+            friendSince = friend.friendSince?.let { LocationUtils.formatDate(it) }
         )
     }
 }

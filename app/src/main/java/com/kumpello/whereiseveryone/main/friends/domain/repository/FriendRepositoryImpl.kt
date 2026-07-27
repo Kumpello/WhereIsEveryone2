@@ -9,8 +9,8 @@ class FriendRepositoryImpl(
     private val friendApi: FriendApi
 ) : FriendRepository {
 
-    override suspend fun addFriend(token: String, username: String): CodeResponse {
-        val response = friendApi.addFriend("Bearer $token", FriendRequest(username))
+    override suspend fun addFriend(username: String): CodeResponse {
+        val response = friendApi.addFriend(FriendRequest(username))
 
         return when {
             response.isSuccessful -> {
@@ -29,8 +29,8 @@ class FriendRepositoryImpl(
         }
     }
 
-    override suspend fun removeFriend(token: String, username: String): CodeResponse {
-        val response = friendApi.removeFriend("Bearer $token", FriendRequest(username))
+    override suspend fun removeFriend(username: String): CodeResponse {
+        val response = friendApi.removeFriend(FriendRequest(username))
 
         return when {
             response.isSuccessful -> {
@@ -50,11 +50,10 @@ class FriendRepositoryImpl(
     }
 
     override suspend fun acceptFriendRequest(
-        token: String,
         username: String
     ): CodeResponse {
         val response =
-            friendApi.acceptFriendRequest("Bearer $token", FriendRequest(username))
+            friendApi.acceptFriendRequest(FriendRequest(username))
 
         return when {
             response.isSuccessful -> {
@@ -74,11 +73,10 @@ class FriendRepositoryImpl(
     }
 
     override suspend fun rejectFriendRequest(
-        token: String,
         username: String
     ): CodeResponse {
         val response =
-            friendApi.rejectFriendRequest("Bearer $token", FriendRequest(username))
+            friendApi.rejectFriendRequest(FriendRequest(username))
 
         return when {
             response.isSuccessful -> {

@@ -2,7 +2,6 @@ package com.kumpello.whereiseveryone.main.map.presentation
 
 import app.cash.turbine.test
 import com.kumpello.whereiseveryone.main.common.domain.manager.FriendsManager
-import com.kumpello.whereiseveryone.main.common.domain.usecase.CalculateBearingUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.MapFriendUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.MapLocationUseCase
 import com.kumpello.whereiseveryone.main.common.entity.AccuracyLevel
@@ -41,7 +40,6 @@ class MapViewModelTest {
     }
     private val mapLocationUseCase: MapLocationUseCase = mockk()
     private val mapFriendUseCase: MapFriendUseCase = mockk()
-    private val calculateBearingUseCase: CalculateBearingUseCase = mockk()
     private val stopSharingUseCase: StopSharingUseCase = mockk()
     private val resumeSharingUseCase: ResumeSharingUseCase = mockk()
     private val getPausedFriendsUseCase: GetPausedFriendsUseCase = mockk()
@@ -54,10 +52,9 @@ class MapViewModelTest {
             friendsManager,
             mapLocationUseCase,
             mapFriendUseCase,
-            calculateBearingUseCase,
             stopSharingUseCase,
             resumeSharingUseCase,
-            getPausedFriendsUseCase
+            getPausedFriendsUseCase,
         )
     }
 
@@ -120,7 +117,6 @@ class MapViewModelTest {
             accuracy = AccuracyLevel.PERFECT, rawAccuracy = 0f,
             lastUpdateTime = "now", lastUpdateAge = LastUpdateAge.FRESH
         )
-        every { calculateBearingUseCase.execute(0.0, 0.0, 1.0, 0.0) } returns 0.0f // 0 degrees (North)
         every { mapFriendUseCase.execute(any(), any()) } returns friend
 
         setupViewModel()

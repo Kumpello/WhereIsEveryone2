@@ -65,16 +65,15 @@ class SignUpViewModelTest {
         coEvery { signUpUseCase.execute(any(), any()) } returns SignUpUseCase.Response.Success
         setupViewModel()
 
-        viewModel.state.test {
-            assertTrue(awaitItem().signUpState is AsyncState.Idle) // Initial
-            viewModel.trigger(SignUpViewModel.Event.OnSignUpClick)
-            // Loading state
-            assertTrue(awaitItem().signUpState is AsyncState.Loading)
-            // Success state
-            assertTrue(awaitItem().signUpState is AsyncState.Success)
-        }
-
         viewModel.action.test {
+            viewModel.state.test {
+                assertTrue(awaitItem().signUpState is AsyncState.Idle) // Initial
+                viewModel.trigger(SignUpViewModel.Event.OnSignUpClick)
+                // Loading state
+                assertTrue(awaitItem().signUpState is AsyncState.Loading)
+                // Success state
+                assertTrue(awaitItem().signUpState is AsyncState.Success)
+            }
             assertEquals(SignUpViewModel.Action.NavigateMain, awaitItem())
         }
     }
@@ -85,16 +84,15 @@ class SignUpViewModelTest {
         coEvery { signUpUseCase.execute(any(), any()) } returns SignUpUseCase.Response.Error
         setupViewModel()
 
-        viewModel.state.test {
-            assertTrue(awaitItem().signUpState is AsyncState.Idle) // Initial
-            viewModel.trigger(SignUpViewModel.Event.OnSignUpClick)
-            // Loading state
-            assertTrue(awaitItem().signUpState is AsyncState.Loading)
-            // Error state
-            assertTrue(awaitItem().signUpState is AsyncState.Error)
-        }
-
         viewModel.action.test {
+            viewModel.state.test {
+                assertTrue(awaitItem().signUpState is AsyncState.Idle) // Initial
+                viewModel.trigger(SignUpViewModel.Event.OnSignUpClick)
+                // Loading state
+                assertTrue(awaitItem().signUpState is AsyncState.Loading)
+                // Error state
+                assertTrue(awaitItem().signUpState is AsyncState.Error)
+            }
             val action = awaitItem()
             assertTrue(action is SignUpViewModel.Action.MakeToast)
             assertEquals("SignUp failed!", (action as SignUpViewModel.Action.MakeToast).string)

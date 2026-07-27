@@ -4,20 +4,18 @@ import com.kumpello.whereiseveryone.main.common.entity.AltDifference
 import com.kumpello.whereiseveryone.main.common.entity.Location
 import com.kumpello.whereiseveryone.main.common.entity.LocationData
 
-class MapLocationUseCase(
-    private val convertAccuracyUseCase: ConvertAccuracyUseCase,
-    private val convertLastUpdateUseCase: ConvertLastUpdateUseCase,
-    private val formatLastUpdateUseCase: FormatLastUpdateUseCase
-) {
+import com.kumpello.whereiseveryone.main.common.util.LocationUtils
+
+class MapLocationUseCase {
     fun execute(data: LocationData): Location {
         return Location(
             lat = data.lat,
             lon = data.lon,
             bearing = data.bearing,
             alt = AltDifference.SOMEWHAT_SAME,
-            accuracy = convertAccuracyUseCase.execute(data.accuracy),
-            lastUpdateTime = formatLastUpdateUseCase.execute(data.lastUpdate),
-            lastUpdateAge = convertLastUpdateUseCase.execute(data.lastUpdate),
+            accuracy = LocationUtils.convertAccuracy(data.accuracy),
+            lastUpdateTime = LocationUtils.formatLastUpdate(data.lastUpdate),
+            lastUpdateAge = LocationUtils.convertLastUpdate(data.lastUpdate),
             rawAlt = data.alt,
             rawAccuracy = data.accuracy
         )

@@ -4,7 +4,6 @@ import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
 
 sealed interface LocationRepository {
     suspend fun sendPosition(
-        token: String,
         longitude: Double,
         latitude: Double,
         bearing: Float,
@@ -13,7 +12,5 @@ sealed interface LocationRepository {
         lastUpdate: Long
     ): CodeResponse
 
-    suspend fun wipeLocation(
-        token: String
-    ): CodeResponse
+    suspend fun wipeLocation(): CodeResponse
 }

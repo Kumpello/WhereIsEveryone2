@@ -8,8 +8,8 @@ class FriendsRepositoryImpl(
     private val friendsApi: FriendsApi
 ) : FriendsRepository {
 
-    override suspend fun getFriends(token: String): FriendsResponse {
-        val response = friendsApi.getFriends("Bearer $token")
+    override suspend fun getFriends(): FriendsResponse {
+        val response = friendsApi.getFriends()
         return if (response.isSuccessful) {
             Timber.tag(TAG).d("Successfully fetched friends")
             FriendsResponse.FriendsData(

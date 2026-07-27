@@ -40,14 +40,13 @@ class AddFriendViewModelTest {
         coEvery { addFriendUseCase.execute(any()) } returns CodeResponse.SuccessNoContent
         setupViewModel()
 
-        viewModel.state.test {
-            awaitItem() // Initial
-            viewModel.trigger(AddFriendViewModel.Event.AddFriend)
-            assertTrue(awaitItem().actionState is AsyncState.Loading)
-            assertTrue(awaitItem().actionState is AsyncState.Idle)
-        }
-
         viewModel.action.test {
+            viewModel.state.test {
+                awaitItem() // Initial
+                viewModel.trigger(AddFriendViewModel.Event.AddFriend)
+                assertTrue(awaitItem().actionState is AsyncState.Loading)
+                assertTrue(awaitItem().actionState is AsyncState.Idle)
+            }
             assertTrue(awaitItem() is AddFriendViewModel.Action.Toast)
             assertTrue(awaitItem() is AddFriendViewModel.Action.NotifyFriendAdded)
         }
@@ -58,19 +57,18 @@ class AddFriendViewModelTest {
         coEvery { addFriendUseCase.execute(any()) } returns CodeResponse.ErrorData(400, "Error", "Bad Request")
         setupViewModel()
 
-        viewModel.state.test {
-            awaitItem() // Initial
-            viewModel.trigger(AddFriendViewModel.Event.AddFriend)
-            
-            val next = awaitItem()
-            if (next.actionState is AsyncState.Loading) {
-                assertTrue(awaitItem().actionState is AsyncState.Idle)
-            } else {
-                assertTrue(next.actionState is AsyncState.Idle)
-            }
-        }
-
         viewModel.action.test {
+            viewModel.state.test {
+                awaitItem() // Initial
+                viewModel.trigger(AddFriendViewModel.Event.AddFriend)
+                
+                val next = awaitItem()
+                if (next.actionState is AsyncState.Loading) {
+                    assertTrue(awaitItem().actionState is AsyncState.Idle)
+                } else {
+                    assertTrue(next.actionState is AsyncState.Idle)
+                }
+            }
             assertTrue(awaitItem() is AddFriendViewModel.Action.Toast)
         }
     }
