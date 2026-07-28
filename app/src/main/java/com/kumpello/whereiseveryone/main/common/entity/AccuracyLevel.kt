@@ -1,11 +1,11 @@
 package com.kumpello.whereiseveryone.main.common.entity
 
 enum class AccuracyLevel(val haloSize: Double, val displayName: String) {
-    TRAGIC(5.0, "Tragic"),
-    LOW(3.5, "Low"),
-    MEDIUM(2.5, "Medium"),
+    TRAGIC(1.5, "Tragic"),
+    LOW(1.3, "Low"),
+    MEDIUM(1.15, "Medium"),
     HIGH(1.0, "High"),
-    PERFECT(0.0, "Perfect"),
+    PERFECT(0.9, "Perfect"),
 
-    UNKNOWN((-1.0), "Unknown")
+    UNKNOWN((3.0), "Unknown") //Probably won't occur
 }

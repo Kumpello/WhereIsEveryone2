@@ -2,7 +2,6 @@ package com.kumpello.whereiseveryone.main.map.ui
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Color.GREEN
 import android.graphics.Paint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -28,7 +27,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.ColorUtils
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.toColorInt
 import com.kumpello.whereiseveryone.R
@@ -325,16 +323,14 @@ fun FriendsSymbolLayer(
                     "haloWidth",
                     data.haloWidth
                 )
+                addStringProperty(
+                    "color",
+                    String.format("#%06X", 0xFFFFFF and colorForUsername(id))
+                )
             }
         }
         sourceState.data = GeoJSONData(features)
     }
-
-    val friendMarker = rememberStyleImage(
-        imageId = "friend-arrow",
-        resourceId = R.drawable.ic_map_friend_ring_sdf,
-        sdf = true
-    )
 
     SymbolLayer(
         sourceState = sourceState,
@@ -350,34 +346,24 @@ fun FriendsSymbolLayer(
         iconIgnorePlacement = BooleanValue(true)
     }
 
+    val friendRing = rememberStyleImage(
+        imageId = "friend-arrow",
+        resourceId = R.drawable.ic_map_friend_ring_sdf,
+        sdf = true
+    )
+
     SymbolLayer(
         sourceState = sourceState,
-        layerId = "friends-layer",
+        layerId = "friends-ring-layer",
         symbolLayerState = remember {
             SymbolLayerState().apply {
-                iconImage = ImageValue(friendMarker)
-                iconSize = DoubleValue(1.15)
+                iconImage = ImageValue(friendRing)
+                iconSize = DoubleValue(Expression.get("haloWidth"))
                 iconRotate = DoubleValue(Expression.get("bearing"))
                 iconRotationAlignment = IconRotationAlignmentValue.MAP
                 iconPitchAlignment = IconPitchAlignmentValue.MAP
                 iconOpacity = DoubleValue(Expression.get("opacity"))
-                iconColor = ColorValue(Expression.color(android.graphics.Color.BLACK))
-
-                iconHaloColor = ColorValue(
-                    Expression.match(
-                        Expression.get("haloWidth"),
-                        Expression.literal(-1.0), Expression.color(android.graphics.Color.RED),
-                        Expression.color(
-                            ColorUtils.setAlphaComponent(
-                                GREEN, iconOpacity.doubleOrNull?.coerceIn(
-                                    0.0, 1.0 * 255
-                                )?.roundToInt() ?: 255
-                            )
-                        ),
-                    )
-                )
-                iconHaloWidth = DoubleValue(Expression.get("haloWidth"))
-                iconHaloBlur = DoubleValue(2.0)
+                iconColor = ColorValue(Expression.toColor(Expression.get("color")))
 
                 iconAllowOverlap = BooleanValue(true)
                 iconIgnorePlacement = BooleanValue(true)
