@@ -1,6 +1,9 @@
 package com.kumpello.whereiseveryone.main.map.ui
 
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Color.GREEN
+import android.graphics.Paint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,11 +22,15 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.toColorInt
 import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.common.extension.lerp
 import com.kumpello.whereiseveryone.common.extension.lerpBearing
@@ -33,6 +40,7 @@ import com.kumpello.whereiseveryone.main.map.entity.MapSettings
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.Point
+import com.mapbox.maps.ImageHolder
 import com.mapbox.maps.MapboxDelicateApi
 import com.mapbox.maps.MapboxExperimental
 import com.mapbox.maps.extension.compose.MapEffect
@@ -41,10 +49,9 @@ import com.mapbox.maps.extension.compose.animation.viewport.rememberMapViewportS
 import com.mapbox.maps.extension.compose.rememberMapState
 import com.mapbox.maps.extension.compose.style.BooleanValue
 import com.mapbox.maps.extension.compose.style.ColorValue
-import com.mapbox.maps.extension.compose.style.DoubleListValue
 import com.mapbox.maps.extension.compose.style.DoubleValue
-import com.mapbox.maps.extension.compose.style.layers.FormattedValue
 import com.mapbox.maps.extension.compose.style.layers.ImageValue
+import com.mapbox.maps.extension.compose.style.layers.generated.IconPitchAlignmentValue
 import com.mapbox.maps.extension.compose.style.layers.generated.IconRotationAlignmentValue
 import com.mapbox.maps.extension.compose.style.layers.generated.SymbolLayer
 import com.mapbox.maps.extension.compose.style.layers.generated.SymbolLayerState
@@ -53,9 +60,9 @@ import com.mapbox.maps.extension.compose.style.sources.GeoJSONData
 import com.mapbox.maps.extension.compose.style.sources.generated.rememberGeoJsonSourceState
 import com.mapbox.maps.extension.compose.style.standard.MapboxStandardStyle
 import com.mapbox.maps.extension.style.expressions.generated.Expression
+import com.mapbox.maps.plugin.LocationPuck2D
 import com.mapbox.maps.plugin.PuckBearing
 import com.mapbox.maps.plugin.gestures.generated.GesturesSettings
-import com.mapbox.maps.plugin.locationcomponent.createDefault2DPuck
 import com.mapbox.maps.plugin.locationcomponent.location
 import com.mapbox.maps.plugin.viewport.data.DefaultViewportTransitionOptions
 import com.mapbox.maps.plugin.viewport.data.FollowPuckViewportStateOptions
@@ -199,12 +206,22 @@ fun Map(
             )
         }
     ) {
-        MapEffect(Unit) { mapView ->
+        val context = LocalContext.current
+        val puckAvatarBitmap = remember { createAvatarBitmap(null, USER_PUCK_COLOR, sizePx = 120) }
+        val puckBearingBitmap = remember {
+            createTintedBitmap(context, R.drawable.ic_map_friend_ring_sdf, USER_PUCK_COLOR, sizePx = 270)
+        }
+
+        MapEffect(puckAvatarBitmap, puckBearingBitmap) { mapView ->
             mapView.location.updateSettings {
-                locationPuck = createDefault2DPuck(withBearing = true)
+                enabled = true
+                locationPuck = LocationPuck2D(
+                    topImage = ImageHolder.from(puckAvatarBitmap),
+                    bearingImage = ImageHolder.from(puckBearingBitmap),
+                    shadowImage = null,
+                )
                 puckBearingEnabled = true
                 puckBearing = PuckBearing.HEADING
-                enabled = true
             }
         }
     }
@@ -265,6 +282,22 @@ fun FriendsSymbolLayer(
         displayedFriends = targetStates
     }
 
+    val registeredAvatars = remember { mutableSetOf<String>() }
+    MapEffect(friends) { mapView ->
+        val style = mapView.mapboxMap.style ?: return@MapEffect
+        friends.forEach { friend ->
+            val imageId = "avatar-${friend.username}"
+            if (registeredAvatars.add(imageId)) {
+                val bitmap = createAvatarBitmap(
+                    name = friend.username,
+                    backgroundColor = colorForUsername(friend.username),
+                    sizePx = 150
+                )
+                style.addImage(imageId, bitmap) // non-SDF: full-color image, not tinted
+            }
+        }
+    }
+
     val sourceState = rememberGeoJsonSourceState()
 
     LaunchedEffect(displayedFriends) {
@@ -279,6 +312,7 @@ fun FriendsSymbolLayer(
                     "id",
                     id
                 )
+                addStringProperty("avatarId", "avatar-$id")
                 addNumberProperty(
                     "bearing",
                     data.bearing
@@ -298,9 +332,23 @@ fun FriendsSymbolLayer(
 
     val friendMarker = rememberStyleImage(
         imageId = "friend-arrow",
-        resourceId = R.drawable.ic_map_friend_sdf,
+        resourceId = R.drawable.ic_map_friend_ring_sdf,
         sdf = true
     )
+
+    SymbolLayer(
+        sourceState = sourceState,
+        layerId = "friends-avatar-layer"
+    ) {
+        iconImage = ImageValue(Expression.get("avatarId"))
+        iconSize = DoubleValue(1.0)
+        iconRotationAlignment = IconRotationAlignmentValue.VIEWPORT
+        iconPitchAlignment = IconPitchAlignmentValue.MAP
+        iconOpacity =
+            DoubleValue(Expression.get("opacity")) // fades in sync with your existing layer
+        iconAllowOverlap = BooleanValue(true)
+        iconIgnorePlacement = BooleanValue(true)
+    }
 
     SymbolLayer(
         sourceState = sourceState,
@@ -308,9 +356,10 @@ fun FriendsSymbolLayer(
         symbolLayerState = remember {
             SymbolLayerState().apply {
                 iconImage = ImageValue(friendMarker)
-                iconSize = DoubleValue(1.0)
+                iconSize = DoubleValue(1.15)
                 iconRotate = DoubleValue(Expression.get("bearing"))
                 iconRotationAlignment = IconRotationAlignmentValue.MAP
+                iconPitchAlignment = IconPitchAlignmentValue.MAP
                 iconOpacity = DoubleValue(Expression.get("opacity"))
                 iconColor = ColorValue(Expression.color(android.graphics.Color.BLACK))
 
@@ -333,9 +382,6 @@ fun FriendsSymbolLayer(
                 iconAllowOverlap = BooleanValue(true)
                 iconIgnorePlacement = BooleanValue(true)
 
-                textField = FormattedValue(Expression.get("id"))
-                textOffset = DoubleListValue(listOf(0.0, -2.5))
-
                 interactionsState.onClicked { feature, _ ->
                     val id = feature.properties.getString("id")
                     val friend = friendsByIdState.value[id]
@@ -353,3 +399,50 @@ fun FriendsSymbolLayer(
     )
 }
 
+private fun createAvatarBitmap(
+    name: String?,
+    backgroundColor: Int,
+    sizePx: Int = 130
+): Bitmap {
+    val bitmap = createBitmap(sizePx, sizePx)
+    val canvas = Canvas(bitmap)
+    val circlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = backgroundColor }
+    canvas.drawCircle(sizePx / 2f, sizePx / 2f, sizePx / 2f, circlePaint)
+    if (!name.isNullOrBlank()) {
+        val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.WHITE
+            textAlign = Paint.Align.CENTER
+            textSize = sizePx * 0.42f
+            val textWidth = measureText(name.uppercase())
+            val maxWidth = sizePx * 0.8f
+            if (textWidth > maxWidth) {
+                textSize *= maxWidth / textWidth
+            }
+        }
+        val textY = sizePx / 2f - (textPaint.descent() + textPaint.ascent()) / 2f
+        canvas.drawText(name.uppercase(), sizePx / 2f, textY, textPaint)
+    }
+    return bitmap
+}
+
+private fun createTintedBitmap(
+    context: android.content.Context,
+    @androidx.annotation.DrawableRes resourceId: Int,
+    tintColor: Int,
+    sizePx: Int = 130
+): Bitmap {
+    val drawable = ContextCompat.getDrawable(context, resourceId)!!.mutate()
+    val bitmap = createBitmap(sizePx, sizePx)
+    val canvas = Canvas(bitmap)
+    drawable.setBounds(0, 0, sizePx, sizePx)
+    drawable.setTint(tintColor)
+    drawable.draw(canvas)
+    return bitmap
+}
+
+private fun colorForUsername(username: String): Int {
+    val hue = (username.hashCode() and 0x7FFFFFFF % 360).toFloat()
+    return android.graphics.Color.HSVToColor(floatArrayOf(hue, 0.5f, 0.7f))
+}
+
+private val USER_PUCK_COLOR = "#3478F6".toColorInt()
