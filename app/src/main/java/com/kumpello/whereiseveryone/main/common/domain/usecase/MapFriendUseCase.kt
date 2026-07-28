@@ -30,6 +30,7 @@ class MapFriendUseCase {
                     rawAlt = loc.alt,
                     accuracy = LocationUtils.convertAccuracy(loc.accuracy),
                     rawAccuracy = loc.accuracy,
+                    speed = loc.speed,
                     lastUpdateTime = LocationUtils.formatLastUpdate(loc.lastUpdate),
                     lastUpdateAge = LocationUtils.convertLastUpdate(loc.lastUpdate)
                 )

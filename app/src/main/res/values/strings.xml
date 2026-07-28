@@ -117,6 +117,8 @@
     <string name="bearing_label">Bearing</string>
     <string name="altitude_label">Altitude</string>
     <string name="accuracy_label">Accuracy</string>
+    <string name="speed_label">Speed</string>
+    <string name="speed_format">Speed: %s</string>
     <string name="last_update_label">Last Update</string>
     <string name="data_age_label">Data Age</string>
     <string name="friend_since_label">Friend since</string>

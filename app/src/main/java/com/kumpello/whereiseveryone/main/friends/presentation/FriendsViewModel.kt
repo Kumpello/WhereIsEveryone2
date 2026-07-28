@@ -54,6 +54,7 @@ class FriendsViewModel(
                         bearing = it.bearing,
                         alt = it.altitude,
                         accuracy = it.accuracy,
+                        speed = it.speed,
                         lastUpdate = System.currentTimeMillis()
                     )
                 }))
@@ -99,6 +100,7 @@ class FriendsViewModel(
                                             bearing = loc.bearing,
                                             alt = loc.altitude,
                                             accuracy = loc.accuracy,
+                                            speed = loc.speed,
                                             lastUpdate = loc.last_update
                                         )
                                     },

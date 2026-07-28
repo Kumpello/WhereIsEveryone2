@@ -19,10 +19,10 @@ class MapFriendUseCaseTest {
             username = "friend1",
             status = "status",
             state = FriendState.ACCEPTED,
-            location = LocationData(1.0, 2.0, 0f, 3.0, 4f, lastUpdate),
+            location = LocationData(1.0, 2.0, 0f, 3.0, 4f, 10.0f, lastUpdate),
             friendSince = lastUpdate,
         )
-        val userLocation = LocationData(0.0, 0.0, 0f, 0.0, 0f, lastUpdate)
+        val userLocation = LocationData(0.0, 0.0, 0f, 0.0, 0f, 0f, lastUpdate)
 
         val result = useCase.execute(friendLocalData, userLocation)
 
@@ -30,6 +30,7 @@ class MapFriendUseCaseTest {
         // Values are now calculated by LocationUtils, we can check if they are not null
         // or we could check specific values if we know the expected behavior of LocationUtils
         assertEquals(AltDifference.SOMEWHAT_SAME, result.location?.alt)
+        assertEquals(10.0f, result.location?.speed)
     }
 
     @Test
@@ -42,7 +43,7 @@ class MapFriendUseCaseTest {
             location = null,
             friendSince = null
         )
-        val userLocation = LocationData(0.0, 0.0, 0f, 0.0, 0f, lastUpdate)
+        val userLocation = LocationData(0.0, 0.0, 0f, 0.0, 0f, 0f, lastUpdate)
 
         val result = useCase.execute(friendLocalData, userLocation)
 

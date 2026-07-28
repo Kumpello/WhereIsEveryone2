@@ -196,6 +196,7 @@ fun FriendPreview() {
                     lastUpdateAge = LastUpdateAge.FRESH,
                     rawAlt = 0.0,
                     rawAccuracy = 0.0f,
+                    speed = 0f,
                 ),
             )
         ) {}
@@ -224,6 +225,7 @@ fun FriendOutgoingPreview() {
                     lastUpdateAge = LastUpdateAge.FRESH,
                     rawAlt = 0.0,
                     rawAccuracy = 0.0f,
+                    speed = 0f,
                 ),
             )
         ) {}
@@ -252,6 +254,7 @@ fun FriendIncomingPreview() {
                     lastUpdateAge = LastUpdateAge.FRESH,
                     rawAlt = 0.0,
                     rawAccuracy = 0.0f,
+                    speed = 0f,
                 ),
             )
         ) {}

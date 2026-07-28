@@ -32,6 +32,7 @@ import com.kumpello.whereiseveryone.main.common.entity.Friend
 import com.kumpello.whereiseveryone.main.common.entity.FriendState
 import com.kumpello.whereiseveryone.main.common.entity.LastUpdateAge
 import com.kumpello.whereiseveryone.main.common.entity.Location
+import com.kumpello.whereiseveryone.main.common.util.LocationUtils
 
 @Composable
 fun FriendDetailsCard(
@@ -110,6 +111,9 @@ private fun FriendDetailsContent(
                         label = stringResource(R.string.accuracy_label),
                         value = "${loc.accuracy.displayName} (${String.format("%.2f", it)}m)"
                     )
+                }
+                LocationUtils.formatSpeed(loc.speed)?.let {
+                    DetailItem(label = stringResource(R.string.speed_label), value = it)
                 }
                 DetailItem(label = stringResource(R.string.last_update_label), value = loc.lastUpdateTime)
                 DetailItem(
@@ -194,6 +198,7 @@ fun FriendDetailsPreview() {
                     rawAlt = 100.0,
                     accuracy = AccuracyLevel.HIGH,
                     rawAccuracy = 5.0f,
+                    speed = 10.0f,
                     lastUpdateTime = "12:34:56 03.06.2026",
                     lastUpdateAge = LastUpdateAge.FRESH
                 ),

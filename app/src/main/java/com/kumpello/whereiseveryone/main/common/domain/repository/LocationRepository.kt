@@ -9,6 +9,7 @@ sealed interface LocationRepository {
         bearing: Float,
         altitude: Double,
         accuracy: Float,
+        speed: Float,
         lastUpdate: Long
     ): CodeResponse
 

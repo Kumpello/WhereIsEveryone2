@@ -15,6 +15,7 @@ class LocationRepositoryImpl(
         bearing: Float,
         altitude: Double,
         accuracy: Float,
+        speed: Float,
         lastUpdate: Long
     ): CodeResponse {
         val response = locationApi.sendLocation(
@@ -24,6 +25,7 @@ class LocationRepositoryImpl(
                 bearing = bearing,
                 altitude = altitude,
                 accuracy = accuracy,
+                speed = speed,
                 last_update = lastUpdate
             )
         )

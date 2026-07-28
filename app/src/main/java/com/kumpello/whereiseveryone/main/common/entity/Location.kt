@@ -11,6 +11,7 @@ data class Location(
     val rawAlt: Double?,
     val accuracy: AccuracyLevel,
     val rawAccuracy: Float?,
+    val speed: Float?,
     val lastUpdateTime: String,
     val lastUpdateAge: LastUpdateAge,
 )

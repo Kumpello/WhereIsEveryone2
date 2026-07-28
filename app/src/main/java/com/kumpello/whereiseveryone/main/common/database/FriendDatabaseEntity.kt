@@ -21,6 +21,7 @@ data class UserInfoEntity(
     val bearing: Float?,
     val altitude: Double?,
     val accuracy: Float?,
+    val speed: Float?,
     val lastUpdate: Long
 )
 
@@ -35,6 +36,7 @@ fun FriendData.toDatabaseEntity() = FriendDatabaseEntity(
             bearing = it.bearing,
             altitude = it.altitude,
             accuracy = it.accuracy,
+            speed = it.speed,
             lastUpdate = it.last_update
         )
     },
@@ -52,6 +54,7 @@ fun FriendDatabaseEntity.toDomain() = FriendData(
             bearing = it.bearing,
             altitude = it.altitude,
             accuracy = it.accuracy,
+            speed = it.speed,
             last_update = it.lastUpdate
         )
     },

@@ -102,11 +102,12 @@ class MapViewModelTest {
 
     @Test
     fun `bearingToFriend calculation accounts for map bearing`() = runTest {
-        val userLocation = LocationData(lat = 0.0, lon = 0.0, bearing = 0f, alt = 0.0, accuracy = 0f, lastUpdate = 0L)
+        val userLocation = LocationData(lat = 0.0, lon = 0.0, bearing = 0f, alt = 0.0, accuracy = 0f, speed = 0f, lastUpdate = 0L)
         val entityLocation = EntityLocation(
             lat = 1.0, lon = 0.0, bearing = 0f,
             alt = AltDifference.SOMEWHAT_SAME, rawAlt = 0.0,
             accuracy = AccuracyLevel.PERFECT, rawAccuracy = 0f,
+            speed = 0f,
             lastUpdateTime = "now", lastUpdateAge = LastUpdateAge.FRESH
         )
         val friend = Friend(username = "friend", status = "", state = FriendState.ACCEPTED, location = entityLocation) // North
@@ -115,6 +116,7 @@ class MapViewModelTest {
             lat = 0.0, lon = 0.0, bearing = 0f,
             alt = AltDifference.SOMEWHAT_SAME, rawAlt = 0.0,
             accuracy = AccuracyLevel.PERFECT, rawAccuracy = 0f,
+            speed = 0f,
             lastUpdateTime = "now", lastUpdateAge = LastUpdateAge.FRESH
         )
         every { mapFriendUseCase.execute(any(), any()) } returns friend

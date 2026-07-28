@@ -6,5 +6,6 @@ data class LocationData(
     val bearing: Float?,
     val alt: Double?,
     val accuracy: Float?,
+    val speed: Float?,
     val lastUpdate: Long
 )

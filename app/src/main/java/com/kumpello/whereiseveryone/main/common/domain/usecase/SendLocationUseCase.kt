@@ -12,6 +12,7 @@ class SendLocationUseCase(
         bearing: Float,
         altitude: Double,
         accuracy: Float,
+        speed: Float,
         lastUpdate: Long
     ): CodeResponse {
         return locationRepository.sendPosition(
@@ -20,6 +21,7 @@ class SendLocationUseCase(
             bearing = bearing,
             altitude = altitude,
             accuracy = accuracy,
+            speed = speed,
             lastUpdate = lastUpdate
         )
     }

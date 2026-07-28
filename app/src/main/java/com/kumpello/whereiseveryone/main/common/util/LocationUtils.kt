@@ -91,4 +91,10 @@ object LocationUtils {
             .withZone(ZoneId.systemDefault())
         return formatter.format(javaInstant)
     }
+
+    fun formatSpeed(speed: Float?): String? {
+        if (speed == null) return null
+        val kmh = speed * 3.6f
+        return String.format(java.util.Locale.US, "%.1f km/h", kmh)
+    }
 }

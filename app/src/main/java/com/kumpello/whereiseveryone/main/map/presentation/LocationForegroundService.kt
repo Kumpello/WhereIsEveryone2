@@ -203,6 +203,7 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
                         bearing = location.bearing,
                         altitude = location.altitude,
                         accuracy = location.accuracy,
+                        speed = location.speed,
                         lastUpdate = now
                     )
                 )
@@ -454,6 +455,7 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
                 bearing = location.bearing,
                 altitude = location.altitude,
                 accuracy = location.accuracy,
+                speed = location.speed,
                 lastUpdate = lastUpdate
             )
             if (response is CodeResponse.SuccessNoContent) {
@@ -501,6 +503,7 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
                 bearing = entity.bearing ?: 0f
                 altitude = entity.altitude ?: 0.0
                 accuracy = entity.accuracy ?: 0f
+                speed = entity.speed ?: 0f
                 time = entity.lastUpdate
             }
         }

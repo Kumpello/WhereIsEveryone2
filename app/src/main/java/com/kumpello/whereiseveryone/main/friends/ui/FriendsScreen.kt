@@ -458,6 +458,7 @@ fun FriendsWithDetailsPreview() {
                             rawAlt = 0.0,
                             accuracy = AccuracyLevel.MEDIUM,
                             rawAccuracy = 15.0f,
+                            speed = 0f,
                             lastUpdateTime = "12:34:56 20.04.2137",
                             lastUpdateAge = LastUpdateAge.SOMEWHAT_NEW,
                         )
@@ -476,6 +477,7 @@ fun FriendsWithDetailsPreview() {
                         rawAlt = 0.0,
                         accuracy = AccuracyLevel.MEDIUM,
                         rawAccuracy = 15.0f,
+                        speed = 0f,
                         lastUpdateTime = "12:34:56 20.04.2137",
                         lastUpdateAge = LastUpdateAge.SOMEWHAT_NEW,
                     )
@@ -513,6 +515,7 @@ fun FriendsWithDetailsPreviewDark() {
                             rawAlt = 0.0,
                             accuracy = AccuracyLevel.MEDIUM,
                             rawAccuracy = 15.0f,
+                            speed = 0f,
                             lastUpdateTime = "12:34:56 20.04.2137",
                             lastUpdateAge = LastUpdateAge.SOMEWHAT_NEW,
                         )
@@ -531,6 +534,7 @@ fun FriendsWithDetailsPreviewDark() {
                         rawAlt = 0.0,
                         accuracy = AccuracyLevel.MEDIUM,
                         rawAccuracy = 15.0f,
+                        speed = 0f,
                         lastUpdateTime = "12:34:56 20.04.2137",
                         lastUpdateAge = LastUpdateAge.SOMEWHAT_NEW,
                     )
@@ -568,6 +572,7 @@ fun FriendsPreview() {
                             rawAlt = 0.0,
                             accuracy = AccuracyLevel.MEDIUM,
                             rawAccuracy = 15.0f,
+                            speed = 0f,
                             lastUpdateTime = "12:34:56 20.04.2137",
                             lastUpdateAge = LastUpdateAge.SOMEWHAT_NEW,
                         )
@@ -584,6 +589,7 @@ fun FriendsPreview() {
                             rawAlt = 100.0,
                             accuracy = AccuracyLevel.PERFECT,
                             rawAccuracy = 0.0f,
+                            speed = 0f,
                             lastUpdateTime = "12:34:56 20.04.2137",
                             lastUpdateAge = LastUpdateAge.FRESH,
                         )
@@ -600,6 +606,7 @@ fun FriendsPreview() {
                             rawAlt = -50.0,
                             accuracy = AccuracyLevel.TRAGIC,
                             rawAccuracy = 50.0f,
+                            speed = 0f,
                             lastUpdateTime = "12:34:56 20.04.2137",
                             lastUpdateAge = LastUpdateAge.OLD,
                         )
@@ -640,6 +647,7 @@ fun FriendsPreviewDark() {
                             rawAlt = 0.0,
                             accuracy = AccuracyLevel.MEDIUM,
                             rawAccuracy = 15.0f,
+                            speed = 0f,
                             lastUpdateTime = "12:34:56 20.04.2137",
                             lastUpdateAge = LastUpdateAge.SOMEWHAT_NEW,
                         )
@@ -656,6 +664,7 @@ fun FriendsPreviewDark() {
                             rawAlt = 100.0,
                             accuracy = AccuracyLevel.PERFECT,
                             rawAccuracy = 0.0f,
+                            speed = 0f,
                             lastUpdateTime = "12:34:56 20.04.2137",
                             lastUpdateAge = LastUpdateAge.FRESH,
                         )
@@ -672,6 +681,7 @@ fun FriendsPreviewDark() {
                             rawAlt = -50.0,
                             accuracy = AccuracyLevel.TRAGIC,
                             rawAccuracy = 50.0f,
+                            speed = 0f,
                             lastUpdateTime = "12:34:56 20.04.2137",
                             lastUpdateAge = LastUpdateAge.OLD,
                         )
