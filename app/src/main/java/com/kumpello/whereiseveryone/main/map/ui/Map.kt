@@ -64,9 +64,11 @@ import com.mapbox.maps.plugin.gestures.generated.GesturesSettings
 import com.mapbox.maps.plugin.locationcomponent.location
 import com.mapbox.maps.plugin.viewport.data.DefaultViewportTransitionOptions
 import com.mapbox.maps.plugin.viewport.data.FollowPuckViewportStateOptions
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import com.mapbox.maps.MapView
 import timber.log.Timber
 import kotlin.math.roundToInt
 
@@ -207,7 +209,12 @@ fun Map(
         val context = LocalContext.current
         val puckAvatarBitmap = remember { createAvatarBitmap(null, USER_PUCK_COLOR, sizePx = 120) }
         val puckBearingBitmap = remember {
-            createTintedBitmap(context, R.drawable.ic_map_friend_ring_sdf, USER_PUCK_COLOR, sizePx = 270)
+            createTintedBitmap(context, R.drawable.ic_map_friend_ring_sdf, USER_PUCK_COLOR, sizePx = 270) //TODO: Implement size as accuracy? To consider
+        }
+
+        var mapViewRef by remember { mutableStateOf<MapView?>(null) }
+        MapEffect(Unit) { mapView ->
+            mapViewRef = mapView
         }
 
         MapEffect(puckAvatarBitmap, puckBearingBitmap) { mapView ->
@@ -220,6 +227,28 @@ fun Map(
                 )
                 puckBearingEnabled = true
                 puckBearing = PuckBearing.HEADING
+                slot = "top"
+            }
+        }
+
+        LaunchedEffect(friendsPositions.isNotEmpty(), mapViewRef) {
+            val mapView = mapViewRef ?: return@LaunchedEffect
+            if (friendsPositions.isNotEmpty()) {
+                while (true) {
+                    val style = mapView.mapboxMap.style
+                    if (style != null && style.styleLayerExists("friends-ring-layer")) {
+                        mapView.location.updateSettings {
+                            layerBelow = "friends-ring-layer"
+                        }
+                        break
+                    }
+                    delay(200)
+                }
+            } else {
+                mapView.location.updateSettings {
+                    layerBelow = null
+                    slot = "top"
+                }
             }
         }
     }
@@ -251,7 +280,8 @@ fun FriendsSymbolLayer(
                     lon = loc.lon,
                     bearing = loc.bearing?.toDouble() ?: 0.0,
                     opacity = loc.lastUpdateAge.opacity,
-                    haloWidth = loc.accuracy.haloSize
+                    haloWidth = loc.accuracy.haloSize,
+                    speed = loc.speed?.toDouble() ?: 0.0
                 )
             }
         }.toMap()
@@ -273,7 +303,8 @@ fun FriendsSymbolLayer(
                     lon = lerp(start.lon, target.lon, fraction.toDouble()),
                     bearing = lerpBearing(start.bearing, target.bearing, fraction.toDouble()),
                     opacity = lerp(start.opacity, target.opacity, fraction.toDouble()),
-                    haloWidth = lerp(start.haloWidth, target.haloWidth, fraction.toDouble())
+                    haloWidth = lerp(start.haloWidth, target.haloWidth, fraction.toDouble()),
+                    speed = lerp(start.speed, target.speed, fraction.toDouble())
                 )
             }
         }
@@ -323,6 +354,10 @@ fun FriendsSymbolLayer(
                     "haloWidth",
                     data.haloWidth
                 )
+                addNumberProperty(
+                    "speed",
+                    data.speed
+                )
                 addStringProperty(
                     "color",
                     String.format("#%06X", 0xFFFFFF and colorForUsername(id))
@@ -332,23 +367,14 @@ fun FriendsSymbolLayer(
         sourceState.data = GeoJSONData(features)
     }
 
-    SymbolLayer(
-        sourceState = sourceState,
-        layerId = "friends-avatar-layer"
-    ) {
-        iconImage = ImageValue(Expression.get("avatarId"))
-        iconSize = DoubleValue(1.0)
-        iconRotationAlignment = IconRotationAlignmentValue.VIEWPORT
-        iconPitchAlignment = IconPitchAlignmentValue.MAP
-        iconOpacity =
-            DoubleValue(Expression.get("opacity")) // fades in sync with your existing layer
-        iconAllowOverlap = BooleanValue(true)
-        iconIgnorePlacement = BooleanValue(true)
-    }
-
     val friendRing = rememberStyleImage(
-        imageId = "friend-arrow",
+        imageId = "friend-ring",
         resourceId = R.drawable.ic_map_friend_ring_sdf,
+        sdf = true
+    )
+    val friendRingNotchless = rememberStyleImage(
+        imageId = "friend-ring-notchless",
+        resourceId = R.drawable.ic_map_friend_ring_notchless_sdf,
         sdf = true
     )
 
@@ -357,7 +383,13 @@ fun FriendsSymbolLayer(
         layerId = "friends-ring-layer",
         symbolLayerState = remember {
             SymbolLayerState().apply {
-                iconImage = ImageValue(friendRing)
+                iconImage = ImageValue(
+                    Expression.switchCase(
+                        Expression.lt(Expression.get("speed"), Expression.literal(1.0)),
+                        Expression.literal("friend-ring-notchless"),
+                        Expression.literal("friend-ring")
+                    )
+                )
                 iconSize = DoubleValue(Expression.get("haloWidth"))
                 iconRotate = DoubleValue(Expression.get("bearing"))
                 iconRotationAlignment = IconRotationAlignmentValue.MAP
@@ -383,6 +415,20 @@ fun FriendsSymbolLayer(
             }
         }
     )
+
+    SymbolLayer(
+        sourceState = sourceState,
+        layerId = "friends-avatar-layer"
+    ) {
+        iconImage = ImageValue(Expression.get("avatarId"))
+        iconSize = DoubleValue(1.0)
+        iconRotationAlignment = IconRotationAlignmentValue.VIEWPORT
+        iconPitchAlignment = IconPitchAlignmentValue.MAP
+        iconOpacity =
+            DoubleValue(Expression.get("opacity"))
+        iconAllowOverlap = BooleanValue(true)
+        iconIgnorePlacement = BooleanValue(true)
+    }
 }
 
 private fun createAvatarBitmap(

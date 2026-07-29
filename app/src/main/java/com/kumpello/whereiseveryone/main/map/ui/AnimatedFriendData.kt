@@ -5,5 +5,6 @@ data class AnimatedFriendData(
     val lon: Double,
     val bearing: Double,
     val opacity: Double,
-    val haloWidth: Double
+    val haloWidth: Double,
+    val speed: Double
 )
