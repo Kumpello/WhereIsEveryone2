@@ -3,6 +3,7 @@ package com.kumpello.whereiseveryone.main.settings.ui
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import com.google.android.gms.oss.licenses.OssLicensesMenuActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -202,6 +203,14 @@ private fun AboutSection() {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Start
         )
+
+        val context = LocalContext.current
+        Button.Animated(
+            text = stringResource(R.string.settings_licenses),
+            textSize = 14
+        ) {
+            context.startActivity(Intent(context, OssLicensesMenuActivity::class.java))
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
 

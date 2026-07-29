@@ -3,6 +3,7 @@ plugins {
     id(libs.plugins.ksp.get().pluginId) version (libs.plugins.ksp.get().version.toString())
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.google.oss.licenses)
 }
 
 android {
@@ -62,6 +63,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.appcompat)
     implementation(libs.androidx.foundation.layout)
     implementation(libs.androidx.ktx)
     implementation(libs.androidx.core.splashscreen)
@@ -82,6 +84,7 @@ dependencies {
     implementation(libs.retrofit2)
     implementation(libs.retrofit2.converter.moshi)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.play.services.oss.licenses)
 
     implementation(libs.play.services.location)
     implementation(libs.play.services.appset)
