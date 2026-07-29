@@ -33,7 +33,6 @@ import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.common.extension.lerp
 import com.kumpello.whereiseveryone.common.extension.lerpBearing
 import com.kumpello.whereiseveryone.main.common.entity.Friend
-import com.kumpello.whereiseveryone.main.common.entity.Location
 import com.kumpello.whereiseveryone.main.map.entity.MapSettings
 import com.kumpello.whereiseveryone.main.map.presentation.MapViewModel
 import com.mapbox.geojson.Feature
@@ -52,7 +51,6 @@ import com.mapbox.maps.extension.compose.style.layers.ImageValue
 import com.mapbox.maps.extension.compose.style.layers.generated.IconPitchAlignmentValue
 import com.mapbox.maps.extension.compose.style.layers.generated.IconRotationAlignmentValue
 import com.mapbox.maps.extension.compose.style.layers.generated.SymbolLayer
-import com.mapbox.maps.extension.compose.style.layers.generated.SymbolLayerState
 import com.mapbox.maps.extension.compose.style.rememberStyleImage
 import com.mapbox.maps.extension.compose.style.sources.GeoJSONData
 import com.mapbox.maps.extension.compose.style.sources.generated.rememberGeoJsonSourceState
@@ -64,11 +62,9 @@ import com.mapbox.maps.plugin.gestures.generated.GesturesSettings
 import com.mapbox.maps.plugin.locationcomponent.location
 import com.mapbox.maps.plugin.viewport.data.DefaultViewportTransitionOptions
 import com.mapbox.maps.plugin.viewport.data.FollowPuckViewportStateOptions
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
-import com.mapbox.maps.MapView
 import timber.log.Timber
 import kotlin.math.roundToInt
 
@@ -78,7 +74,6 @@ fun Map(
     modifier: Modifier = Modifier,
     state: MapSettings,
     actions: Flow<MapViewModel.Action>,
-    userLocation: Location?,
     friendsPositions: List<Friend>,
     event: (MapViewModel.Event) -> Unit,
 ) {
@@ -212,12 +207,7 @@ fun Map(
             createTintedBitmap(context, R.drawable.ic_map_friend_ring_sdf, USER_PUCK_COLOR, sizePx = 270) //TODO: Implement size as accuracy? To consider
         }
 
-        var mapViewRef by remember { mutableStateOf<MapView?>(null) }
-        MapEffect(Unit) { mapView ->
-            mapViewRef = mapView
-        }
-
-        MapEffect(puckAvatarBitmap, puckBearingBitmap) { mapView ->
+        MapEffect(puckAvatarBitmap, puckBearingBitmap, friendsPositions.isNotEmpty()) { mapView ->
             mapView.location.updateSettings {
                 enabled = true
                 locationPuck = LocationPuck2D(
@@ -227,25 +217,9 @@ fun Map(
                 )
                 puckBearingEnabled = true
                 puckBearing = PuckBearing.HEADING
-                slot = "top"
-            }
-        }
-
-        LaunchedEffect(friendsPositions.isNotEmpty(), mapViewRef) {
-            val mapView = mapViewRef ?: return@LaunchedEffect
-            if (friendsPositions.isNotEmpty()) {
-                while (true) {
-                    val style = mapView.mapboxMap.style
-                    if (style != null && style.styleLayerExists("friends-ring-layer")) {
-                        mapView.location.updateSettings {
-                            layerBelow = "friends-ring-layer"
-                        }
-                        break
-                    }
-                    delay(200)
-                }
-            } else {
-                mapView.location.updateSettings {
+                if (friendsPositions.isNotEmpty()) {
+                    layerBelow = "friends-ring-layer"
+                } else {
                     layerBelow = null
                     slot = "top"
                 }
@@ -265,6 +239,8 @@ fun FriendsSymbolLayer(
         friends.associateBy { it.username }
     }
     val friendsByIdState = rememberUpdatedState(friendsById)
+    val currentOnFriendClick by rememberUpdatedState(onFriendClick)
+    val currentOnFriendLongClick by rememberUpdatedState(onFriendLongClick)
 
     var displayedFriends by remember { mutableStateOf<Map<String, AnimatedFriendData>>(emptyMap()) }
 
@@ -311,12 +287,11 @@ fun FriendsSymbolLayer(
         displayedFriends = targetStates
     }
 
-    val registeredAvatars = remember { mutableSetOf<String>() }
     MapEffect(friends) { mapView ->
         val style = mapView.mapboxMap.style ?: return@MapEffect
         friends.forEach { friend ->
             val imageId = "avatar-${friend.username}"
-            if (registeredAvatars.add(imageId)) {
+            if (style.getStyleImage(imageId) == null) {
                 val bitmap = createAvatarBitmap(
                     name = friend.username,
                     backgroundColor = colorForUsername(friend.username),
@@ -381,40 +356,37 @@ fun FriendsSymbolLayer(
     SymbolLayer(
         sourceState = sourceState,
         layerId = "friends-ring-layer",
-        symbolLayerState = remember {
-            SymbolLayerState().apply {
-                iconImage = ImageValue(
-                    Expression.switchCase(
-                        Expression.lt(Expression.get("speed"), Expression.literal(1.0)),
-                        Expression.literal("friend-ring-notchless"),
-                        Expression.literal("friend-ring")
-                    )
-                )
-                iconSize = DoubleValue(Expression.get("haloWidth"))
-                iconRotate = DoubleValue(Expression.get("bearing"))
-                iconRotationAlignment = IconRotationAlignmentValue.MAP
-                iconPitchAlignment = IconPitchAlignmentValue.MAP
-                iconOpacity = DoubleValue(Expression.get("opacity"))
-                iconColor = ColorValue(Expression.toColor(Expression.get("color")))
+    ) {
+        iconImage = ImageValue(
+            Expression.switchCase(
+                Expression.lt(Expression.get("speed"), Expression.literal(1.0)),
+                Expression.literal(friendRingNotchless.imageId),
+                Expression.literal(friendRing.imageId)
+            )
+        )
+        iconSize = DoubleValue(Expression.get("haloWidth"))
+        iconRotate = DoubleValue(Expression.get("bearing"))
+        iconRotationAlignment = IconRotationAlignmentValue.MAP
+        iconPitchAlignment = IconPitchAlignmentValue.MAP
+        iconOpacity = DoubleValue(Expression.get("opacity"))
+        iconColor = ColorValue(Expression.toColor(Expression.get("color")))
 
-                iconAllowOverlap = BooleanValue(true)
-                iconIgnorePlacement = BooleanValue(true)
+        iconAllowOverlap = BooleanValue(true)
+        iconIgnorePlacement = BooleanValue(true)
 
-                interactionsState.onClicked { feature, _ ->
-                    val id = feature.properties.getString("id")
-                    val friend = friendsByIdState.value[id]
-                    friend?.let(onFriendClick)
-                    true
-                }
-                interactionsState.onLongClicked { feature, _ ->
-                    val id = feature.properties.getString("id")
-                    val friend = friendsByIdState.value[id]
-                    friend?.let(onFriendLongClick)
-                    true
-                }
-            }
+        interactionsState.onClicked { feature, _ ->
+            val id = feature.properties.getString("id")
+            val friend = friendsByIdState.value[id]
+            friend?.let(currentOnFriendClick)
+            true
         }
-    )
+        interactionsState.onLongClicked { feature, _ ->
+            val id = feature.properties.getString("id")
+            val friend = friendsByIdState.value[id]
+            friend?.let(currentOnFriendLongClick)
+            true
+        }
+    }
 
     SymbolLayer(
         sourceState = sourceState,

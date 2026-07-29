@@ -44,7 +44,6 @@ fun MapContent(
             modifier = Modifier.fillMaxSize(),
             state = state.mapSettings,
             actions = viewModel.action,
-            userLocation = state.user,
             friendsPositions = state.friends,
             event = viewModel::trigger
         )
