@@ -517,9 +517,9 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
             maxAge = 5_000L,
         ),
         val backgroundSettings: LocationRequestSettings = LocationRequestSettings(
-            interval = 900_000L,
+            interval = 600_000L,
             minInterval = 300_000L,
-            maxDelay = 1_800_000L,
+            maxDelay = 900_000L,
             maxAge = 300_000L
         ),
         val isLocationUpdatesStarted: Boolean = false,
