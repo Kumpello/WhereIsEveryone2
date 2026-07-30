@@ -66,7 +66,7 @@ android {
             applicationIdSuffix = ".development"
             versionNameSuffix = "-development"
             buildConfigField("String", "BASE_URL", "\"http://192.168.1.216:8080/api/\"")
-            buildConfigField("Boolean", "IS_PREMIUM", "false")
+            buildConfigField("Boolean", "IS_PREMIUM", "true")
         }
     }
     compileOptions {
