@@ -14,3 +14,4 @@ app/src/main/res/values/secrets.xml
 *.keystore
 *.jks
 KEYSTORE_BASE64.txt
+.artifacts
