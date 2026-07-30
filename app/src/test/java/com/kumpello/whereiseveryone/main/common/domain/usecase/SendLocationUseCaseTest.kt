@@ -17,10 +17,10 @@ class SendLocationUseCaseTest {
     fun `execute returns data from repository`() = runTest {
         val lastUpdate = System.currentTimeMillis()
         coEvery { 
-            locationRepository.sendPosition(1.0, 2.0, 0f, 3.0, 4f, lastUpdate) 
+            locationRepository.sendPosition(1.0, 2.0, 0f, 3.0, 4f, 5f, lastUpdate) 
         } returns CodeResponse.SuccessNoContent
 
-        val result = useCase.execute(1.0, 2.0, 0f, 3.0, 4f, lastUpdate)
+        val result = useCase.execute(1.0, 2.0, 0f, 3.0, 4f, 5f, lastUpdate)
 
         assertEquals(CodeResponse.SuccessNoContent, result)
     }

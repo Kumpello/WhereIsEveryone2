@@ -27,8 +27,18 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("release.keystore")
+            storePassword = System.getenv("KEYSTORE_PASSWORD")
+            keyAlias = System.getenv("KEY_ALIAS")
+            keyPassword = System.getenv("KEY_PASSWORD")
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -37,17 +47,26 @@ android {
             )
         }
     }
+
     flavorDimensions += "version"
     productFlavors {
         create("production") {
             dimension = "version"
             buildConfigField("String", "BASE_URL", "\"http://192.168.1.216:8080/api/\"")
+            buildConfigField("Boolean", "IS_PREMIUM", "false")
+        }
+        create("productionPremium") {
+            dimension = "version"
+            applicationIdSuffix = ".premium"
+            buildConfigField("String", "BASE_URL", "\"http://192.168.1.216:8080/api/\"")
+            buildConfigField("Boolean", "IS_PREMIUM", "true")
         }
         create("development") {
             dimension = "version"
             applicationIdSuffix = ".development"
             versionNameSuffix = "-development"
             buildConfigField("String", "BASE_URL", "\"http://192.168.1.216:8080/api/\"")
+            buildConfigField("Boolean", "IS_PREMIUM", "false")
         }
     }
     compileOptions {
