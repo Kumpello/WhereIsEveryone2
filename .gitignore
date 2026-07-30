@@ -13,4 +13,4 @@ app/src/main/res/values/secrets.xml
 /app/src/main/res/values/secrets.xml
 *.keystore
 *.jks
-keystore_base64.txt
+KEYSTORE_BASE64.txt
