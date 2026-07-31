@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ master ]
 
+env:
+  MAPBOX_TOKEN: ${{ secrets.MAPBOX_TOKEN }}
+
 jobs:
   test:
     name: Unit Tests
