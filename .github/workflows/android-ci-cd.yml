@@ -36,7 +36,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Run unit tests
-        run: ./gradlew testDebugUnitTest --stacktrace
+        run: ./gradlew testDevelopmentDebugUnitTest testProductionDebugUnitTest testProductionPremiumDebugUnitTest --stacktrace
 
       - name: Upload test results
         if: always()
@@ -71,7 +71,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Run lint
-        run: ./gradlew lintDebug --stacktrace
+        run: ./gradlew lintDevelopmentDebug lintProductionDebug lintProductionPremiumDebug --stacktrace
 
       - name: Upload lint report
         if: always()
