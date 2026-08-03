@@ -35,8 +35,22 @@ jobs:
       - name: Grant execute permission to gradlew
         run: chmod +x gradlew
 
-      - name: Run unit tests
-        run: ./gradlew testDevelopmentDebugUnitTest testProductionDebugUnitTest testProductionPremiumDebugUnitTest --stacktrace
+      - name: Configure Gradle memory limits for CI
+        run: |
+          cat >> gradle.properties << 'EOF'
+          org.gradle.jvmargs=-Xmx3200m -XX:MaxMetaspaceSize=1024m
+          kotlin.daemon.jvmargs=-Xmx3200m
+          org.gradle.parallel=false
+          EOF
+
+      - name: Run unit tests (development)
+        run: ./gradlew testDevelopmentDebugUnitTest --stacktrace
+
+      - name: Run unit tests (production)
+        run: ./gradlew testProductionDebugUnitTest --stacktrace
+
+      - name: Run unit tests (production premium)
+        run: ./gradlew testProductionPremiumDebugUnitTest --stacktrace
 
       - name: Upload test results
         if: always()
@@ -70,8 +84,22 @@ jobs:
       - name: Grant execute permission to gradlew
         run: chmod +x gradlew
 
-      - name: Run lint
-        run: ./gradlew lintDevelopmentDebug lintProductionDebug lintProductionPremiumDebug --stacktrace
+      - name: Configure Gradle memory limits for CI
+        run: |
+          cat >> gradle.properties << 'EOF'
+          org.gradle.jvmargs=-Xmx3200m -XX:MaxMetaspaceSize=1024m
+          kotlin.daemon.jvmargs=-Xmx3200m
+          org.gradle.parallel=false
+          EOF
+
+      - name: Lint (development)
+        run: ./gradlew lintDevelopmentDebug --stacktrace
+
+      - name: Lint (production)
+        run: ./gradlew lintProductionDebug --stacktrace
+
+      - name: Lint (production premium)
+        run: ./gradlew lintProductionPremiumDebug --stacktrace
 
       - name: Upload lint report
         if: always()
@@ -107,15 +135,30 @@ jobs:
       - name: Grant execute permission to gradlew
         run: chmod +x gradlew
 
+      - name: Configure Gradle memory limits for CI
+        run: |
+          cat >> gradle.properties << 'EOF'
+          org.gradle.jvmargs=-Xmx3200m -XX:MaxMetaspaceSize=1024m
+          kotlin.daemon.jvmargs=-Xmx3200m
+          org.gradle.parallel=false
+          EOF
+
       - name: Decode signing keystore
         run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > app/release.keystore
 
-      - name: Build release App Bundles
+      - name: Build release App Bundle (production)
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew bundleProductionRelease bundleProductionPremiumRelease --stacktrace
+        run: ./gradlew bundleProductionRelease --stacktrace
+
+      - name: Build release App Bundle (production premium)
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: ./gradlew bundleProductionPremiumRelease --stacktrace
 
       - name: Upload Production to Google Play (internal track)
         uses: r0adkll/upload-google-play@v1
