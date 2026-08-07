@@ -16,7 +16,7 @@ class ProximityManager(
     private val preferencesManager: PreferencesManager
 ) {
 
-    fun observeNearbyFriends(): Flow<List<String>> {
+    suspend fun observeNearbyFriends(): Flow<List<String>> {
         return combine(
             locationService.observeLocation(),
             friendsManager.observeFriends(),

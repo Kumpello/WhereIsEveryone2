@@ -28,6 +28,7 @@ import com.kumpello.whereiseveryone.common.domain.manager.PreferencesKey
 import com.kumpello.whereiseveryone.common.domain.manager.PreferencesManager
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.common.MainRoute
+import com.kumpello.whereiseveryone.main.common.domain.manager.FriendsManager
 import com.kumpello.whereiseveryone.main.friends.presentation.AddFriendViewModel
 import com.kumpello.whereiseveryone.main.friends.presentation.ShareProfileViewModel
 import com.kumpello.whereiseveryone.main.friends.ui.FriendsScreen
@@ -36,6 +37,8 @@ import com.kumpello.whereiseveryone.main.map.presentation.MapScreenViewModel
 import com.kumpello.whereiseveryone.main.map.ui.MapScreen
 import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel
 import com.kumpello.whereiseveryone.main.settings.ui.SettingsScreen
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -50,6 +53,7 @@ class MainActivity : ComponentActivity() {
 
     private val preferencesManager: PreferencesManager by inject()
     private val locationService: LocationService by inject()
+    private val friendsManager: FriendsManager by inject()
 
     private lateinit var permissionsLauncher: ActivityResultLauncher<Array<String>>
 
@@ -98,61 +102,67 @@ class MainActivity : ComponentActivity() {
         handleIntent(intent)
 
         lifecycleScope.launch {
-            shareProfileViewModel.action.collect { action ->
-                when (action) {
-                    is ShareProfileViewModel.Action.Toast -> {
-                        Toast.makeText(
-                            this@MainActivity,
-                            getString(action.id),
-                            Toast.LENGTH_SHORT
-                        ).show()
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                shareProfileViewModel.action.collect { action ->
+                    when (action) {
+                        is ShareProfileViewModel.Action.Toast -> {
+                            Toast.makeText(
+                                this@MainActivity,
+                                getString(action.id),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     }
                 }
             }
         }
 
         lifecycleScope.launch {
-            addFriendViewModel.action.collect { action ->
-                when (action) {
-                    is AddFriendViewModel.Action.NotifyFriendAdded -> {
-                        navController?.let { controller ->
-                            if (controller.currentDestination?.route?.contains("Map") == false) {
-                                controller.navigate(MainRoute.Map) {
-                                    popUpTo(MainRoute.Map) { inclusive = false }
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                addFriendViewModel.action.collect { action ->
+                    when (action) {
+                        is AddFriendViewModel.Action.NotifyFriendAdded -> {
+                            navController?.let { controller ->
+                                if (controller.currentDestination?.route?.contains("Map") == false) {
+                                    controller.navigate(MainRoute.Map) {
+                                        popUpTo(MainRoute.Map) { inclusive = false }
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    is AddFriendViewModel.Action.Toast -> {
-                        Toast.makeText(
-                            this@MainActivity,
-                            getString(action.id),
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
+                        is AddFriendViewModel.Action.Toast -> {
+                            Toast.makeText(
+                                this@MainActivity,
+                                getString(action.id),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
 
-                    else -> Unit
+                        else -> Unit
+                    }
                 }
             }
         }
 
         lifecycleScope.launch {
-            mapScreenViewModel.action.collect { action ->
-                when (action) {
-                    is MapScreenViewModel.Action.ShowPermissionSettings -> requestPermissionsOrStart(
-                        permissionsLauncher,
-                        action.permissions
-                    ) {
-                        lifecycleScope.launch {
-                            val isEnabled = preferencesManager.get(PreferencesKey.LocationSharingEnabled) ?: true
-                            if (isEnabled) {
-                                locationService.startLocationService()
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                mapScreenViewModel.action.collect { action ->
+                    when (action) {
+                        is MapScreenViewModel.Action.ShowPermissionSettings -> requestPermissionsOrStart(
+                            permissionsLauncher,
+                            action.permissions
+                        ) {
+                            lifecycleScope.launch {
+                                val isEnabled = preferencesManager.get(PreferencesKey.LocationSharingEnabled) ?: true
+                                if (isEnabled) {
+                                    locationService.startLocationService()
+                                }
                             }
                         }
-                    }
 
-                    else -> Unit
+                        else -> Unit
+                    }
                 }
             }
         }
@@ -196,6 +206,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        friendsManager.cancel()
     }
 
     private fun getPermissionsLauncher(): ActivityResultLauncher<Array<String>> {

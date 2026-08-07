@@ -3,14 +3,20 @@ package com.kumpello.whereiseveryone.main.map.extension
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.util.LruCache
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.createBitmap
+
+private val avatarCache = LruCache<String, Bitmap>(50)
 
 fun createAvatarBitmap(
     name: String?,
     backgroundColor: Int,
     sizePx: Int = 130
 ): Bitmap {
+    val key = "${name.orEmpty()}_${backgroundColor}_$sizePx"
+    avatarCache.get(key)?.let { return it }
+
     val bitmap = createBitmap(sizePx, sizePx)
     val canvas = Canvas(bitmap)
     val circlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = backgroundColor }
@@ -29,6 +35,7 @@ fun createAvatarBitmap(
         val textY = sizePx / 2f - (textPaint.descent() + textPaint.ascent()) / 2f
         canvas.drawText(name.uppercase(), sizePx / 2f, textY, textPaint)
     }
+    avatarCache.put(key, bitmap)
     return bitmap
 }
 

@@ -1,4 +1,5 @@
 package com.kumpello.whereiseveryone.main.map.ui
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,12 +10,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -23,8 +23,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kumpello.whereiseveryone.R
-import com.kumpello.whereiseveryone.common.extension.lerp
-import com.kumpello.whereiseveryone.common.extension.lerpBearing
 import com.kumpello.whereiseveryone.common.ui.theme.USER_PUCK_COLOR
 import com.kumpello.whereiseveryone.main.common.entity.Friend
 import com.kumpello.whereiseveryone.main.map.entity.MapSettings
@@ -37,6 +35,7 @@ import com.mapbox.geojson.Point
 import com.mapbox.maps.ImageHolder
 import com.mapbox.maps.MapboxDelicateApi
 import com.mapbox.maps.MapboxExperimental
+import com.mapbox.maps.MapboxLocationComponentException
 import com.mapbox.maps.extension.compose.MapEffect
 import com.mapbox.maps.extension.compose.MapboxMap
 import com.mapbox.maps.extension.compose.animation.viewport.rememberMapViewportState
@@ -59,11 +58,13 @@ import com.mapbox.maps.plugin.gestures.generated.GesturesSettings
 import com.mapbox.maps.plugin.locationcomponent.location
 import com.mapbox.maps.plugin.viewport.data.DefaultViewportTransitionOptions
 import com.mapbox.maps.plugin.viewport.data.FollowPuckViewportStateOptions
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import timber.log.Timber
 import kotlin.math.roundToInt
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(MapboxExperimental::class)
 @Composable
@@ -205,18 +206,42 @@ fun Map(
         }
 
         MapEffect(puckAvatarBitmap, puckBearingBitmap, friendsPositions.isNotEmpty()) { mapView ->
-            mapView.location.updateSettings {
-                enabled = true
-                locationPuck = LocationPuck2D(
-                    topImage = ImageHolder.from(puckAvatarBitmap),
-                    bearingImage = ImageHolder.from(puckBearingBitmap),
-                    shadowImage = null,
-                )
-                puckBearingEnabled = true
-                puckBearing = PuckBearing.HEADING
-                if (friendsPositions.isNotEmpty()) {
-                    layerBelow = "friends-ring-layer"
-                } else {
+            val style = mapView.mapboxMap.style
+            val ringLayerId = "friends-ring-layer"
+
+            // The ring layer is added declaratively by FriendsSymbolLayer (in the style's topSlot).
+            // There's no ordering guarantee it already exists when this effect runs, so wait briefly.
+            var hasRingLayer = false
+            if (friendsPositions.isNotEmpty()) {
+                var attempts = 0
+                while (!hasRingLayer && attempts < 30) { // ~480ms max
+                    hasRingLayer = style?.styleLayerExists(ringLayerId) == true
+                    if (!hasRingLayer) delay(16.milliseconds)
+                    attempts++
+                }
+            }
+
+            try {
+                mapView.location.updateSettings {
+                    enabled = true
+                    locationPuck = LocationPuck2D(
+                        topImage = ImageHolder.from(puckAvatarBitmap),
+                        bearingImage = ImageHolder.from(puckBearingBitmap),
+                        shadowImage = null,
+                    )
+                    puckBearingEnabled = true
+                    puckBearing = PuckBearing.HEADING
+                    if (hasRingLayer) {
+                        layerBelow = ringLayerId
+                    } else {
+                        layerBelow = null
+                        slot = "top"
+                    }
+                }
+            } catch (e: MapboxLocationComponentException) {
+                // Belt-and-suspenders: if the layer still wasn't there, don't crash — fall back to top slot.
+                Timber.tag("MAP_UI").w(e, "Couldn't bind puck below $ringLayerId, falling back to top slot")
+                mapView.location.updateSettings {
                     layerBelow = null
                     slot = "top"
                 }
@@ -239,50 +264,8 @@ fun FriendsSymbolLayer(
     val currentOnFriendClick by rememberUpdatedState(onFriendClick)
     val currentOnFriendLongClick by rememberUpdatedState(onFriendLongClick)
 
-    var displayedFriends by remember { mutableStateOf<Map<String, AnimatedFriendData>>(emptyMap()) }
-
-    LaunchedEffect(friends) {
-        val duration = 1000L // 1 second transition
-        val startTime = withFrameNanos { it } / 1_000_000
-        val startStates = displayedFriends
-
-        val targetStates = friends.mapNotNull { friend ->
-            friend.location?.let { loc ->
-                friend.username to AnimatedFriendData(
-                    lat = loc.lat,
-                    lon = loc.lon,
-                    bearing = loc.bearing?.toDouble() ?: 0.0,
-                    opacity = loc.lastUpdateAge.opacity,
-                    haloWidth = loc.accuracy.haloSize,
-                    speed = loc.speed?.toDouble() ?: 0.0
-                )
-            }
-        }.toMap()
-
-        if (startStates.isEmpty()) {
-            displayedFriends = targetStates
-            return@LaunchedEffect
-        }
-
-        var playTime = 0L
-        while (playTime < duration) {
-            playTime = (withFrameNanos { it } / 1_000_000) - startTime
-            val fraction = (playTime.toFloat() / duration).coerceIn(0f, 1f)
-
-            displayedFriends = targetStates.mapValues { (id, target) ->
-                val start = startStates[id] ?: target
-                AnimatedFriendData(
-                    lat = lerp(start.lat, target.lat, fraction.toDouble()),
-                    lon = lerp(start.lon, target.lon, fraction.toDouble()),
-                    bearing = lerpBearing(start.bearing, target.bearing, fraction.toDouble()),
-                    opacity = lerp(start.opacity, target.opacity, fraction.toDouble()),
-                    haloWidth = lerp(start.haloWidth, target.haloWidth, fraction.toDouble()),
-                    speed = lerp(start.speed, target.speed, fraction.toDouble())
-                )
-            }
-        }
-        displayedFriends = targetStates
-    }
+    // Read directly in composition below to rebuild the GeoJSON source — no manual frame loop.
+    val displayedFriends = remember { mutableStateMapOf<String, AnimatedFriendData>() }
 
     MapEffect(friends) { mapView ->
         val style = mapView.mapboxMap.style ?: return@MapEffect
@@ -299,45 +282,63 @@ fun FriendsSymbolLayer(
         }
     }
 
+    friends.forEach { friend ->
+        val location = friend.location ?: return@forEach
+        val target = AnimatedFriendData(
+            lat = location.lat,
+            lon = location.lon,
+            bearing = location.bearing?.toDouble() ?: 0.0,
+            opacity = location.lastUpdateAge.opacity,
+            haloWidth = location.accuracy.haloSize,
+            speed = location.speed?.toDouble() ?: 0.0
+        )
+        key(friend.username) {
+            AnimatedFriendEffect(
+                id = friend.username,
+                target = target,
+                onUpdate = { updated -> displayedFriends[friend.username] = updated },
+                onRemoved = { displayedFriends.remove(friend.username) }
+            )
+        }
+    }
+
     val sourceState = rememberGeoJsonSourceState()
 
-    LaunchedEffect(displayedFriends) {
-        val features = displayedFriends.map { (id, data) ->
-            Feature.fromGeometry(
-                Point.fromLngLat(
-                    data.lon,
-                    data.lat
-                )
-            ).apply {
-                addStringProperty(
-                    "id",
-                    id
-                )
-                addStringProperty("avatarId", "avatar-$id")
-                addNumberProperty(
-                    "bearing",
-                    data.bearing
-                )
-                addNumberProperty(
-                    "opacity",
-                    data.opacity
-                )
-                addNumberProperty(
-                    "haloWidth",
-                    data.haloWidth
-                )
-                addNumberProperty(
-                    "speed",
-                    data.speed
-                )
-                addStringProperty(
-                    "color",
-                    String.format("#%06X", 0xFFFFFF and colorForUsername(id))
-                )
-            }
+    val features = displayedFriends.map { (id, data) ->
+        Feature.fromGeometry(
+            Point.fromLngLat(
+                data.lon,
+                data.lat
+            )
+        ).apply {
+            addStringProperty(
+                "id",
+                id
+            )
+            addStringProperty("avatarId", "avatar-$id")
+            addNumberProperty(
+                "bearing",
+                data.bearing
+            )
+            addNumberProperty(
+                "opacity",
+                data.opacity
+            )
+            addNumberProperty(
+                "haloWidth",
+                data.haloWidth
+            )
+            addNumberProperty(
+                "speed",
+                data.speed
+            )
+            addStringProperty(
+                "color",
+                String.format("#%06X", 0xFFFFFF and colorForUsername(id))
+            )
         }
-        sourceState.data = GeoJSONData(features)
     }
+    sourceState.data = GeoJSONData(features)
 
     val friendRing = rememberStyleImage(
         imageId = "friend-ring",
@@ -370,19 +371,6 @@ fun FriendsSymbolLayer(
 
         iconAllowOverlap = BooleanValue(true)
         iconIgnorePlacement = BooleanValue(true)
-
-        interactionsState.onClicked { feature, _ ->
-            val id = feature.properties.getString("id")
-            val friend = friendsByIdState.value[id]
-            friend?.let(currentOnFriendClick)
-            true
-        }
-        interactionsState.onLongClicked { feature, _ ->
-            val id = feature.properties.getString("id")
-            val friend = friendsByIdState.value[id]
-            friend?.let(currentOnFriendLongClick)
-            true
-        }
     }
 
     SymbolLayer(
@@ -397,5 +385,18 @@ fun FriendsSymbolLayer(
             DoubleValue(Expression.get("opacity"))
         iconAllowOverlap = BooleanValue(true)
         iconIgnorePlacement = BooleanValue(true)
+
+        interactionsState.onClicked { feature, _ ->
+            val id = feature.properties.getString("id")
+            val friend = friendsByIdState.value[id]
+            friend?.let(currentOnFriendClick)
+            true
+        }
+        interactionsState.onLongClicked { feature, _ ->
+            val id = feature.properties.getString("id")
+            val friend = friendsByIdState.value[id]
+            friend?.let(currentOnFriendLongClick)
+            true
+        }
     }
 }

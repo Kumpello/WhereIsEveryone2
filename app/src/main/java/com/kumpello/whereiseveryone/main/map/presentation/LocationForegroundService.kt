@@ -35,6 +35,7 @@ import com.kumpello.whereiseveryone.main.common.domain.usecase.SendLocationUseCa
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -62,32 +63,35 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
 
     private val forcedForegroundStatus = MutableStateFlow(LocationService.ForcedForegroundStatus())
 
-    private var lastSendTimestamp: Long = 0L
-
     private val desiredUpdateType =
         MutableStateFlow<LocationService.UpdateType>(LocationService.UpdateType.Foreground)
 
     private val binder: IBinder = LocationBinder()
+
     private val channelID = "WhereIsEveryone_Silent"
     private val proximityChannelID = "WhereIsEveryone_Proximity"
     private val proximityNotificationID = 422
-
-    private var previousNearbyFriends = emptySet<String>()
-
     private val job = SupervisorJob()
-    private val scope = CoroutineScope(Dispatchers.IO + job)
 
+    private val scope = CoroutineScope(Dispatchers.IO + job)
     private val serviceThread =
         HandlerThread("LocationThread", Process.THREAD_PRIORITY_BACKGROUND).apply {
             start()
         }
+
     private val handler = Handler(serviceThread.looper)
+    private var previousNearbyFriends = emptySet<String>()
+
+    @Volatile
+    private var latestLocation: Location? = null
+
+    private var lastSendTimestamp: Long = 0L
 
     override fun onCreate() {
         Timber.tag(TAG).d("LocationForegroundService onCreate")
         super.onCreate()
         locationServiceProxy.registerDelegate(this)
-        
+
         scope.launch {
             getLastLocation()?.let {
                 locationServiceProxy.updateLocation(it)
@@ -191,22 +195,22 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
         return START_STICKY
     }
 
+    override fun onDestroy() {
+        Timber.tag(TAG).d("LocationForegroundService stopping")
+        saveLatestLocationToDatabase()
+        locationServiceProxy.unregisterDelegate()
+        stopUpdates()
+        scope.cancel()
+        serviceThread.quitSafely()
+        super.onDestroy()
+    }
+
     private fun startLocationSender() {
         scope.launch {
             while (isActive) {
                 val location = locationSendChannel.receive()
+                latestLocation = location
                 val now = System.currentTimeMillis()
-                userLocationDao.updateUserLocation(
-                    UserLocationEntity(
-                        latitude = location.latitude,
-                        longitude = location.longitude,
-                        bearing = location.bearing,
-                        altitude = location.altitude,
-                        accuracy = location.accuracy,
-                        speed = location.speed,
-                        lastUpdate = now
-                    )
-                )
                 sendLocation(location, now)
                 delay(5_000.milliseconds)
             }
@@ -330,13 +334,22 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
                 coarseLocationPermission == PackageManager.PERMISSION_GRANTED
     }
 
-    override fun onDestroy() {
-        Timber.tag(TAG).d("LocationForegroundService stopping")
-        locationServiceProxy.unregisterDelegate()
-        stopUpdates()
-        job.cancel()
-        serviceThread.quitSafely()
-        super.onDestroy()
+    private fun saveLatestLocationToDatabase() {
+        latestLocation?.let { location ->
+            kotlinx.coroutines.runBlocking(Dispatchers.IO) {
+                userLocationDao.updateUserLocation(
+                    UserLocationEntity(
+                        latitude = location.latitude,
+                        longitude = location.longitude,
+                        bearing = location.bearing,
+                        altitude = location.altitude,
+                        accuracy = location.accuracy,
+                        speed = location.speed,
+                        lastUpdate = System.currentTimeMillis()
+                    )
+                )
+            }
+        }
     }
 
     inner class LocationBinder : Binder() {
