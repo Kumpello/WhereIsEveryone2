@@ -49,6 +49,7 @@ import com.mapbox.maps.extension.compose.style.layers.generated.IconRotationAlig
 import com.mapbox.maps.extension.compose.style.layers.generated.SymbolLayer
 import com.mapbox.maps.extension.compose.style.rememberStyleImage
 import com.mapbox.maps.extension.compose.style.sources.GeoJSONData
+import com.mapbox.maps.extension.compose.style.sources.generated.GeoJsonSourceState
 import com.mapbox.maps.extension.compose.style.sources.generated.rememberGeoJsonSourceState
 import com.mapbox.maps.extension.compose.style.standard.MapboxStandardStyle
 import com.mapbox.maps.extension.style.expressions.generated.Expression
@@ -264,7 +265,6 @@ fun FriendsSymbolLayer(
     val currentOnFriendClick by rememberUpdatedState(onFriendClick)
     val currentOnFriendLongClick by rememberUpdatedState(onFriendLongClick)
 
-    // Read directly in composition below to rebuild the GeoJSON source — no manual frame loop.
     val displayedFriends = remember { mutableStateMapOf<String, AnimatedFriendData>() }
 
     MapEffect(friends) { mapView ->
@@ -277,11 +277,15 @@ fun FriendsSymbolLayer(
                     backgroundColor = colorForUsername(friend.username),
                     sizePx = 150
                 )
-                style.addImage(imageId, bitmap) // non-SDF: full-color image, not tinted
+                style.addImage(imageId, bitmap)
             }
         }
     }
 
+    // NOTE: this loop only reads `friends` (the data param) and writes to `displayedFriends`
+    // (never reads it). It must NOT live in the same recomposition scope as anything that
+    // reads `displayedFriends`, or every animation frame will re-trigger it and restart
+    // every friend's tween. See UpdateFriendsGeoJsonSource below.
     friends.forEach { friend ->
         val location = friend.location ?: return@forEach
         val target = AnimatedFriendData(
@@ -304,41 +308,9 @@ fun FriendsSymbolLayer(
 
     val sourceState = rememberGeoJsonSourceState()
 
-    val features = displayedFriends.map { (id, data) ->
-        Feature.fromGeometry(
-            Point.fromLngLat(
-                data.lon,
-                data.lat
-            )
-        ).apply {
-            addStringProperty(
-                "id",
-                id
-            )
-            addStringProperty("avatarId", "avatar-$id")
-            addNumberProperty(
-                "bearing",
-                data.bearing
-            )
-            addNumberProperty(
-                "opacity",
-                data.opacity
-            )
-            addNumberProperty(
-                "haloWidth",
-                data.haloWidth
-            )
-            addNumberProperty(
-                "speed",
-                data.speed
-            )
-            addStringProperty(
-                "color",
-                String.format("#%06X", 0xFFFFFF and colorForUsername(id))
-            )
-        }
-    }
-    sourceState.data = GeoJSONData(features)
+    // Isolated in its own composable so *only this scope* recomposes when displayedFriends
+    // changes on every animation frame — it can no longer cascade back into the forEach above.
+    UpdateFriendsGeoJsonSource(displayedFriends = displayedFriends, sourceState = sourceState)
 
     val friendRing = rememberStyleImage(
         imageId = "friend-ring",
@@ -368,7 +340,6 @@ fun FriendsSymbolLayer(
         iconPitchAlignment = IconPitchAlignmentValue.MAP
         iconOpacity = DoubleValue(Expression.get("opacity"))
         iconColor = ColorValue(Expression.toColor(Expression.get("color")))
-
         iconAllowOverlap = BooleanValue(true)
         iconIgnorePlacement = BooleanValue(true)
     }
@@ -381,22 +352,45 @@ fun FriendsSymbolLayer(
         iconSize = DoubleValue(1.0)
         iconRotationAlignment = IconRotationAlignmentValue.VIEWPORT
         iconPitchAlignment = IconPitchAlignmentValue.MAP
-        iconOpacity =
-            DoubleValue(Expression.get("opacity"))
+        iconOpacity = DoubleValue(Expression.get("opacity"))
         iconAllowOverlap = BooleanValue(true)
         iconIgnorePlacement = BooleanValue(true)
 
         interactionsState.onClicked { feature, _ ->
             val id = feature.properties.getString("id")
-            val friend = friendsByIdState.value[id]
-            friend?.let(currentOnFriendClick)
+            friendsByIdState.value[id]?.let(currentOnFriendClick)
             true
         }
         interactionsState.onLongClicked { feature, _ ->
             val id = feature.properties.getString("id")
-            val friend = friendsByIdState.value[id]
-            friend?.let(currentOnFriendLongClick)
+            friendsByIdState.value[id]?.let(currentOnFriendLongClick)
             true
         }
     }
+}
+
+/**
+ * Deliberately its own composable. `displayedFriends` is written to on every animation frame
+ * (via AnimatedFriendEffect's onUpdate), so reading it here — and ONLY here — means those
+ * writes invalidate just this small scope instead of the whole FriendsSymbolLayer body
+ * (which would otherwise re-run the friend/target-building loop every frame).
+ */
+@OptIn(MapboxExperimental::class)
+@Composable
+private fun UpdateFriendsGeoJsonSource(
+    displayedFriends: Map<String, AnimatedFriendData>,
+    sourceState: GeoJsonSourceState,
+) {
+    val features = displayedFriends.map { (id, data) ->
+        Feature.fromGeometry(Point.fromLngLat(data.lon, data.lat)).apply {
+            addStringProperty("id", id)
+            addStringProperty("avatarId", "avatar-$id")
+            addNumberProperty("bearing", data.bearing)
+            addNumberProperty("opacity", data.opacity)
+            addNumberProperty("haloWidth", data.haloWidth)
+            addNumberProperty("speed", data.speed)
+            addStringProperty("color", String.format("#%06X", 0xFFFFFF and colorForUsername(id)))
+        }
+    }
+    sourceState.data = GeoJSONData(features)
 }
