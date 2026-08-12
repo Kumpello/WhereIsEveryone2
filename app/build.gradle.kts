@@ -52,20 +52,20 @@ android {
     productFlavors {
         create("production") {
             dimension = "version"
-            buildConfigField("String", "BASE_URL", "\"https://api.where-is-everyone.com/api/\"")
+            buildConfigField("String", "BASE_URL", "\"https://api.where-is-everyone.com/\"")
             buildConfigField("Boolean", "IS_PREMIUM", "false")
         }
         create("productionPremium") {
             dimension = "version"
             applicationIdSuffix = ".premium"
-            buildConfigField("String", "BASE_URL", "\"https://api.where-is-everyone.com/api/\"")
+            buildConfigField("String", "BASE_URL", "\"https://api.where-is-everyone.com/\"")
             buildConfigField("Boolean", "IS_PREMIUM", "true")
         }
         create("development") {
             dimension = "version"
             applicationIdSuffix = ".development"
             versionNameSuffix = "-development"
-            buildConfigField("String", "BASE_URL", "\"http://192.168.1.216:8080/api/\"")
+            buildConfigField("String", "BASE_URL", "\"http://192.168.1.216:8080/\"")
             buildConfigField("Boolean", "IS_PREMIUM", "true")
         }
     }
