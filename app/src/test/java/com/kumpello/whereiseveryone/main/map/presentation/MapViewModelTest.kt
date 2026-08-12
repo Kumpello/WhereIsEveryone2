@@ -14,6 +14,7 @@ import com.kumpello.whereiseveryone.main.friends.domain.usecase.GetPausedFriends
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.ResumeSharingUseCase
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.StopSharingUseCase
 import com.kumpello.whereiseveryone.utils.MainDispatcherRule
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,7 +37,7 @@ class MapViewModelTest {
         every { observeLocation() } returns MutableStateFlow<AndroidLocation?>(null).asStateFlow()
     }
     private val friendsManager: FriendsManager = mockk {
-        every { observeFriends() } returns emptyFlow()
+        coEvery { observeFriends() } returns emptyFlow()
     }
     private val mapLocationUseCase: MapLocationUseCase = mockk()
     private val mapFriendUseCase: MapFriendUseCase = mockk()

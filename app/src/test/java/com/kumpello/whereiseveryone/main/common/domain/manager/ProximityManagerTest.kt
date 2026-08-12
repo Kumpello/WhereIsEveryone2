@@ -8,6 +8,7 @@ import com.kumpello.whereiseveryone.main.map.domain.model.FriendData
 import com.kumpello.whereiseveryone.main.map.domain.model.FriendsResponse
 import com.kumpello.whereiseveryone.main.map.domain.model.UserInfo
 import com.kumpello.whereiseveryone.main.map.presentation.LocationService
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,7 +40,7 @@ class ProximityManagerTest {
         val friendsResponse = FriendsResponse.FriendsData(listOf(farFriend, nearFriend))
 
         every { locationService.observeLocation() } returns MutableStateFlow(userLocation)
-        every { friendsManager.observeFriends() } returns flowOf(friendsResponse)
+        coEvery { friendsManager.observeFriends() } returns flowOf(friendsResponse)
         every { preferencesManager.observe(PreferencesKey.ProximityDistance) } returns flowOf(1000) // 1km threshold
 
         proximityManager.observeNearbyFriends().test {
