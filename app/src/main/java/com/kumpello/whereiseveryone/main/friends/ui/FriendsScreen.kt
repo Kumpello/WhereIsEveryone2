@@ -14,6 +14,7 @@ import android.os.Vibrator
 import android.os.VibratorManager
 import android.widget.Toast
 import timber.log.Timber
+import com.kumpello.whereiseveryone.common.extension.isAddFriendDeepLink
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
@@ -329,7 +330,7 @@ private fun processNdefMessage(message: NdefMessage?, context: Context, viewMode
     val uri = parsedUri
     Timber.tag(TAG).d("Final Parsed URI: $uri")
 
-    if (uri != null && uri.scheme == "whereiseveryone" && uri.host == "addfriend") {
+    if (uri.isAddFriendDeepLink()) {
         (context as Activity).runOnUiThread {
             Timber.tag(TAG).i("Valid Friend URI received via NFC!")
             val vibrator = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {

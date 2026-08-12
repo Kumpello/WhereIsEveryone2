@@ -26,6 +26,7 @@ import androidx.navigation.compose.rememberNavController
 import com.kumpello.whereiseveryone.authentication.AuthenticationActivity
 import com.kumpello.whereiseveryone.common.domain.manager.PreferencesKey
 import com.kumpello.whereiseveryone.common.domain.manager.PreferencesManager
+import com.kumpello.whereiseveryone.common.extension.isAddFriendDeepLink
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.common.MainRoute
 import com.kumpello.whereiseveryone.main.common.domain.manager.FriendsManager
@@ -178,7 +179,7 @@ class MainActivity : ComponentActivity() {
         Timber.tag(TAG).d("handleIntent: %s", intent)
         intent?.data?.let { uri ->
             Timber.tag(TAG).d("handleIntent: uri = %s, scheme = %s, host = %s", uri, uri.scheme, uri.host)
-            if (uri.scheme == "whereiseveryone" && uri.host == "addfriend") {
+            if (uri.isAddFriendDeepLink()) {
                 Timber.tag(TAG).d("handleIntent: Triggering OnUriReceived with %s", uri)
                 addFriendViewModel.trigger(AddFriendViewModel.Event.OnUriReceived(uri))
             }

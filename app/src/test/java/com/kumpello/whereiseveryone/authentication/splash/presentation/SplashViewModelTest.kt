@@ -60,4 +60,16 @@ class SplashViewModelTest {
             assertEquals(SplashViewModel.Action.NavigateLogin, awaitItem())
         }
     }
+
+    @Test
+    fun `CheckUserStatus with token and refresh network error navigates to Login`() = runTest {
+        coEvery { preferencesManager.get(PreferencesKey.AuthToken) } returns "valid_token"
+        coEvery { refreshTokenUseCase.execute() } returns RefreshTokenUseCase.Response.NetworkError
+        setupViewModel()
+
+        viewModel.action.test {
+            viewModel.trigger(SplashViewModel.Event.CheckUserStatus(null))
+            assertEquals(SplashViewModel.Action.NavigateLogin, awaitItem())
+        }
+    }
 }

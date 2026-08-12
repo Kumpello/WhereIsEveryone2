@@ -55,11 +55,47 @@ class RefreshTokenUseCaseTest {
         coEvery { deviceIdProvider.getDeviceId() } returns "device_123"
         coEvery { authenticationRepository.refreshToken("old_refresh_token", "device_123") } returns AuthResponse.ErrorData(401, "Error", "Unauthorized")
 
-        val result = useCase.execute()
+        val result = useCase.execute(maxRetries = 3, initialDelayMs = 0L)
 
         assertEquals(RefreshTokenUseCase.Response.Error, result)
         coVerify(exactly = 0) {
             preferencesManager.save(any<PreferencesKey<String>>(), any())
+        }
+    }
+
+    @Test
+    fun `execute network exception retries and returns NetworkError when all attempts fail`() = runTest {
+        coEvery { preferencesManager.get(PreferencesKey.AuthRefreshToken) } returns "old_refresh_token"
+        coEvery { deviceIdProvider.getDeviceId() } returns "device_123"
+        coEvery { authenticationRepository.refreshToken("old_refresh_token", "device_123") } throws java.io.IOException("ConnectException: ECONNABORTED")
+
+        val result = useCase.execute(maxRetries = 3, initialDelayMs = 0L)
+
+        assertEquals(RefreshTokenUseCase.Response.NetworkError, result)
+        coVerify(exactly = 3) {
+            authenticationRepository.refreshToken("old_refresh_token", "device_123")
+        }
+        coVerify(exactly = 0) {
+            preferencesManager.save(any<PreferencesKey<String>>(), any())
+        }
+    }
+
+    @Test
+    fun `execute network exception retries and returns Success when subsequent attempt succeeds`() = runTest {
+        coEvery { preferencesManager.get(PreferencesKey.AuthRefreshToken) } returns "old_refresh_token"
+        coEvery { deviceIdProvider.getDeviceId() } returns "device_123"
+        val authData = AuthResponse.AuthData(id = "1", refresh_token = "new_refresh_token", token = "new_access_token")
+        coEvery { authenticationRepository.refreshToken("old_refresh_token", "device_123") } throws java.io.IOException("ConnectException") andThen authData
+
+        val result = useCase.execute(maxRetries = 3, initialDelayMs = 0L)
+
+        assertEquals(RefreshTokenUseCase.Response.Success, result)
+        coVerify(exactly = 2) {
+            authenticationRepository.refreshToken("old_refresh_token", "device_123")
+        }
+        coVerify {
+            preferencesManager.save(PreferencesKey.AuthToken, "new_access_token")
+            preferencesManager.save(PreferencesKey.AuthRefreshToken, "new_refresh_token")
         }
     }
 }

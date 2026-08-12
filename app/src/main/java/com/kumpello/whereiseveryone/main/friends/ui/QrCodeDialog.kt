@@ -20,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.kumpello.whereiseveryone.R
+import com.kumpello.whereiseveryone.common.extension.createAddFriendDeepLink
 import com.kumpello.whereiseveryone.common.ui.entity.Button
 import com.kumpello.whereiseveryone.common.ui.theme.Shapes
 
@@ -48,7 +49,7 @@ fun QrCodeDialog(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
-                val qrContent = "whereiseveryone://addfriend/$username"
+                val qrContent = createAddFriendDeepLink(username)
                 val qrBitmap = remember(qrContent) {
                     QrCodeGenerator.generateQrCode(qrContent, 512)
                 }

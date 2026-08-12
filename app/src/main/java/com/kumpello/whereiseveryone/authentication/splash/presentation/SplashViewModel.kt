@@ -28,13 +28,17 @@ class SplashViewModel(
                     AuthStatus.RefreshSuccess
                 }
                 RefreshTokenUseCase.Response.Error -> {
-                    Timber.tag(TAG).d("Token refresh failed")
+                    Timber.tag(TAG).d("Token refresh failed due to invalid credentials")
                     AuthStatus.RefreshFailed
+                }
+                RefreshTokenUseCase.Response.NetworkError -> {
+                    Timber.tag(TAG).w("Token refresh failed due to network issue")
+                    AuthStatus.NetworkError
                 }
             }
         } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "Error during token refresh")
-            AuthStatus.RefreshFailed
+            Timber.tag(TAG).e(e, "Unexpected error during token refresh")
+            AuthStatus.NetworkError
         }
     }
 
@@ -54,7 +58,7 @@ class SplashViewModel(
                 val action = when (event.status) {
                     AuthStatus.NoToken -> Action.NavigateSignUp
                     AuthStatus.RefreshSuccess -> Action.NavigateMain(event.uri)
-                    AuthStatus.RefreshFailed -> Action.NavigateLogin
+                    AuthStatus.RefreshFailed, AuthStatus.NetworkError -> Action.NavigateLogin
                 }
                 state.toResult(SideEffect.Effect(action))
             }
@@ -80,6 +84,7 @@ class SplashViewModel(
         data object NoToken : AuthStatus()
         data object RefreshSuccess : AuthStatus()
         data object RefreshFailed : AuthStatus()
+        data object NetworkError : AuthStatus()
     }
 
     data object State

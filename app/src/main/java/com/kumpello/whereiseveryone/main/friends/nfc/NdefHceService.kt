@@ -9,6 +9,7 @@ import com.kumpello.whereiseveryone.common.domain.manager.PreferencesManager
 import kotlinx.coroutines.runBlocking
 import org.koin.android.ext.android.inject
 import timber.log.Timber
+import com.kumpello.whereiseveryone.common.extension.createAddFriendDeepLink
 
 class NdefHceService : HostApduService() {
 
@@ -114,7 +115,7 @@ class NdefHceService : HostApduService() {
             preferencesManager.get(PreferencesKey.UserName)
         }?.trim() ?: "unknown"
 
-        val uri = "whereiseveryone://addfriend/$username"
+        val uri = createAddFriendDeepLink(username)
         Timber.tag(TAG).d("Username: '$username' (len: ${username.length}), URI: '$uri' (len: ${uri.length})")
 
         // Manually construct the URI record to be 100% sure of the length and prefix
