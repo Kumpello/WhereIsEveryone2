@@ -19,7 +19,10 @@ android {
         minSdk = 28
         targetSdk = 37
         versionCode = 1
-        versionName = "0.5"
+        versionName = "0.8"
+
+        val mapboxToken: String = project.findProperty("MAPBOX_TOKEN") as? String ?: ""
+        resValue("string", "mapbox_access_token", mapboxToken)
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
