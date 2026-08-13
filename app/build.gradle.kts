@@ -1,3 +1,6 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id(libs.plugins.android.application.get().pluginId)
     id(libs.plugins.ksp.get().pluginId) version (libs.plugins.ksp.get().version.toString())
@@ -6,12 +9,23 @@ plugins {
     alias(libs.plugins.google.oss.licenses)
 }
 
+// --- Signing config resolution: env vars (CI/CD) win, keystore.properties (local) is the fallback ---
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+}
+
+fun signingProp(propKey: String, envKey: String): String? =
+    System.getenv(envKey) ?: keystoreProperties.getProperty(propKey)
+
 android {
     namespace = "com.kumpello.whereiseveryone"
     compileSdk = 37
 
     buildFeatures {
         buildConfig = true
+        resValues = true
     }
 
     defaultConfig {
@@ -32,10 +46,12 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file("release.keystore")
-            storePassword = System.getenv("KEYSTORE_PASSWORD")
-            keyAlias = System.getenv("KEY_ALIAS")
-            keyPassword = System.getenv("KEY_PASSWORD")
+            // storeFile path: KEYSTORE_FILE env var, or "storeFile" in keystore.properties,
+            // or defaults to release.keystore sitting next to this build file
+            storeFile = file(signingProp("storeFile", "KEYSTORE_FILE") ?: "release.keystore")
+            storePassword = signingProp("storePassword", "KEYSTORE_PASSWORD")
+            keyAlias = signingProp("keyAlias", "KEY_ALIAS")
+            keyPassword = signingProp("keyPassword", "KEY_PASSWORD")
         }
     }
 
@@ -48,6 +64,11 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+        debug {
+            // Optional: makes plain "Run" install a release-signed APK too.
+            // Remove this block if you want Run to keep using the debug keystore.
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
