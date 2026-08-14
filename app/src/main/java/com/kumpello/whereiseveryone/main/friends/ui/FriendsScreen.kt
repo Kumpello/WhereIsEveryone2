@@ -323,6 +323,7 @@ private fun processNdefMessage(message: NdefMessage?, context: Context, viewMode
                 if (parsedUri != null) Timber.tag(TAG).d("Record #$index parsed as URI: $parsedUri")
             } catch (e: Exception) {
                 Timber.tag(TAG).d("Record #$index is not a URI")
+                Timber.tag(TAG).e(e.toString())
             }
         }
     }
@@ -393,37 +394,58 @@ private fun triggerNfcReading(context: Context, viewModel: FriendsViewModel) {
         nfcAdapter.enableReaderMode(
             context as Activity,
             { tag ->
-                val ndef = android.nfc.tech.Ndef.get(tag)
                 try {
-                    ndef?.connect()
-                    val message = ndef?.ndefMessage
+                    var message: NdefMessage? = null
+                    val ndef = android.nfc.tech.Ndef.get(tag)
+                    if (ndef != null) {
+                        try {
+                            ndef.connect()
+                            message = ndef.ndefMessage
+                        } catch (e: Exception) {
+                            Timber.tag(TAG).w(e, "Error reading with Ndef technology")
+                        } finally {
+                            try {
+                                ndef.close()
+                            } catch (e: Exception) {
+                                Timber.tag(TAG).w(e, "Error closing Ndef")
+                            }
+                        }
+                    }
 
                     if (message == null || message.records.isEmpty()) {
                         Timber.tag(TAG).w("NDEF read returned empty. Attempting manual fallback...")
                         val isoDep = android.nfc.tech.IsoDep.get(tag)
                         if (isoDep != null) {
-                            isoDep.connect()
-                            // SELECT NDEF AID
-                            isoDep.transceive(byteArrayOf(0x00, 0xA4.toByte(), 0x04, 0x00, 0x07, 0xD2.toByte(), 0x76, 0x00, 0x00, 0x85.toByte(), 0x01, 0x01))
-                            // SELECT NDEF File (E104)
-                            isoDep.transceive(byteArrayOf(0x00, 0xA4.toByte(), 0x00, 0x0C, 0x02, 0xE1.toByte(), 0x04.toByte()))
-                            // READ Length
-                            val lenResp = isoDep.transceive(byteArrayOf(0x00, 0xB0.toByte(), 0x00, 0x00, 0x02))
-                            if (lenResp.size >= 2) {
-                                val ndefLen = ((lenResp[0].toInt() and 0xFF) shl 8) or (lenResp[1].toInt() and 0xFF)
-                                // READ Payload
-                                val payloadResp = isoDep.transceive(byteArrayOf(0x00, 0xB0.toByte(), 0x00, 0x02, (ndefLen and 0xFF).toByte()))
-                                if (payloadResp.size >= 2) {
-                                    val rawNdef = payloadResp.sliceArray(0 until payloadResp.size - 2)
-                                    processNdefMessage(NdefMessage(rawNdef), context, viewModel)
+                            try {
+                                isoDep.connect()
+                                // SELECT NDEF AID
+                                isoDep.transceive(byteArrayOf(0x00, 0xA4.toByte(), 0x04, 0x00, 0x07, 0xD2.toByte(), 0x76, 0x00, 0x00, 0x85.toByte(), 0x01, 0x01))
+                                // SELECT NDEF File (E104)
+                                isoDep.transceive(byteArrayOf(0x00, 0xA4.toByte(), 0x00, 0x0C, 0x02, 0xE1.toByte(), 0x04.toByte()))
+                                // READ Length
+                                val lenResp = isoDep.transceive(byteArrayOf(0x00, 0xB0.toByte(), 0x00, 0x00, 0x02))
+                                if (lenResp.size >= 2) {
+                                    val ndefLen = ((lenResp[0].toInt() and 0xFF) shl 8) or (lenResp[1].toInt() and 0xFF)
+                                    // READ Payload
+                                    val payloadResp = isoDep.transceive(byteArrayOf(0x00, 0xB0.toByte(), 0x00, 0x02, (ndefLen and 0xFF).toByte()))
+                                    if (payloadResp.size >= 2) {
+                                        val rawNdef = payloadResp.sliceArray(0 until payloadResp.size - 2)
+                                        processNdefMessage(NdefMessage(rawNdef), context, viewModel)
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                Timber.tag(TAG).w(e, "Error reading with IsoDep fallback")
+                            } finally {
+                                try {
+                                    isoDep.close()
+                                } catch (e: Exception) {
+                                    Timber.tag(TAG).w(e, "Error closing IsoDep")
                                 }
                             }
-                            isoDep.close()
                         }
                     } else {
                         processNdefMessage(message, context, viewModel)
                     }
-                    ndef?.close()
                 } catch (e: Exception) {
                     Timber.tag(TAG).e(e, "Error reading NDEF tag")
                 }
