@@ -13,8 +13,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.kumpello.whereiseveryone.R
@@ -84,8 +89,24 @@ private fun MapScreenContent(
         }
 
         if (screenViewState.showPermissionNotification) {
+            val baseMessage = stringResource(R.string.permissions_message)
+            val warningMessage = stringResource(R.string.permissions_allow_all_the_time_warning)
+            val errorColor = androidx.compose.material3.MaterialTheme.colorScheme.error
+            val annotatedMessage = buildAnnotatedString {
+                append(baseMessage)
+                append("\n\n")
+                withStyle(
+                    style = SpanStyle(
+                        color = errorColor,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                ) {
+                    append(warningMessage)
+                }
+            }
             Notification(
-                notification = stringResource(R.string.permissions_message),
+                notification = annotatedMessage,
                 onAllowClick = { onScreenEvent(MapScreenViewModel.Event.OnPermissionAllow) },
                 onDenyClick = { onScreenEvent(MapScreenViewModel.Event.OnPermissionDeny) },
                 onDismiss = { onScreenEvent(MapScreenViewModel.Event.OnPermissionDeny) }

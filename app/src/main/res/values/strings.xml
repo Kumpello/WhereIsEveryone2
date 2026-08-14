@@ -102,6 +102,7 @@
 
     <!-- Permissions -->
     <string name="permissions_message">This application requires permission to show notification and to get precise location in background to be able to share your location with friends, without it you will be only able to see your friends locations.</string>
+    <string name="permissions_allow_all_the_time_warning">IMPORTANT: You MUST select \"Allow all the time\" for the location permission in your device system settings to enable background updates.</string>
     <string name="allow">Allow</string>
     <string name="deny">Deny</string>
 
