@@ -1,7 +1,8 @@
 package com.kumpello.whereiseveryone.main.friends.ui
 
-import android.net.Uri
 import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,12 +26,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.activity.compose.LocalActivity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.activity.ComponentActivity
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
@@ -40,7 +40,6 @@ import com.kumpello.whereiseveryone.common.presentation.AsyncState
 import com.kumpello.whereiseveryone.common.ui.entity.Button
 import com.kumpello.whereiseveryone.main.friends.presentation.AddFriendViewModel
 import org.koin.compose.viewmodel.koinViewModel
-import androidx.core.net.toUri
 
 @Composable
 fun AddFriendContent(
@@ -78,7 +77,11 @@ fun AddFriendContent(
                             }
                         }
                         .addOnFailureListener {
-                            Toast.makeText(context, context.getString(R.string.scanning_failed), Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                context,
+                                context.applicationContext.getString(R.string.scanning_failed),
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                 }
             }

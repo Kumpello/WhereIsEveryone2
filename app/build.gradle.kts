@@ -9,6 +9,12 @@ plugins {
     alias(libs.plugins.google.oss.licenses)
 }
 
+configurations.all {
+    resolutionStrategy {
+        force("androidx.concurrent:concurrent-futures:1.2.0")
+    }
+}
+
 // --- Signing config resolution: env vars (CI/CD) win, keystore.properties (local) is the fallback ---
 val keystorePropertiesFile = rootProject.file("keystore.properties")
 val keystoreProperties = Properties()
