@@ -3,6 +3,7 @@ package com.kumpello.whereiseveryone.main.map.domain.repository
 import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
 import com.kumpello.whereiseveryone.main.map.domain.api.StatusApi
 import com.kumpello.whereiseveryone.main.map.domain.model.StatusRequest
+import com.kumpello.whereiseveryone.common.logging.httpFailure
 import timber.log.Timber
 
 class StatusRepositoryImpl(
@@ -20,7 +21,7 @@ class StatusRepositoryImpl(
             }
 
             else -> {
-                Timber.tag(TAG).e("Status update failed: %s", response.errorBody()?.string())
+                Timber.tag(TAG).httpFailure("Status update", response.code())
                 CodeResponse.ErrorData(
                     response.code(),
                     response.errorBody().toString(),

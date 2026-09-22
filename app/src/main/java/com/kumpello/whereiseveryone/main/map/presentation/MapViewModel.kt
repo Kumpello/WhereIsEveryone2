@@ -69,11 +69,11 @@ class MapViewModel(
                     }
 
                     is SharingResponse.ErrorData -> {
-                        Timber.tag(TAG).d("Error getting paused friends!\n%s", response)
+                        Timber.tag(TAG).d("Paused friends request rejected")
                     }
                 }
             } catch (e: Exception) {
-                Timber.tag(TAG).d("Error getting paused friends!\n%s", e.message.toString())
+                Timber.tag(TAG).w(e, "Unable to load paused friends")
             }
         }
     }
@@ -107,7 +107,7 @@ class MapViewModel(
                     }
 
                     is FriendsResponse.ErrorData -> {
-                        Timber.tag(TAG).d(response.toString())
+                        Timber.tag(TAG).d("Friends request rejected")
                         state.toResult(SideEffect.Effect(Action.Toast(R.string.error_getting_friends)))
                     }
                 }
@@ -147,7 +147,7 @@ class MapViewModel(
                                 Event.OnError(errorMsg as Int)
                             }
                         } catch (e: Exception) {
-                            Timber.tag(TAG).d("Error toggling sharing!\n%s", e.message.toString())
+                            Timber.tag(TAG).w(e, "Unable to change sharing")
                             Event.OnError(errorMsg as Int)
                         }
                     })

@@ -451,7 +451,7 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
             state.update { it.copy(isLocationUpdatesStarted = true, updateType = updateType) }
         } catch (exception: SecurityException) {
             SystemClock.sleep(15000)
-            Timber.tag(TAG).e("SecurityException during location updates: %s", exception.toString())
+            Timber.tag(TAG).e(exception, "Location updates denied")
         }
     }
 
@@ -475,10 +475,10 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
                 lastSendTimestamp = System.currentTimeMillis()
                 updateNotification()
             } else if (response is CodeResponse.ErrorData) {
-                Timber.tag(TAG).e("Error sending location: %s", response.toString())
+                Timber.tag(TAG).d("Location update rejected")
             }
         }.onFailure { error ->
-            Timber.tag(TAG).e("Exception sending location: %s", error.message)
+            Timber.tag(TAG).w(error, "Unable to send location update")
         }
     }
 

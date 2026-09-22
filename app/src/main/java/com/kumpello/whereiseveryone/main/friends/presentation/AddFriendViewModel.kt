@@ -19,10 +19,10 @@ class AddFriendViewModel(
         return when (event) {
             is Event.SetAddFriendNick -> state.copy(addFriendNick = event.nick).toResult()
             Event.AddFriend -> {
-                Timber.tag(TAG).d("AddFriend: nick = %s", state.addFriendNick)
+                Timber.tag(TAG).d("Adding friend")
                 state.copy(actionState = AsyncState.Loading(message = "Adding friend...")).toResult(SideEffect.AsyncWork {
                     try {
-                        Timber.tag(TAG).d("AddFriend: Executing addFriendUseCase for %s", state.addFriendNick)
+                        Timber.tag(TAG).d("Executing add-friend request")
                         when (val response = addFriendUseCase.execute(state.addFriendNick)) {
                             CodeResponse.SuccessNoContent -> {
                                 Timber.tag(TAG).d("AddFriend: Success")
@@ -30,12 +30,12 @@ class AddFriendViewModel(
                             }
 
                             is CodeResponse.ErrorData -> {
-                                Timber.tag(TAG).e("AddFriend: Error response = %s", response.toString())
+                                Timber.tag(TAG).d("Add-friend request rejected")
                                 Event.OnError(R.string.error_adding_friend)
                             }
                         }
                     } catch (e: Exception) {
-                        Timber.tag(TAG).e(e, "Error adding friend: %s", state.addFriendNick)
+                        Timber.tag(TAG).w(e, "Unable to add friend")
                         Event.OnError(R.string.error_adding_friend)
                     }
                 })
@@ -50,7 +50,7 @@ class AddFriendViewModel(
             
             is Event.OnUriReceived -> {
                 val username = event.uri.lastPathSegment ?: event.uri.pathSegments.lastOrNull { it.isNotBlank() }
-                Timber.tag(TAG).d("OnUriReceived: uri = %s, parsed username = %s", event.uri, username)
+                Timber.tag(TAG).d("Received add-friend link")
                 if (!username.isNullOrBlank()) {
                     state.copy(addFriendNick = username).toResult(SideEffect.InternalEvent(Event.AddFriend))
                 } else {

@@ -316,24 +316,23 @@ private fun FriendsScreen(
 private fun processNdefMessage(message: NdefMessage?, context: Context, viewModel: FriendsViewModel) {
     var parsedUri: android.net.Uri? = null
     message?.records?.forEachIndexed { index, record ->
-        Timber.tag(TAG).d("Record #$index: TNF=${record.tnf}, Type=${record.type.joinToString("") { "%02X".format(it) }}, PayloadLen=${record.payload.size}")
+        Timber.tag(TAG).d("NFC record #%d: TNF=%d, payload length=%d", index, record.tnf, record.payload.size)
         if (parsedUri == null) {
             try {
                 parsedUri = record.toUri()
-                if (parsedUri != null) Timber.tag(TAG).d("Record #$index parsed as URI: $parsedUri")
+                if (parsedUri != null) Timber.tag(TAG).d("Record #%d parsed as URI", index)
             } catch (e: Exception) {
-                Timber.tag(TAG).d("Record #$index is not a URI")
-                Timber.tag(TAG).e(e.toString())
+                Timber.tag(TAG).d(e, "NFC record is not a URI")
             }
         }
     }
 
     val uri = parsedUri
-    Timber.tag(TAG).d("Final Parsed URI: $uri")
+    Timber.tag(TAG).d("NFC URI parsed: %s", uri != null)
 
     if (uri.isAddFriendDeepLink()) {
         (context as Activity).runOnUiThread {
-            Timber.tag(TAG).i("Valid Friend URI received via NFC!")
+            Timber.tag(TAG).d("Valid Friend URI received via NFC!")
             val vibrator = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
                 val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
                 vibratorManager.defaultVibrator
@@ -356,7 +355,7 @@ private fun triggerNfcSharing(context: Context) {
     Timber.tag(TAG).d("Triggering NFC Sharing")
     val nfcAdapter = NfcAdapter.getDefaultAdapter(context)
     if (nfcAdapter == null) {
-        Timber.tag(TAG).e("NFC Adapter is null")
+        Timber.tag(TAG).w("NFC is unavailable")
     } else {
         val cardEmulation = CardEmulation.getInstance(nfcAdapter)
         val componentName = ComponentName(context, NdefHceService::class.java)
@@ -389,7 +388,7 @@ private fun triggerNfcReading(context: Context, viewModel: FriendsViewModel) {
     Timber.tag(TAG).d("Triggering NFC Reading")
     val nfcAdapter = NfcAdapter.getDefaultAdapter(context)
     if (nfcAdapter == null) {
-        Timber.tag(TAG).e("NFC Adapter is null")
+        Timber.tag(TAG).w("NFC is unavailable")
     } else {
         nfcAdapter.enableReaderMode(
             context as Activity,
@@ -402,7 +401,7 @@ private fun triggerNfcReading(context: Context, viewModel: FriendsViewModel) {
                             ndef.connect()
                             message = ndef.ndefMessage
                         } catch (e: Exception) {
-                            Timber.tag(TAG).w(e, "Error reading with Ndef technology")
+                            Timber.tag(TAG).d(e, "NDEF read failed; attempting fallback")
                         } finally {
                             try {
                                 ndef.close()
@@ -413,7 +412,7 @@ private fun triggerNfcReading(context: Context, viewModel: FriendsViewModel) {
                     }
 
                     if (message == null || message.records.isEmpty()) {
-                        Timber.tag(TAG).w("NDEF read returned empty. Attempting manual fallback...")
+                        Timber.tag(TAG).d("NDEF read returned empty. Attempting manual fallback...")
                         val isoDep = android.nfc.tech.IsoDep.get(tag)
                         if (isoDep != null) {
                             try {
@@ -447,7 +446,7 @@ private fun triggerNfcReading(context: Context, viewModel: FriendsViewModel) {
                         processNdefMessage(message, context, viewModel)
                     }
                 } catch (e: Exception) {
-                    Timber.tag(TAG).e(e, "Error reading NDEF tag")
+                    Timber.tag(TAG).w(e, "Error reading NDEF tag")
                 }
             },
             NfcAdapter.FLAG_READER_NFC_A or NfcAdapter.FLAG_READER_NFC_B,

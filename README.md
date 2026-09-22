@@ -80,6 +80,37 @@ com.kumpello.whereiseveryone/
     └── extension/              # Kotlin extension functions
 ```
 
+## Logging
+
+Logging follows the build type (`BuildConfig.DEBUG`), independently of the server flavor.
+All debug variants use Timber's `DebugTree`; all release variants use `ProductionTree`.
+Release logs go to Android Logcat. They are not uploaded or persisted to an app log file.
+
+| Level | Use | Release output |
+|-------|-----|----------------|
+| Verbose / Debug | UI and service lifecycle, polling, successful operations, intermediate retries, NFC protocol negotiation | No |
+| Info | Optional routine milestones | No |
+| Warn | Recoverable failures, HTTP 4xx, exhausted network retries, device capability fallbacks | Yes |
+| Error / Assert | HTTP 5xx, unexpected failures, permission failures preventing location updates, encrypted storage failures | Yes |
+
+Log HTTP failures once in the repository via `Timber.tag(TAG).httpFailure("Operation", statusCode)`.
+Callers may log debug context or exceptions that bypass the repository's response handling.
+Use stable tags and operation names. Never log credentials, tokens, usernames, coordinates,
+user messages, full URLs/deep links, HTTP bodies, or NFC payloads, even at debug level.
+Pass exceptions as the throwable argument with a safe message, e.g.
+`Timber.tag(TAG).w(error, "Unable to update status")`; never interpolate `error.message`.
+Debug builds retain full exception details for diagnosis. Release logs retain only the
+safe context and exception type; throwable messages, causes, and stack traces are removed.
+Coroutine cancellation is omitted from release logs.
+
+Koin's direct Android logger is disabled in release builds so it cannot bypass this
+policy with arbitrary dependency messages. Third-party SDK and Android system logs
+are outside the Timber policy.
+
+To inspect production diagnostics, select the installed app process in Android Studio
+Logcat and filter with `level:WARN`, or use `adb logcat --pid=<app-pid> '*:W'`.
+Production logging does not require a server or dependency change.
+
 ## 📄 Licenses
 
 ### Project License

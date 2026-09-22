@@ -44,7 +44,7 @@ class NdefHceService : HostApduService() {
 
     override fun processCommandApdu(commandApdu: ByteArray, extras: Bundle?): ByteArray {
         val hexCommand = commandApdu.joinToString("") { "%02X".format(it) }
-        Timber.tag(TAG).d("Command received: $hexCommand")
+        Timber.tag(TAG).d("NFC command received (%d bytes)", commandApdu.size)
         Timber.tag(TAG).d("Current state: $selectedFile")
 
         val response = when {
@@ -86,7 +86,7 @@ class NdefHceService : HostApduService() {
                     if (offset < fullFile.size) {
                         // Successfully served NDEF content
                         if (selectedFile == SelectedFile.NDEF && offset + length >= fullFile.size) {
-                            Timber.tag(TAG).i("NDEF successfully served. Sending success broadcast.")
+                            Timber.tag(TAG).d("NDEF successfully served. Sending success broadcast.")
                             val intent = android.content.Intent("com.kumpello.whereiseveryone.NFC_SUCCESS")
                             intent.setPackage(packageName)
                             sendBroadcast(intent)
@@ -101,12 +101,12 @@ class NdefHceService : HostApduService() {
             }
 
             else -> {
-                Timber.tag(TAG).w("Unknown Command: $hexCommand")
+                Timber.tag(TAG).d("Unsupported NFC command")
                 STATUS_FAILED
             }
         }
         
-        Timber.tag(TAG).d("Response sent: ${response.joinToString("") { "%02X".format(it) }}")
+        Timber.tag(TAG).d("NFC response sent (%d bytes)", response.size)
         return response
     }
 
@@ -116,7 +116,7 @@ class NdefHceService : HostApduService() {
         }?.trim() ?: "unknown"
 
         val uri = createAddFriendDeepLink(username)
-        Timber.tag(TAG).d("Username: '$username' (len: ${username.length}), URI: '$uri' (len: ${uri.length})")
+        Timber.tag(TAG).d("Preparing NFC profile link")
 
         // Manually construct the URI record to be 100% sure of the length and prefix
         val uriPayload = byteArrayOf(0x00.toByte()) + uri.toByteArray(Charsets.UTF_8)
@@ -127,7 +127,7 @@ class NdefHceService : HostApduService() {
         val payload = message.toByteArray()
         val size = payload.size
         
-        Timber.tag(TAG).d("NDEF Message Payload (size: $size): ${payload.joinToString("") { "%02X".format(it) }}")
+        Timber.tag(TAG).d("NDEF payload prepared (%d bytes)", size)
         
         ndefFile = byteArrayOf(
             (size shr 8).toByte(), (size and 0xFF).toByte()

@@ -40,7 +40,7 @@ class RefreshTokenUseCase(
                     Timber.tag(TAG).w(e, "Token refresh failed after $maxRetries attempts due to network error")
                     return Response.NetworkError
                 }
-                Timber.tag(TAG).w(e, "Token refresh attempt $attempt failed. Retrying in ${currentDelay}ms...")
+                Timber.tag(TAG).d(e, "Token refresh attempt $attempt failed. Retrying in ${currentDelay}ms...")
                 if (currentDelay > 0) {
                     delay(currentDelay.milliseconds)
                 }

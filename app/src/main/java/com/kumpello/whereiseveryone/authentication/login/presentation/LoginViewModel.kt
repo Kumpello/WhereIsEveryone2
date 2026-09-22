@@ -16,9 +16,11 @@ class LoginViewModel(
 ) {
 
     override fun handleGlobalError(e: Exception) {
-        Timber.tag(TAG).e(e, "Global error caught")
         if (e is java.io.IOException) {
+            Timber.tag(TAG).w(e, "Login failed due to network error")
             trigger(Event.OnLoginResult(false, e, "Server unreachable"))
+        } else {
+            Timber.tag(TAG).e(e, "Unexpected login failure")
         }
     }
 
@@ -43,8 +45,7 @@ class LoginViewModel(
                     state.copy(loginState = AsyncState.Success(Unit))
                         .toResult(SideEffect.Effect(Action.NavigateMain))
                 } else {
-                    Timber.tag(TAG).e("Login failed!")
-                    event.error?.let { Timber.tag(TAG).e(it) }
+                    Timber.tag(TAG).d("Login failed")
 
                     val toastMessage = if (event.message.isNotEmpty()) {
                         event.message

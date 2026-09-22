@@ -176,11 +176,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleIntent(intent: Intent?) {
-        Timber.tag(TAG).d("handleIntent: %s", intent)
+        Timber.tag(TAG).d("Handling intent")
         intent?.data?.let { uri ->
-            Timber.tag(TAG).d("handleIntent: uri = %s, scheme = %s, host = %s", uri, uri.scheme, uri.host)
+            Timber.tag(TAG).d("Intent contains a URI")
             if (uri.isAddFriendDeepLink()) {
-                Timber.tag(TAG).d("handleIntent: Triggering OnUriReceived with %s", uri)
+                Timber.tag(TAG).d("Handling add-friend link")
                 addFriendViewModel.trigger(AddFriendViewModel.Event.OnUriReceived(uri))
             }
         }

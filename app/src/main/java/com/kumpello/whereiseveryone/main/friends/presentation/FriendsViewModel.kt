@@ -64,9 +64,11 @@ class FriendsViewModel(
     }
 
     override fun handleGlobalError(e: Exception) {
-        Timber.tag(TAG).e(e, "Global error caught")
         if (e is java.io.IOException) {
+            Timber.tag(TAG).w(e, "Friends operation failed due to network error")
             trigger(Event.OnError(R.string.server_unreachable))
+        } else {
+            Timber.tag(TAG).e(e, "Unexpected friends operation failure")
         }
     }
 
@@ -82,7 +84,7 @@ class FriendsViewModel(
                     val paused = if (pausedResponse is SharingResponse.PausedFriends) {
                         pausedResponse.usernames
                     } else {
-                        Timber.tag(TAG).d("Error getting paused friends!\n%s", pausedResponse)
+                        Timber.tag(TAG).d("Paused friends request rejected")
                         emptyList()
                     }
 
@@ -111,7 +113,7 @@ class FriendsViewModel(
                         }
 
                         is FriendsResponse.ErrorData -> {
-                            Timber.tag(TAG).d("Error getting friends!\n%s", friendsResponse)
+                            Timber.tag(TAG).d("Friends request rejected")
                             Event.OnError(R.string.error_getting_friends)
                         }
                     }
@@ -129,7 +131,7 @@ class FriendsViewModel(
                 .toResult(SideEffect.Effect(Action.Toast(event.id)))
 
             is Event.DeleteFriend -> {
-                Timber.tag(TAG).d("Deleting friend: %s", event.nick)
+                Timber.tag(TAG).d("Deleting friend")
                 state.copy(actionState = AsyncState.Loading(message = "Deleting friend..."))
                     .toResult(SideEffect.AsyncWork {
                         when (removeFriendUseCase.execute(event.nick)) {
@@ -145,7 +147,7 @@ class FriendsViewModel(
             }
 
             is Event.AcceptFriend -> {
-                Timber.tag(TAG).d("Accepting friend: %s", event.nick)
+                Timber.tag(TAG).d("Accepting friend")
                 state.copy(actionState = AsyncState.Loading(message = "Accepting request..."))
                     .toResult(SideEffect.AsyncWork {
                         when (val response = acceptFriendUseCase.execute(event.nick)) {
@@ -161,7 +163,7 @@ class FriendsViewModel(
             }
 
             is Event.RejectFriend -> {
-                Timber.tag(TAG).d("Rejecting friend: %s", event.nick)
+                Timber.tag(TAG).d("Rejecting friend")
                 state.copy(actionState = AsyncState.Loading(message = "Rejecting request..."))
                     .toResult(SideEffect.AsyncWork {
                         when (val response = rejectFriendUseCase.execute(event.nick)) {

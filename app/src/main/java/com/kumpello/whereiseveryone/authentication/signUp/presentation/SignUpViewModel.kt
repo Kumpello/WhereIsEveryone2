@@ -44,8 +44,11 @@ class SignUpViewModel(
                     state.copy(signUpState = AsyncState.Success(Unit))
                         .toResult(SideEffect.Effect(Action.NavigateMain))
                 } else {
-                    Timber.tag(TAG).e("SignUp failed!")
-                    event.error?.let { Timber.tag(TAG).e(it) }
+                    if (event.error != null) {
+                        Timber.tag(TAG).w(event.error, "Unable to sign up")
+                    } else {
+                        Timber.tag(TAG).d("Sign-up request rejected")
+                    }
                     state.copy(signUpState = AsyncState.Error(event.error))
                         .toResult(SideEffect.Effect(Action.MakeToast("SignUp failed!")))
                 }

@@ -83,7 +83,7 @@ class SettingsViewModel(
                         Timber.tag(TAG).d("Sending wipe location request to backend")
                         when (val response = wipeLocationUseCase.execute()) {
                             is CodeResponse.ErrorData -> {
-                                Timber.tag(TAG).e("Error wiping location: %s", response.toString())
+                                Timber.tag(TAG).d("Location wipe rejected")
                                 Toast(R.string.error_wiping_location)
                             }
 
@@ -95,7 +95,7 @@ class SettingsViewModel(
                             }
                         }
                     } catch (e: Exception) {
-                        Timber.tag(TAG).e("Exception when wiping location: %s", e.message)
+                        Timber.tag(TAG).w(e, "Unable to wipe location")
                         Toast(R.string.error_wiping_location)
                     }
                 })

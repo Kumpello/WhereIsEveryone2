@@ -51,7 +51,7 @@ class FriendsManager(
                     }
                     emit(response)
                 }.onFailure {
-                    Timber.tag(TAG).e("Error during friends polling: %s", it.message)
+                    Timber.tag(TAG).w(it, "Friends polling failed; will retry")
                 }
 
                 delay(pollingInterval.milliseconds)

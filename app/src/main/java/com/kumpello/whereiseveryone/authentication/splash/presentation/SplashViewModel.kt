@@ -32,7 +32,7 @@ class SplashViewModel(
                     AuthStatus.RefreshFailed
                 }
                 RefreshTokenUseCase.Response.NetworkError -> {
-                    Timber.tag(TAG).w("Token refresh failed due to network issue")
+                    Timber.tag(TAG).d("Token refresh failed due to network issue")
                     AuthStatus.NetworkError
                 }
             }
@@ -45,7 +45,7 @@ class SplashViewModel(
     override fun reduce(state: State, event: Event): ReducerResult<State, Event, Action> {
         return when (event) {
             is Event.CheckUserStatus -> {
-                Timber.tag(TAG).d("Checking user status from Splash, uri = %s", event.uri)
+                Timber.tag(TAG).d("Checking user status from Splash")
                 state.toResult(
                     SideEffect.AsyncWork {
                         Event.OnAuthChecked(checkUserStatus(), event.uri)
@@ -54,7 +54,7 @@ class SplashViewModel(
             }
 
             is Event.OnAuthChecked -> {
-                Timber.tag(TAG).d("Auth checked: status = %s, uri = %s", event.status, event.uri)
+                Timber.tag(TAG).d("Auth checked: status = %s", event.status)
                 val action = when (event.status) {
                     AuthStatus.NoToken -> Action.NavigateSignUp
                     AuthStatus.RefreshSuccess -> Action.NavigateMain(event.uri)

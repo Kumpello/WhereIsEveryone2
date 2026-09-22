@@ -25,7 +25,7 @@ class MessageViewModel(
         return when (event) {
             Event.LoadUserMessage -> state.toResult(SideEffect.AsyncWork {
                 val message = preferencesManager.get(PreferencesKey.UserMessage).orEmpty()
-                Timber.tag(TAG).d("Loaded user message: %s", message)
+                Timber.tag(TAG).d("Loaded user message")
                 Event.OnUserMessageLoaded(message)
             })
 
@@ -44,18 +44,18 @@ class MessageViewModel(
                         }
 
                         is CodeResponse.ErrorData -> {
-                            Timber.tag(TAG).d("Error updating message!")
+                            Timber.tag(TAG).d("Status update rejected")
                             Event.OnMessageError(R.string.error_updating_message)
                         }
                     }
                 } catch (e: Exception) {
-                    Timber.tag(TAG).d("Error updating message!\n%s", e.message.toString())
+                    Timber.tag(TAG).w(e, "Unable to update status")
                     Event.OnMessageError(R.string.error_updating_message)
                 }
             })
 
             is Event.OnMessageSent -> {
-                Timber.tag(TAG).d("Message updated successfully: %s", event.message)
+                Timber.tag(TAG).d("Message updated successfully")
                 state.copy(userMessage = event.message, userMessageField = "").toResult(
                     SideEffect.Effect(Action.NotifyMessageSent)
                 )

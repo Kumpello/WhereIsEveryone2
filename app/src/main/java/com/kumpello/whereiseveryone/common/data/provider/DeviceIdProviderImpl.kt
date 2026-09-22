@@ -14,7 +14,7 @@ class DeviceIdProviderImpl(private val context: Context) : DeviceIdProvider {
             val info = AppSet.getClient(context).appSetIdInfo.await()
             info.id
         } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "Failed to get AppSet ID, falling back to ANDROID_ID")
+            Timber.tag(TAG).w(e, "Failed to get AppSet ID, falling back to ANDROID_ID")
             getAndroidId()
         }
     }

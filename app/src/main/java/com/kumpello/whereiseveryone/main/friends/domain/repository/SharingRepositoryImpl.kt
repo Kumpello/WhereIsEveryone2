@@ -4,6 +4,7 @@ import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
 import com.kumpello.whereiseveryone.main.friends.domain.api.SharingApi
 import com.kumpello.whereiseveryone.main.friends.domain.model.FriendRequest
 import com.kumpello.whereiseveryone.main.friends.domain.model.SharingResponse
+import com.kumpello.whereiseveryone.common.logging.httpFailure
 import timber.log.Timber
 
 class SharingRepositoryImpl(
@@ -15,12 +16,12 @@ class SharingRepositoryImpl(
 
         return when {
             response.isSuccessful -> {
-                Timber.tag(TAG).d("Stop sharing successful for user: %s", username)
+                Timber.tag(TAG).d("Stop sharing successful")
                 CodeResponse.SuccessNoContent
             }
 
             else -> {
-                Timber.tag(TAG).e("Stop sharing failed: %s", response.errorBody()?.string())
+                Timber.tag(TAG).httpFailure("Stop sharing", response.code())
                 CodeResponse.ErrorData(
                     response.code(),
                     response.errorBody()?.string() ?: "",
@@ -35,12 +36,12 @@ class SharingRepositoryImpl(
 
         return when {
             response.isSuccessful -> {
-                Timber.tag(TAG).d("Resume sharing successful for user: %s", username)
+                Timber.tag(TAG).d("Resume sharing successful")
                 CodeResponse.SuccessNoContent
             }
 
             else -> {
-                Timber.tag(TAG).e("Resume sharing failed: %s", response.errorBody()?.string())
+                Timber.tag(TAG).httpFailure("Resume sharing", response.code())
                 CodeResponse.ErrorData(
                     response.code(),
                     response.errorBody()?.string() ?: "",
@@ -58,7 +59,7 @@ class SharingRepositoryImpl(
                 response.body() ?: emptyList()
             )
         } else {
-            Timber.tag(TAG).e("Get paused friends failed: %s", response.errorBody()?.string())
+            Timber.tag(TAG).httpFailure("Get paused friends", response.code())
             SharingResponse.ErrorData(
                 response.code(),
                 response.errorBody()?.string() ?: "",

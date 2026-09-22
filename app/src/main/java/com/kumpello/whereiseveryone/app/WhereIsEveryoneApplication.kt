@@ -6,9 +6,11 @@ import com.kumpello.whereiseveryone.authentication.common.di.authenticationModul
 import com.kumpello.whereiseveryone.common.di.commonModule
 import com.kumpello.whereiseveryone.main.common.di.mainModule
 import com.kumpello.whereiseveryone.common.di.networkModule
+import com.kumpello.whereiseveryone.common.logging.ProductionTree
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.GlobalContext.startKoin
+import org.koin.core.logger.Level
 import timber.log.Timber
 
 
@@ -18,12 +20,10 @@ class WhereIsEveryoneApplication : Application() {
         super.onCreate()
         instance = this
 
-        if(BuildConfig.DEBUG){
-            Timber.plant(Timber.DebugTree())
-        }
+        Timber.plant(if (BuildConfig.DEBUG) Timber.DebugTree() else ProductionTree())
 
         startKoin{
-            androidLogger()
+            androidLogger(if (BuildConfig.DEBUG) Level.DEBUG else Level.NONE)
             androidContext(this@WhereIsEveryoneApplication)
             modules(listOf(commonModule, mainModule, authenticationModule, networkModule))
         }

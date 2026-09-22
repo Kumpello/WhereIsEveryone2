@@ -3,6 +3,7 @@ package com.kumpello.whereiseveryone.main.common.domain.repository
 import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
 import com.kumpello.whereiseveryone.main.map.domain.api.LocationApi
 import com.kumpello.whereiseveryone.main.map.domain.model.LocationRequest
+import com.kumpello.whereiseveryone.common.logging.httpFailure
 import timber.log.Timber
 
 class LocationRepositoryImpl(
@@ -36,7 +37,7 @@ class LocationRepositoryImpl(
             }
 
             else -> {
-                Timber.tag(TAG).e("Error sending location: %s", response.errorBody()?.string())
+                Timber.tag(TAG).httpFailure("Send location", response.code())
                 CodeResponse.ErrorData(
                     response.code(),
                     response.errorBody().toString(),
@@ -55,7 +56,7 @@ class LocationRepositoryImpl(
             }
 
             else -> {
-                Timber.tag(TAG).e("Error wiping location: %s", response.errorBody()?.string())
+                Timber.tag(TAG).httpFailure("Wipe location", response.code())
                 CodeResponse.ErrorData(
                     response.code(),
                     response.errorBody().toString(),

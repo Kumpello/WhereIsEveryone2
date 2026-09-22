@@ -5,6 +5,7 @@ import com.kumpello.whereiseveryone.authentication.login.domain.model.RefreshReq
 import com.kumpello.whereiseveryone.authentication.signUp.domain.model.SignUpRequest
 import com.kumpello.whereiseveryone.common.domain.model.AuthApi
 import com.kumpello.whereiseveryone.common.model.AuthResponse
+import com.kumpello.whereiseveryone.common.logging.httpFailure
 import timber.log.Timber
 
 class AuthenticationRepositoryImpl(
@@ -16,12 +17,12 @@ class AuthenticationRepositoryImpl(
 
         return when {
             authResponse.isSuccessful -> {
-                Timber.tag(TAG).d("SignUp successful for user: %s", username)
+                Timber.tag(TAG).d("SignUp successful")
                 authResponse.body()!!
             }
 
             else -> {
-                Timber.tag(TAG).e("SignUp failed: %s", authResponse.errorBody()?.string())
+                Timber.tag(TAG).httpFailure("SignUp", authResponse.code())
                 AuthResponse.ErrorData(
                     authResponse.code(),
                     authResponse.errorBody().toString(),
@@ -36,12 +37,12 @@ class AuthenticationRepositoryImpl(
 
         return when {
             authResponse.isSuccessful -> {
-                Timber.tag(TAG).d("Login successful for user: %s", username)
+                Timber.tag(TAG).d("Login successful")
                 authResponse.body()!!
             }
 
             else -> {
-                Timber.tag(TAG).e("Login failed: %s", authResponse.errorBody()?.string())
+                Timber.tag(TAG).httpFailure("Login", authResponse.code())
                 AuthResponse.ErrorData(
                     authResponse.code(),
                     authResponse.errorBody().toString(),
@@ -61,7 +62,7 @@ class AuthenticationRepositoryImpl(
             }
 
             else -> {
-                Timber.tag(TAG).e("Token refresh failed: %s", authResponse.errorBody()?.string())
+                Timber.tag(TAG).httpFailure("Token refresh", authResponse.code())
                 AuthResponse.ErrorData(
                     authResponse.code(),
                     authResponse.errorBody().toString(),

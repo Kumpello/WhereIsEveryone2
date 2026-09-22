@@ -36,7 +36,7 @@ class LocationServiceProxy : LocationService, KoinComponent {
         try {
             context.unbindService(connection)
         } catch (e: IllegalArgumentException) {
-            Timber.tag(TAG).e("Service not bound during unregister: %s", e.message)
+            Timber.tag(TAG).d(e, "Service already unbound during unregister")
         }
     }
 
@@ -61,7 +61,7 @@ class LocationServiceProxy : LocationService, KoinComponent {
         try {
             context.unbindService(connection)
         } catch (e: IllegalArgumentException) {
-            Timber.tag(TAG).e("Service not bound: %s", e.message)
+            Timber.tag(TAG).d(e, "Service already unbound during stop")
         }
         val intent = Intent(context, LocationForegroundService::class.java)
         context.stopService(intent)

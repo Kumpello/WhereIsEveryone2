@@ -8,7 +8,7 @@ import timber.log.Timber
 object RequestInterceptor : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request()
-        Timber.d("Outgoing request to %s", request.url)
+        Timber.tag("HTTP").d("Outgoing %s request", request.method)
         return chain.proceed(request)
     }
 }

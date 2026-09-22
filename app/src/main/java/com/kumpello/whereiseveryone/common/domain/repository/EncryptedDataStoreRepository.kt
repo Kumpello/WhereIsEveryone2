@@ -42,7 +42,7 @@ class EncryptedDataStoreRepository(private val context: Context) {
             val decoded = Base64.decode(encryptedValue, Base64.NO_WRAP)
             String(aead.decrypt(decoded, null))
         } catch (e: Exception) {
-            Timber.tag(TAG).e("Decryption failed: %s", e.message)
+            Timber.tag(TAG).e(e, "Decryption failed")
             null
         }
     }

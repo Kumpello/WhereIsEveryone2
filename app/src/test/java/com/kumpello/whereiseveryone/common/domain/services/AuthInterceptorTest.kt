@@ -3,7 +3,6 @@ package com.kumpello.whereiseveryone.common.domain.services
 import com.kumpello.whereiseveryone.common.domain.manager.PreferencesKey
 import com.kumpello.whereiseveryone.common.domain.manager.PreferencesManager
 import com.kumpello.whereiseveryone.common.domain.usecase.RefreshTokenUseCase
-import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import okhttp3.Interceptor
@@ -36,7 +35,7 @@ class AuthInterceptorTest {
 
     @Test
     fun `intercept adds Authorization header when token exists`() {
-        coEvery { preferencesManager.get(PreferencesKey.AuthToken) } returns "test_token"
+        every { preferencesManager.getCached(PreferencesKey.AuthToken) } returns "test_token"
         
         val chain = mockk<Interceptor.Chain>()
         val request = Request.Builder().url("http://api.com/data").build()
