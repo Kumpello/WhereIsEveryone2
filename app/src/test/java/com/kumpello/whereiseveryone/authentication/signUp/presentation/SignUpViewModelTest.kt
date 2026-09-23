@@ -1,6 +1,9 @@
 package com.kumpello.whereiseveryone.authentication.signUp.presentation
 
 import app.cash.turbine.test
+import com.kumpello.whereiseveryone.authentication.common.domain.repository.RememberedCredentialsRepository
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flowOf
 import com.kumpello.whereiseveryone.authentication.common.domain.usecase.ValidateLoginInputUseCase
 import com.kumpello.whereiseveryone.authentication.signUp.domain.model.PasswordValidationState
 import com.kumpello.whereiseveryone.authentication.signUp.domain.usecase.SignUpUseCase
@@ -25,10 +28,13 @@ class SignUpViewModelTest {
     private val validatePasswordUseCase: ValidatePasswordUseCase = mockk()
     private val validateLoginInputUseCase: ValidateLoginInputUseCase = mockk()
 
+    private val rememberedCredentialsRepository: RememberedCredentialsRepository = mockk(relaxed = true)
+
     private lateinit var viewModel: SignUpViewModel
 
     private fun setupViewModel() {
-        viewModel = SignUpViewModel(signUpUseCase, validatePasswordUseCase, validateLoginInputUseCase)
+        every { rememberedCredentialsRepository.observe() } returns flowOf(null)
+        viewModel = SignUpViewModel(signUpUseCase, validatePasswordUseCase, validateLoginInputUseCase, rememberedCredentialsRepository)
     }
 
     @Test
@@ -37,7 +43,7 @@ class SignUpViewModelTest {
         every { validatePasswordUseCase.execute("") } returns expectedPasswordState
         setupViewModel()
 
-        viewModel.state.test {
+        viewModel.state.filter { it.credentialsReady }.test {
             val initialState = awaitItem()
             assertEquals("", initialState.username)
             assertEquals("", initialState.password)
@@ -52,7 +58,7 @@ class SignUpViewModelTest {
         every { validateLoginInputUseCase.execute("user123!") } returns "user123"
         setupViewModel()
 
-        viewModel.state.test {
+        viewModel.state.filter { it.credentialsReady }.test {
             assertEquals("", awaitItem().username) // Initial
             viewModel.trigger(SignUpViewModel.Event.SetUsername("user123!"))
             assertEquals("user123", awaitItem().username)
@@ -66,7 +72,7 @@ class SignUpViewModelTest {
         setupViewModel()
 
         viewModel.action.test {
-            viewModel.state.test {
+            viewModel.state.filter { it.credentialsReady }.test {
                 assertTrue(awaitItem().signUpState is AsyncState.Idle) // Initial
                 viewModel.trigger(SignUpViewModel.Event.OnSignUpClick)
                 // Loading state
@@ -85,7 +91,7 @@ class SignUpViewModelTest {
         setupViewModel()
 
         viewModel.action.test {
-            viewModel.state.test {
+            viewModel.state.filter { it.credentialsReady }.test {
                 assertTrue(awaitItem().signUpState is AsyncState.Idle) // Initial
                 viewModel.trigger(SignUpViewModel.Event.OnSignUpClick)
                 // Loading state

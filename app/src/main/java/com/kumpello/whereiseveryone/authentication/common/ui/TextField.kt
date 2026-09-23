@@ -34,7 +34,8 @@ object TextField {
         onValueChange: (String) -> Unit,
         labelColor: Color = MaterialTheme.colorScheme.primary,
         colors: TextFieldColors = OutlinedTextFieldDefaults.colors(),
-        trailingIcon: @Composable (() -> Unit)? = null
+        trailingIcon: @Composable (() -> Unit)? = null,
+        enabled: Boolean = true
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Text(
@@ -46,6 +47,7 @@ object TextField {
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
                 value = value,
+                enabled = enabled,
                 onValueChange = onValueChange,
                 shape = Shapes.large,
                 colors = colors,
@@ -60,7 +62,8 @@ object TextField {
         value: String,
         onValueChange: (String) -> Unit,
         passwordVisible: Boolean,
-        onTogglePasswordVisibility: () -> Unit
+        onTogglePasswordVisibility: () -> Unit,
+        enabled: Boolean = true
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Text(
@@ -72,6 +75,7 @@ object TextField {
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
                 value = value,
+                enabled = enabled,
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 onValueChange = onValueChange,
@@ -87,7 +91,7 @@ object TextField {
                         stringResource(R.string.show_password_cd)
                     }
 
-                    IconButton(onClick = onTogglePasswordVisibility) {
+                    IconButton(onClick = onTogglePasswordVisibility, enabled = enabled) {
                         Icon(imageVector = image, contentDescription = description)
                     }
                 },

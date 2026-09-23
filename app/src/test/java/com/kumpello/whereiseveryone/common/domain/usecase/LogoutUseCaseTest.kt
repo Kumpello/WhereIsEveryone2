@@ -15,14 +15,14 @@ class LogoutUseCaseTest {
     private val logoutUseCase = LogoutUseCase(preferencesManager, appDatabase)
 
     @Test
-    fun `execute clears data store and database tables`() = runTest {
-        coEvery { preferencesManager.clearAll() } returns Unit
+    fun `execute clears session data and database tables`() = runTest {
+        coEvery { preferencesManager.clearSession() } returns Unit
         coEvery { appDatabase.clearAllTables() } returns Unit
 
         logoutUseCase.execute()
 
         coVerify {
-            preferencesManager.clearAll()
+            preferencesManager.clearSession()
             appDatabase.clearAllTables()
         }
     }

@@ -12,7 +12,7 @@ class LogoutUseCase(
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) {
     suspend fun execute() = withContext(ioDispatcher) {
-        preferencesManager.clearAll()
+        preferencesManager.clearSession()
         appDatabase.clearAllTables()
     }
 }

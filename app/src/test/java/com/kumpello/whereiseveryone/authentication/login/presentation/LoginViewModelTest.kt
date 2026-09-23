@@ -1,6 +1,9 @@
 package com.kumpello.whereiseveryone.authentication.login.presentation
 
 import app.cash.turbine.test
+import com.kumpello.whereiseveryone.authentication.common.domain.repository.RememberedCredentialsRepository
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flowOf
 import com.kumpello.whereiseveryone.authentication.common.domain.usecase.ValidateLoginInputUseCase
 import com.kumpello.whereiseveryone.authentication.login.domain.usecase.LoginUseCase
 import com.kumpello.whereiseveryone.common.presentation.AsyncState
@@ -22,16 +25,19 @@ class LoginViewModelTest {
     private val loginUseCase: LoginUseCase = mockk()
     private val validateLoginInputUseCase: ValidateLoginInputUseCase = mockk()
 
+    private val rememberedCredentialsRepository: RememberedCredentialsRepository = mockk(relaxed = true)
+
     private lateinit var viewModel: LoginViewModel
 
     private fun setupViewModel() {
-        viewModel = LoginViewModel(loginUseCase, validateLoginInputUseCase)
+        every { rememberedCredentialsRepository.observe() } returns flowOf(null)
+        viewModel = LoginViewModel(loginUseCase, validateLoginInputUseCase, rememberedCredentialsRepository)
     }
 
     @Test
     fun `initial state is correct`() = runTest {
         setupViewModel()
-        viewModel.state.test {
+        viewModel.state.filter { it.credentialsReady }.test {
             val initialState = awaitItem()
             assertEquals("", initialState.username)
             assertEquals("", initialState.password)
@@ -44,7 +50,7 @@ class LoginViewModelTest {
         every { validateLoginInputUseCase.execute("user123!") } returns "user123"
         setupViewModel()
 
-        viewModel.state.test {
+        viewModel.state.filter { it.credentialsReady }.test {
             assertEquals("", awaitItem().username) // Initial
             viewModel.trigger(LoginViewModel.Event.SetUsername("user123!"))
             assertEquals("user123", awaitItem().username)
@@ -55,7 +61,7 @@ class LoginViewModelTest {
     fun `setPassword updates state`() = runTest {
         setupViewModel()
 
-        viewModel.state.test {
+        viewModel.state.filter { it.credentialsReady }.test {
             assertEquals("", awaitItem().password) // Initial
             viewModel.trigger(LoginViewModel.Event.SetPassword("password123"))
             assertEquals("password123", awaitItem().password)
@@ -68,7 +74,7 @@ class LoginViewModelTest {
         setupViewModel()
 
         viewModel.action.test {
-            viewModel.state.test {
+            viewModel.state.filter { it.credentialsReady }.test {
                 assertTrue(awaitItem().loginState is AsyncState.Idle) // Initial
                 viewModel.trigger(LoginViewModel.Event.OnLoginClick)
                 // Loading state
@@ -86,7 +92,7 @@ class LoginViewModelTest {
         setupViewModel()
 
         viewModel.action.test {
-            viewModel.state.test {
+            viewModel.state.filter { it.credentialsReady }.test {
                 assertTrue(awaitItem().loginState is AsyncState.Idle) // Initial
                 viewModel.trigger(LoginViewModel.Event.OnLoginClick)
                 // Loading state

@@ -79,4 +79,20 @@ class PreferencesManager(
         cache.clear()
         encryptedDataStoreRepository.clearAll()
     }
+
+    suspend fun remove(key: PreferencesKey<*>) {
+        encryptedDataStoreRepository.dataStore().edit { it.remove(stringPreferencesKey(key.key)) }
+        cache.remove(key.key)
+    }
+
+    /** Logout removes session data while retaining explicitly remembered credentials. */
+    suspend fun clearSession() {
+        val rememberedKey = stringPreferencesKey(PreferencesKey.RememberedCredentials.key)
+        encryptedDataStoreRepository.dataStore().edit { preferences ->
+            val remembered = preferences[rememberedKey]
+            preferences.clear()
+            if (remembered != null) preferences[rememberedKey] = remembered
+        }
+        cache.clear()
+    }
 }

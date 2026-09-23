@@ -3,6 +3,8 @@ package com.kumpello.whereiseveryone.authentication.login.ui
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -35,6 +37,7 @@ import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.authentication.AuthenticationActivity
 import com.kumpello.whereiseveryone.authentication.common.AuthenticationRoute
 import com.kumpello.whereiseveryone.authentication.common.ui.TextField
+import com.kumpello.whereiseveryone.authentication.common.ui.RememberPasswordToggle
 import com.kumpello.whereiseveryone.authentication.login.presentation.LoginViewModel
 import com.kumpello.whereiseveryone.common.entity.ScreenState
 import com.kumpello.whereiseveryone.common.presentation.AsyncState
@@ -63,6 +66,10 @@ fun LoginScreen(
     LaunchedEffect(Unit) {
         viewModel.action.collect { action ->
             when (action) {
+                LoginViewModel.Action.CredentialsError -> Toast.makeText(
+                    context, R.string.remember_password_error, Toast.LENGTH_LONG
+                ).show()
+
                 is LoginViewModel.Action.MakeToast -> Toast.makeText(context, action.string, Toast.LENGTH_SHORT)
                     .show()
 
@@ -91,6 +98,7 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .safeDrawingPadding()
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp, vertical = 4.dp)
     ) {
         Logo.Image(
@@ -112,6 +120,7 @@ fun LoginScreen(
             TextField.Regular(
                 label = stringResource(R.string.username_label),
                 value = viewState.username,
+                enabled = viewState.credentialsReady && !viewState.loginState.isLoading,
                 onValueChange = { value ->
                     trigger(LoginViewModel.Event.SetUsername(value))
                 }
@@ -122,6 +131,7 @@ fun LoginScreen(
             TextField.Password(
                 label = stringResource(R.string.password_label),
                 value = viewState.password,
+                enabled = viewState.credentialsReady && !viewState.loginState.isLoading,
                 onValueChange = { value ->
                     trigger(LoginViewModel.Event.SetPassword(value))
                 },
@@ -131,13 +141,19 @@ fun LoginScreen(
                 }
             )
 
+            RememberPasswordToggle(
+                checked = viewState.rememberPassword,
+                enabled = viewState.credentialsReady && !viewState.loginState.isLoading,
+                onToggle = { trigger(LoginViewModel.Event.ToggleRememberPassword) }
+            )
+
             Spacer(modifier = Modifier.height(32.dp))
 
             Button.Animated(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 40.dp),
-                enabled = !viewState.loginState.isLoading,
+                enabled = viewState.credentialsReady && !viewState.loginState.isLoading,
                 text = stringResource(R.string.login_title),
                 textSize = 26,
                 height = 50,
@@ -149,6 +165,7 @@ fun LoginScreen(
                 modifier = Modifier
                     .padding(horizontal = 40.dp),
                 text = stringResource(R.string.signup_here),
+                enabled = viewState.credentialsReady && !viewState.loginState.isLoading,
             ) { trigger(LoginViewModel.Event.NavigateSignUp) }
         }
     }
