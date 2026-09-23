@@ -12,11 +12,8 @@ import android.content.pm.ServiceInfo
 import android.location.Location
 import android.os.Binder
 import android.os.Build
-import android.os.Handler
-import android.os.HandlerThread
 import android.os.IBinder
-import android.os.Process
-import android.os.SystemClock
+import android.os.Looper
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -34,15 +31,22 @@ import com.kumpello.whereiseveryone.main.common.domain.manager.ProximityManager
 import com.kumpello.whereiseveryone.main.common.domain.usecase.SendLocationUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import org.koin.android.ext.android.inject
 import timber.log.Timber
 import kotlin.time.Duration.Companion.milliseconds
@@ -74,12 +78,7 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
     private val job = SupervisorJob()
 
     private val scope = CoroutineScope(Dispatchers.IO + job)
-    private val serviceThread =
-        HandlerThread("LocationThread", Process.THREAD_PRIORITY_BACKGROUND).apply {
-            start()
-        }
-
-    private val handler = Handler(serviceThread.looper)
+    private var locationUpdatesJob: Job? = null
     private var previousNearbyFriends = emptySet<String>()
 
     @Volatile
@@ -201,7 +200,6 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
         locationServiceProxy.unregisterDelegate()
         stopUpdates()
         scope.cancel()
-        serviceThread.quitSafely()
         super.onDestroy()
     }
 
@@ -370,18 +368,6 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
         notificationManager.createNotificationChannel(serviceChannel)
     }
 
-    private val locationCallback = object : LocationCallback() {
-        override fun onLocationResult(locationResult: LocationResult) {
-            locationResult.lastLocation?.let { location ->
-                scope.launch {
-                    Timber.tag(TAG).d("Emitting location update")
-                    locationServiceProxy.updateLocation(location)
-                    locationSendChannel.send(location)
-                }
-            }
-        }
-    }
-
     override fun changeUpdateType(updateType: LocationService.UpdateType) {
         desiredUpdateType.value = updateType
         if (forcedForegroundStatus.value.isEnabled) {
@@ -437,27 +423,43 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
     }
 
     private fun startLocationUpdates(updateType: LocationService.UpdateType) {
-        if (state.value.isLocationUpdatesStarted) return
+        scope.launch(Dispatchers.Main.immediate) {
+            if (locationUpdatesJob?.isActive == true) return@launch
 
-        try {
-            fusedLocationClient.requestLocationUpdates(
-                when (updateType) {
-                    LocationService.UpdateType.Background -> getBackgroundRequest()
-                    LocationService.UpdateType.Foreground -> getForegroundRequest()
-                },
-                locationCallback,
-                handler.looper
-            )
+            val request = when (updateType) {
+                LocationService.UpdateType.Background -> getBackgroundRequest()
+                LocationService.UpdateType.Foreground -> getForegroundRequest()
+            }
             state.update { it.copy(isLocationUpdatesStarted = true, updateType = updateType) }
-        } catch (exception: SecurityException) {
-            SystemClock.sleep(15000)
-            Timber.tag(TAG).e(exception, "Location updates denied")
+            locationUpdatesJob = scope.launch(Dispatchers.Main) {
+                try {
+                    fusedLocationClient.locationUpdates(request, Looper.getMainLooper())
+                        .catch { exception ->
+                            Timber.tag(TAG).e(exception, "Unable to receive location updates")
+                        }
+                        .collect { location ->
+                            Timber.tag(TAG).d("Emitting location update")
+                            locationServiceProxy.updateLocation(location)
+                            locationSendChannel.send(location)
+                        }
+                } finally {
+                    // A cancelled collection must not reset a replacement collection's state.
+                    if (locationUpdatesJob === coroutineContext[Job]) {
+                        locationUpdatesJob = null
+                        state.update { it.copy(isLocationUpdatesStarted = false) }
+                        updateNotification()
+                    }
+                }
+            }
         }
     }
 
     private fun stopUpdates() {
-        fusedLocationClient.removeLocationUpdates(locationCallback)
-        state.update { it.copy(isLocationUpdatesStarted = false) }
+        scope.launch(Dispatchers.Main.immediate) {
+            locationUpdatesJob?.cancel()
+            locationUpdatesJob = null
+            state.update { it.copy(isLocationUpdatesStarted = false) }
+        }
     }
 
     private suspend fun sendLocation(location: Location, lastUpdate: Long) {
@@ -552,3 +554,23 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
         const val ACTION_KILL_SERVICE = "KILL_LOCATION_SERVICE"
     }
 }
+
+internal fun FusedLocationProviderClient.locationUpdates(
+    request: LocationRequest,
+    looper: Looper
+): Flow<Location> = callbackFlow {
+    val callback = object : LocationCallback() {
+        override fun onLocationResult(result: LocationResult) {
+            result.lastLocation?.let { trySend(it) }
+        }
+    }
+
+    try {
+        requestLocationUpdates(request, callback, looper).await()
+        awaitClose()
+    } catch (exception: SecurityException) {
+        close(exception)
+    } finally {
+        removeLocationUpdates(callback)
+    }
+}.conflate()
