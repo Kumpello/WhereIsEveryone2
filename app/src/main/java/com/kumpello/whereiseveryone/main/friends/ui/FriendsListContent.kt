@@ -139,7 +139,7 @@ private fun FriendsCategory(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        items(friends) { friend ->
+        items(friends, key = { it.username }) { friend ->
             Friend(
                 friend = friend,
                 trigger = trigger
