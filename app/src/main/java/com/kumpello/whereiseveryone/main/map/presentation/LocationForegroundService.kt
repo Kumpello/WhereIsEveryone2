@@ -29,6 +29,7 @@ import com.kumpello.whereiseveryone.main.common.database.UserLocationDao
 import com.kumpello.whereiseveryone.main.common.database.UserLocationEntity
 import com.kumpello.whereiseveryone.main.common.domain.manager.ProximityManager
 import com.kumpello.whereiseveryone.main.common.domain.usecase.SendLocationUseCase
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -59,7 +60,7 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
     private val locationServiceProxy: LocationServiceProxy by inject()
     private val proximityManager: ProximityManager by inject()
 
-    private val locationSendChannel = Channel<Location>(
+    private val locationSendChannel = Channel<LocationUpload>(
         capacity = Channel.CONFLATED
     )
     private val state = MutableStateFlow(State())
@@ -79,6 +80,7 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
 
     private val scope = CoroutineScope(Dispatchers.IO + job)
     private var locationUpdatesJob: Job? = null
+    private var locationSenderJob: Job? = null
     private var previousNearbyFriends = emptySet<String>()
 
     @Volatile
@@ -96,7 +98,6 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
                 locationServiceProxy.updateLocation(it)
             }
         }
-        startLocationSender()
 
         scope.launch {
             forcedForegroundStatus.collect { status ->
@@ -204,12 +205,9 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
     }
 
     private fun startLocationSender() {
-        scope.launch {
+        locationSenderJob = scope.launch {
             while (isActive) {
-                val location = locationSendChannel.receive()
-                latestLocation = location
-                val now = System.currentTimeMillis()
-                sendLocation(location, now)
+                sendLocation(locationSendChannel.receive())
                 delay(5_000.milliseconds)
             }
         }
@@ -431,6 +429,7 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
                 LocationService.UpdateType.Foreground -> getForegroundRequest()
             }
             state.update { it.copy(isLocationUpdatesStarted = true, updateType = updateType) }
+            startLocationSender()
             locationUpdatesJob = scope.launch(Dispatchers.Main) {
                 try {
                     fusedLocationClient.locationUpdates(request, Looper.getMainLooper())
@@ -439,14 +438,14 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
                         }
                         .collect { location ->
                             Timber.tag(TAG).d("Emitting location update")
+                            latestLocation = location
                             locationServiceProxy.updateLocation(location)
-                            locationSendChannel.send(location)
+                            locationSendChannel.send(LocationUpload(location, System.currentTimeMillis()))
                         }
                 } finally {
                     // A cancelled collection must not reset a replacement collection's state.
                     if (locationUpdatesJob === coroutineContext[Job]) {
-                        locationUpdatesJob = null
-                        state.update { it.copy(isLocationUpdatesStarted = false) }
+                        stopUpdates()
                         updateNotification()
                     }
                 }
@@ -458,28 +457,39 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
         scope.launch(Dispatchers.Main.immediate) {
             locationUpdatesJob?.cancel()
             locationUpdatesJob = null
+            locationSenderJob?.cancel()
+            locationSenderJob = null
+            locationSendChannel.tryReceive()
             state.update { it.copy(isLocationUpdatesStarted = false) }
         }
     }
 
-    private suspend fun sendLocation(location: Location, lastUpdate: Long) {
-        runCatching {
-            val response = sendLocationUseCase.execute(
-                longitude = location.longitude,
-                latitude = location.latitude,
-                bearing = location.bearing,
-                altitude = location.altitude,
-                accuracy = location.accuracy,
-                speed = location.speed,
-                lastUpdate = lastUpdate
-            )
+    private suspend fun sendLocation(initialUpload: LocationUpload) {
+        try {
+            val response = sendLocationWithRetry(
+                initialUpload = initialUpload,
+                takeLatestUpload = { locationSendChannel.tryReceive().getOrNull() }
+            ) { upload ->
+                val location = upload.location
+                sendLocationUseCase.execute(
+                    longitude = location.longitude,
+                    latitude = location.latitude,
+                    bearing = location.bearing,
+                    altitude = location.altitude,
+                    accuracy = location.accuracy,
+                    speed = location.speed,
+                    lastUpdate = upload.lastUpdate
+                )
+            }
             if (response is CodeResponse.SuccessNoContent) {
                 lastSendTimestamp = System.currentTimeMillis()
                 updateNotification()
             } else if (response is CodeResponse.ErrorData) {
                 Timber.tag(TAG).d("Location update rejected")
             }
-        }.onFailure { error ->
+        } catch (exception: CancellationException) {
+            throw exception
+        } catch (error: Exception) {
             Timber.tag(TAG).w(error, "Unable to send location update")
         }
     }
