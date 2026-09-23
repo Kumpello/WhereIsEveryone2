@@ -2,6 +2,7 @@ package com.kumpello.whereiseveryone.main.friends.presentation
 
 import android.location.Location
 import app.cash.turbine.test
+import androidx.lifecycle.ViewModelStore
 import com.kumpello.whereiseveryone.common.domain.manager.PreferencesKey
 import com.kumpello.whereiseveryone.common.domain.manager.PreferencesManager
 import com.kumpello.whereiseveryone.main.common.domain.usecase.GetFriendsDataUseCase
@@ -17,9 +18,12 @@ import com.kumpello.whereiseveryone.main.map.domain.model.FriendsResponse
 import com.kumpello.whereiseveryone.main.map.presentation.LocationService
 import com.kumpello.whereiseveryone.utils.MainDispatcherRule
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -52,7 +56,10 @@ class FriendsViewModelTest {
         coEvery { preferencesManager.get(PreferencesKey.UserName) } returns username
         coEvery { getFriendsDataUseCase.execute() } returns FriendsResponse.FriendsData(emptyList())
         coEvery { getPausedFriendsUseCase.execute() } returns SharingResponse.PausedFriends(emptyList())
-        
+        createViewModel()
+    }
+
+    private fun createViewModel() {
         viewModel = FriendsViewModel(
             removeFriendUseCase,
             getFriendsDataUseCase,
@@ -64,14 +71,37 @@ class FriendsViewModelTest {
             resumeSharingUseCase,
             getPausedFriendsUseCase,
             preferencesManager,
+            defaultDispatcher = mainDispatcherRule.testDispatcher,
         )
+    }
+
+    @Test
+    fun `slow username load does not delay location observation or friends loading`() = runTest {
+        val username = CompletableDeferred<String>()
+        val locations = MutableStateFlow<Location?>(null)
+        coEvery { preferencesManager.get(PreferencesKey.UserName) } coAnswers { username.await() }
+        coEvery { getFriendsDataUseCase.execute() } returns FriendsResponse.FriendsData(emptyList())
+        coEvery { getPausedFriendsUseCase.execute() } returns SharingResponse.PausedFriends(emptyList())
+        every { locationService.observeLocation() } returns locations
+        createViewModel()
+        val store = ViewModelStore().apply { put("friends", viewModel) }
+        try {
+            assertEquals(1, locations.subscriptionCount.value)
+            coVerify(exactly = 1) { getFriendsDataUseCase.execute() }
+            username.complete("alice")
+            viewModel.state.filter { it.username.isNotEmpty() }.test {
+                assertEquals("alice", awaitItem().username)
+            }
+        } finally {
+            store.clear()
+        }
     }
 
     @Test
     fun `initial state triggers CheckFriends`() = runTest {
         setupViewModel()
 
-        viewModel.state.test {
+        viewModel.state.filter { it.username.isNotEmpty() }.test {
             val initialState = awaitItem()
             assertTrue(initialState.friends.isEmpty())
         }
@@ -82,7 +112,7 @@ class FriendsViewModelTest {
         setupViewModel("testuser")
         
         viewModel.action.test {
-            viewModel.state.test {
+            viewModel.state.filter { it.username.isNotEmpty() }.test {
                 awaitItem() // Initial
                 viewModel.trigger(FriendsViewModel.Event.OpenNfcSharingDialog)
                 val state = awaitItem()
@@ -102,7 +132,7 @@ class FriendsViewModelTest {
         viewModel.action.test {
             viewModel.trigger(FriendsViewModel.Event.OpenNfcSharingDialog)
 
-            viewModel.state.test {
+            viewModel.state.filter { it.username.isNotEmpty() }.test {
                 assertTrue(awaitItem().isNfcSharingDialogOpen)
                 viewModel.trigger(FriendsViewModel.Event.CloseNfcSharingDialog)
                 assertFalse(awaitItem().isNfcSharingDialogOpen)

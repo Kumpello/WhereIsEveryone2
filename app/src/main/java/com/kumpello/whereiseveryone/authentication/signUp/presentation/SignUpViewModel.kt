@@ -8,6 +8,7 @@ import com.kumpello.whereiseveryone.common.entity.ScreenState
 import com.kumpello.whereiseveryone.common.presentation.AsyncState
 import com.kumpello.whereiseveryone.common.presentation.BaseViewModel
 import androidx.compose.runtime.Immutable
+import kotlinx.coroutines.CancellationException
 import timber.log.Timber
 
 class SignUpViewModel(
@@ -32,6 +33,8 @@ class SignUpViewModel(
                             SignUpUseCase.Response.Success -> Event.OnSignUpResult(true)
                             SignUpUseCase.Response.Error -> Event.OnSignUpResult(false)
                         }
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (e: Exception) {
                         Event.OnSignUpResult(false, e)
                     }

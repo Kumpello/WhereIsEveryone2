@@ -1,30 +1,42 @@
 package com.kumpello.whereiseveryone.main.map.presentation
 
 import app.cash.turbine.test
+import androidx.lifecycle.ViewModelStore
 import com.kumpello.whereiseveryone.main.common.domain.manager.FriendsManager
 import com.kumpello.whereiseveryone.main.common.domain.usecase.MapFriendUseCase
 import com.kumpello.whereiseveryone.main.common.domain.usecase.MapLocationUseCase
 import com.kumpello.whereiseveryone.main.common.entity.AccuracyLevel
 import com.kumpello.whereiseveryone.main.common.entity.AltDifference
 import com.kumpello.whereiseveryone.main.common.entity.Friend
+import com.kumpello.whereiseveryone.main.common.entity.FriendLocalData
 import com.kumpello.whereiseveryone.main.common.entity.FriendState
 import com.kumpello.whereiseveryone.main.common.entity.LastUpdateAge
 import com.kumpello.whereiseveryone.main.common.entity.LocationData
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.GetPausedFriendsUseCase
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.ResumeSharingUseCase
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.StopSharingUseCase
+import com.kumpello.whereiseveryone.main.friends.domain.model.SharingResponse
+import com.kumpello.whereiseveryone.main.map.domain.model.FriendData
+import com.kumpello.whereiseveryone.main.map.domain.model.FriendsResponse
 import com.kumpello.whereiseveryone.utils.MainDispatcherRule
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Assert.assertFalse
 import org.junit.Rule
 import org.junit.Test
+import java.util.concurrent.Executors
 import android.location.Location as AndroidLocation
 import com.kumpello.whereiseveryone.main.common.entity.Location as EntityLocation
 
@@ -47,7 +59,7 @@ class MapViewModelTest {
 
     private lateinit var viewModel: MapViewModel
 
-    private fun setupViewModel() {
+    private fun setupViewModel(defaultDispatcher: CoroutineDispatcher = mainDispatcherRule.testDispatcher) {
         viewModel = MapViewModel(
             locationService,
             friendsManager,
@@ -56,7 +68,60 @@ class MapViewModelTest {
             stopSharingUseCase,
             resumeSharingUseCase,
             getPausedFriendsUseCase,
+            defaultDispatcher = defaultDispatcher,
         )
+    }
+
+    @Test
+    fun `immediate paused friends response is not overwritten by CheckPaused reducer`() = runTest {
+        val friend = Friend("alice", "", FriendState.ACCEPTED, null)
+        every { mapFriendUseCase.execute(any(), any()) } returns friend
+        coEvery { getPausedFriendsUseCase.execute() } returns SharingResponse.PausedFriends(listOf("alice"))
+        setupViewModel()
+        val store = ViewModelStore().apply { put("map", viewModel) }
+        try {
+            viewModel.trigger(MapViewModel.Event.OnFriendsLoaded(listOf(
+                FriendLocalData("alice", "", FriendState.ACCEPTED, null, null)
+            )))
+            viewModel.state.filter { it.friends.isNotEmpty() }.test {
+                assertFalse(awaitItem().friends.single().isPaused)
+                viewModel.trigger(MapViewModel.Event.CheckPaused)
+                assertTrue(awaitItem().friends.single().isPaused)
+            }
+        } finally {
+            store.clear()
+        }
+    }
+
+    @Test
+    fun `initial friends response is converted and formatted on computation dispatcher`() = runTest {
+        Executors.newSingleThreadExecutor { Thread(it, "friends-computation") }.asCoroutineDispatcher().use { worker ->
+            val conversionThreads = mutableListOf<Thread>()
+            val positions = object : AbstractList<FriendData>() {
+                override val size = 1
+                override fun get(index: Int): FriendData {
+                    conversionThreads += Thread.currentThread()
+                    return FriendData("alice", "", "accepted", null, null)
+                }
+            }
+            coEvery { friendsManager.observeFriends() } returns flowOf(FriendsResponse.FriendsData(positions))
+            coEvery { getPausedFriendsUseCase.execute() } returns SharingResponse.PausedFriends(emptyList())
+            every { mapFriendUseCase.execute(any(), any()) } answers {
+                assertTrue(Thread.currentThread().name.startsWith("friends-computation"))
+                Friend("alice", "", FriendState.ACCEPTED, null)
+            }
+            setupViewModel(worker)
+            val store = ViewModelStore().apply { put("map", viewModel) }
+            try {
+                viewModel.state.filter { it.friends.isNotEmpty() }.test {
+                    assertEquals("alice", awaitItem().friends.single().username)
+                }
+                assertTrue(conversionThreads.isNotEmpty())
+                assertTrue(conversionThreads.all { it.name.startsWith("friends-computation") })
+            } finally {
+                store.clear()
+            }
+        }
     }
 
     @Test
@@ -126,9 +191,9 @@ class MapViewModelTest {
         viewModel.trigger(MapViewModel.Event.OnLocationUpdate(userLocation))
         viewModel.trigger(MapViewModel.Event.NavigateToFriend(friend))
 
-        viewModel.state.test {
+        viewModel.state.filter { it.bearingToFriend != null }.test {
             val initial = awaitItem()
-            
+
             // Case 1: Map pointing North (bearing 0)
             assertEquals(0.0f, initial.bearingToFriend!!, 0.001f)
 

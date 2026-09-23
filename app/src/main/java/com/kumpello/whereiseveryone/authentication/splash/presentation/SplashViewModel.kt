@@ -5,6 +5,7 @@ import com.kumpello.whereiseveryone.common.domain.manager.PreferencesManager
 import com.kumpello.whereiseveryone.common.domain.usecase.RefreshTokenUseCase
 import com.kumpello.whereiseveryone.common.presentation.BaseViewModel
 import androidx.compose.runtime.Immutable
+import kotlinx.coroutines.CancellationException
 import timber.log.Timber
 
 class SplashViewModel(
@@ -36,6 +37,8 @@ class SplashViewModel(
                     AuthStatus.NetworkError
                 }
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Unexpected error during token refresh")
             AuthStatus.NetworkError

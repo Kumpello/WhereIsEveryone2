@@ -1,5 +1,6 @@
 package com.kumpello.whereiseveryone.common.domain.manager
 
+import androidx.annotation.WorkerThread
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.kumpello.whereiseveryone.common.domain.repository.EncryptedDataStoreRepository
@@ -17,13 +18,13 @@ class PreferencesManager(
     suspend fun <T> save(key: PreferencesKey<T>, value: T) {
         val prefKey = stringPreferencesKey(key.key)
         val stringValue = value.toString()
+        val encryptedValue = encryptedDataStoreRepository.encrypt(stringValue)
+        encryptedDataStoreRepository.dataStore().edit { it[prefKey] = encryptedValue }
         if (value != null) {
             cache[key.key] = value
         } else {
             cache.remove(key.key)
         }
-        val encryptedValue = encryptedDataStoreRepository.encrypt(stringValue)
-        encryptedDataStoreRepository.dataStore().edit { it[prefKey] = encryptedValue }
     }
 
     suspend fun <T> get(key: PreferencesKey<T>): T? {
@@ -41,6 +42,8 @@ class PreferencesManager(
         return mapped
     }
 
+    /** Blocking cache-miss bridge for synchronous OkHttp interceptors only. */
+    @WorkerThread
     @Suppress("UNCHECKED_CAST")
     fun <T> getCached(key: PreferencesKey<T>): T? {
         val cachedValue = cache[key.key] as? T

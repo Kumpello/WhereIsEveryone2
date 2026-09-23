@@ -1,7 +1,12 @@
 package com.kumpello.whereiseveryone.common.presentation
 
+import androidx.annotation.MainThread
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,17 +19,19 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 abstract class BaseViewModel<S : Any, VS : Any, E : Any, Ef : Any>(
-    initialState: S
+    initialState: S,
+    private val viewStateDispatcher: CoroutineDispatcher = Dispatchers.Main.immediate
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(initialState)
     val state: StateFlow<VS> by lazy {
         _state
-            .map { it.toViewState() }
+            .map { state -> withContext(viewStateDispatcher) { state.toViewState() } }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5000),
-                initialValue = currentState.toViewState()
+                // Initial states must be cheap to map; populated states use viewStateDispatcher.
+                initialValue = initialState.toViewState()
             )
     }
 
@@ -37,7 +44,13 @@ abstract class BaseViewModel<S : Any, VS : Any, E : Any, Ef : Any>(
     protected val currentState: S
         get() = _state.value
 
+    /** Submit from any thread; Main.immediate serializes reducers and state writes. */
     fun trigger(event: E) {
+        viewModelScope.launch { processEvent(event) }
+    }
+
+    @MainThread
+    private fun processEvent(event: E) {
         val result = reduce(_state.value, event)
         _state.value = result.newState
         result.sideEffects.forEach { handleSideEffect(it) }
@@ -56,6 +69,8 @@ abstract class BaseViewModel<S : Any, VS : Any, E : Any, Ef : Any>(
                     try {
                         val event = sideEffect.work()
                         trigger(event)
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (e: Exception) {
                         handleGlobalError(e)
                     }

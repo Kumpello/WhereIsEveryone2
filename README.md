@@ -80,6 +80,30 @@ com.kumpello.whereiseveryone/
     └── extension/              # Kotlin extension functions
 ```
 
+## Coroutine dispatchers
+
+- ViewModel reducers, UI actions, and `SideEffect.AsyncWork` start on Main via
+  `viewModelScope`. `trigger` accepts events from any thread and dispatches reduction
+  and state assignment to Main. Async work should call main-safe suspend APIs.
+- Map and friends view-state calculations run on an injectable `Default` dispatcher.
+  The initial view state uses the cheap, empty constructor state; the latest populated
+  state is mapped asynchronously when collected. Keep `toViewState` pure: it computes
+  an immutable snapshot on Default, then returns to Main for publication. API friend-list
+  conversion also runs on Default before sending a result event to the reducer.
+- Initialization launches independent operations on Main; suspending I/O releases Main
+  while waiting. Username loading must not gate location observation. Reducers only
+  return state and side-effect descriptions; they must not launch requests themselves.
+- Encrypted preferences initialize the keyset and encrypt/decrypt on an injectable
+  `IO` dispatcher. Device-ID settings fallback and synchronous database clearing also
+  use `IO`. Proximity distance calculations use `Default`.
+- Retrofit suspend calls, Room suspend DAOs, and DataStore manage their own I/O.
+  Thin use cases and lightweight validation/mapping functions inherit the caller's
+  context; they don't need an extra I/O switch.
+- `PreferencesManager.getCached` may block on a cache miss and is reserved for
+  OkHttp's synchronous worker-thread interceptor. Coroutine callers use `get` or `observe`.
+- Rethrow `CancellationException`; cancellation must not become a failure toast,
+  authentication fallback, or retry. Tests can supply dispatchers through constructors.
+
 ## Logging
 
 Logging follows the build type (`BuildConfig.DEBUG`), independently of the server flavor.

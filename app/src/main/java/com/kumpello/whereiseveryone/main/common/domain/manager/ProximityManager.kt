@@ -5,6 +5,9 @@ import com.kumpello.whereiseveryone.common.domain.manager.PreferencesManager
 import com.kumpello.whereiseveryone.main.common.util.LocationUtils
 import com.kumpello.whereiseveryone.main.map.domain.model.FriendsResponse
 import com.kumpello.whereiseveryone.main.map.presentation.LocationService
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -13,7 +16,8 @@ import kotlinx.coroutines.flow.map
 class ProximityManager(
     private val locationService: LocationService,
     private val friendsManager: FriendsManager,
-    private val preferencesManager: PreferencesManager
+    private val preferencesManager: PreferencesManager,
+    private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) {
 
     suspend fun observeNearbyFriends(): Flow<List<String>> {
@@ -38,6 +42,6 @@ class ProximityManager(
                     false
                 }
             }.map { it.username }.sorted()
-        }.distinctUntilChanged()
+        }.distinctUntilChanged().flowOn(defaultDispatcher)
     }
 }

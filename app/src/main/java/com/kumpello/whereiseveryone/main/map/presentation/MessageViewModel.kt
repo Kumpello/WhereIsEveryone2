@@ -8,6 +8,7 @@ import com.kumpello.whereiseveryone.common.domain.manager.PreferencesManager
 import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
 import com.kumpello.whereiseveryone.common.presentation.BaseViewModel
 import com.kumpello.whereiseveryone.main.map.domain.usecase.UpdateStatusUseCase
+import kotlinx.coroutines.CancellationException
 import timber.log.Timber
 
 class MessageViewModel(
@@ -48,6 +49,8 @@ class MessageViewModel(
                             Event.OnMessageError(R.string.error_updating_message)
                         }
                     }
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     Timber.tag(TAG).w(e, "Unable to update status")
                     Event.OnMessageError(R.string.error_updating_message)

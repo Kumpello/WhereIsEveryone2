@@ -14,7 +14,7 @@ import com.kumpello.whereiseveryone.main.common.domain.usecase.MapFriendUseCase
 import com.kumpello.whereiseveryone.main.common.entity.Friend
 import com.kumpello.whereiseveryone.main.common.entity.FriendLocalData
 import com.kumpello.whereiseveryone.main.common.entity.LocationData
-import com.kumpello.whereiseveryone.main.common.entity.toFriendState
+import com.kumpello.whereiseveryone.main.common.entity.toLocalData
 import com.kumpello.whereiseveryone.main.friends.domain.model.SharingResponse
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.AcceptFriendUseCase
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.GetPausedFriendsUseCase
@@ -24,7 +24,10 @@ import com.kumpello.whereiseveryone.main.friends.domain.usecase.ResumeSharingUse
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.StopSharingUseCase
 import com.kumpello.whereiseveryone.main.map.domain.model.FriendsResponse
 import com.kumpello.whereiseveryone.main.map.presentation.LocationService
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 class FriendsViewModel(
@@ -37,15 +40,15 @@ class FriendsViewModel(
     private val stopSharingUseCase: StopSharingUseCase,
     private val resumeSharingUseCase: ResumeSharingUseCase,
     private val getPausedFriendsUseCase: GetPausedFriendsUseCase,
-    private val preferencesManager: PreferencesManager
+    private val preferencesManager: PreferencesManager,
+    private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : BaseViewModel<FriendsViewModel.State, FriendsViewModel.ViewState, FriendsViewModel.Event, FriendsViewModel.Action>(
-    State()
+    State(),
+    viewStateDispatcher = defaultDispatcher
 ) {
 
     init {
         viewModelScope.launch {
-            val username = preferencesManager.get(PreferencesKey.UserName)
-            trigger(Event.OnUsernameLoaded(username ?: ""))
             locationService.observeLocation().collect { location ->
                 trigger(Event.OnLocationUpdate(location?.let {
                     LocationData(
@@ -60,6 +63,8 @@ class FriendsViewModel(
                 }))
             }
         }
+        // These operations are independent: slow preferences must not delay location observation.
+        trigger(Event.LoadUsername)
         trigger(Event.CheckFriends)
     }
 
@@ -90,24 +95,8 @@ class FriendsViewModel(
 
                     when (friendsResponse) {
                         is FriendsResponse.FriendsData -> {
-                            val friendList = friendsResponse.positions.map { friendData ->
-                                FriendLocalData(
-                                    username = friendData.username,
-                                    status = friendData.status,
-                                    state = friendData.state.toFriendState(),
-                                    location = friendData.location?.let { loc ->
-                                        LocationData(
-                                            lat = loc.latitude,
-                                            lon = loc.longitude,
-                                            bearing = loc.bearing,
-                                            alt = loc.altitude,
-                                            accuracy = loc.accuracy,
-                                            speed = loc.speed,
-                                            lastUpdate = loc.last_update
-                                        )
-                                    },
-                                    friendSince = friendData.friend_since
-                                )
+                            val friendList = withContext(defaultDispatcher) {
+                                friendsResponse.positions.map { it.toLocalData() }
                             }
                             Event.OnFriendsLoaded(friendList, paused)
                         }
@@ -124,6 +113,10 @@ class FriendsViewModel(
                 friends = event.friends,
                 pausedFriends = event.pausedFriends
             ).toResult()
+
+            Event.LoadUsername -> state.toResult(SideEffect.AsyncWork {
+                Event.OnUsernameLoaded(preferencesManager.get(PreferencesKey.UserName).orEmpty())
+            })
 
             is Event.OnUsernameLoaded -> state.copy(username = event.username).toResult()
 
@@ -267,6 +260,7 @@ class FriendsViewModel(
             val friends: List<FriendLocalData>,
             val pausedFriends: List<String>
         ) : Event()
+        data object LoadUsername : Event()
         data class OnUsernameLoaded(val username: String) : Event()
         data class OnError(@StringRes val id: Int) : Event()
         data class DeleteFriend(val nick: String) : Event()

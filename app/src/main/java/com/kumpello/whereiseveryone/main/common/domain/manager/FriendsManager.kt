@@ -5,6 +5,7 @@ import com.kumpello.whereiseveryone.main.common.database.toDatabaseEntity
 import com.kumpello.whereiseveryone.main.common.database.toDomain
 import com.kumpello.whereiseveryone.main.common.domain.usecase.GetFriendsDataUseCase
 import com.kumpello.whereiseveryone.main.map.domain.model.FriendsResponse
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -51,6 +52,7 @@ class FriendsManager(
                     }
                     emit(response)
                 }.onFailure {
+                    if (it is CancellationException) throw it
                     Timber.tag(TAG).w(it, "Friends polling failed; will retry")
                 }
 

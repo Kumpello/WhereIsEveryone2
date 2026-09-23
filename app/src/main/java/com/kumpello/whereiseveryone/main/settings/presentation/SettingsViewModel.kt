@@ -13,7 +13,7 @@ import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
 import com.kumpello.whereiseveryone.common.domain.usecase.LogoutUseCase
 import com.kumpello.whereiseveryone.common.presentation.BaseViewModel.SideEffect.*
 import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel.Event.*
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.debounce
@@ -35,19 +35,19 @@ class SettingsViewModel(
     private val proximityDistanceFlow = MutableStateFlow<Int?>(null)
 
     init {
-        viewModelScope.launch(Dispatchers.Main) {
+        viewModelScope.launch {
             locationService.observeIsServiceRunning().collect { isRunning ->
                 trigger(OnLocationServiceStateUpdate(isRunning))
             }
         }
-        viewModelScope.launch(Dispatchers.Main) {
+        viewModelScope.launch {
             preferencesManager.observe(PreferencesKey.ProximityDistance).collect { distance ->
                 if (proximityDistanceFlow.value == null) {
                     trigger(OnProximityDistanceUpdate(distance ?: 50))
                 }
             }
         }
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             proximityDistanceFlow
                 .debounce(250.milliseconds)
                 .distinctUntilChanged()
@@ -94,6 +94,8 @@ class SettingsViewModel(
                                 OnDataCleared
                             }
                         }
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (e: Exception) {
                         Timber.tag(TAG).w(e, "Unable to wipe location")
                         Toast(R.string.error_wiping_location)

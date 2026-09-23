@@ -7,6 +7,7 @@ import com.kumpello.whereiseveryone.common.presentation.AsyncState
 import com.kumpello.whereiseveryone.common.presentation.BaseViewModel
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.AddFriendUseCase
 import androidx.compose.runtime.Immutable
+import kotlinx.coroutines.CancellationException
 import timber.log.Timber
 
 class AddFriendViewModel(
@@ -34,6 +35,8 @@ class AddFriendViewModel(
                                 Event.OnError(R.string.error_adding_friend)
                             }
                         }
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (e: Exception) {
                         Timber.tag(TAG).w(e, "Unable to add friend")
                         Event.OnError(R.string.error_adding_friend)

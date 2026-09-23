@@ -13,6 +13,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -22,10 +23,10 @@ class ProximityManagerTest {
     private val locationService: LocationService = mockk()
     private val friendsManager: FriendsManager = mockk()
     private val preferencesManager: PreferencesManager = mockk()
-    private val proximityManager = ProximityManager(locationService, friendsManager, preferencesManager)
 
     @Test
     fun `observeNearbyFriends filters friends based on threshold`() = runTest {
+        val proximityManager = ProximityManager(locationService, friendsManager, preferencesManager, StandardTestDispatcher(testScheduler))
         val userLocation = mockk<Location> {
             every { latitude } returns 0.0
             every { longitude } returns 0.0

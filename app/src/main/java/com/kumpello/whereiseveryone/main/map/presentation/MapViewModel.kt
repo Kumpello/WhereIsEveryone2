@@ -14,14 +14,18 @@ import com.kumpello.whereiseveryone.main.common.entity.Friend
 import com.kumpello.whereiseveryone.main.common.entity.FriendLocalData
 import com.kumpello.whereiseveryone.main.common.entity.Location
 import com.kumpello.whereiseveryone.main.common.entity.LocationData
-import com.kumpello.whereiseveryone.main.common.entity.toFriendState
+import com.kumpello.whereiseveryone.main.common.entity.toLocalData
 import com.kumpello.whereiseveryone.main.friends.domain.model.SharingResponse
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.GetPausedFriendsUseCase
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.ResumeSharingUseCase
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.StopSharingUseCase
 import com.kumpello.whereiseveryone.main.map.domain.model.FriendsResponse
 import com.kumpello.whereiseveryone.main.map.entity.MapSettings
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 class MapViewModel(
@@ -31,9 +35,11 @@ class MapViewModel(
     private val mapFriendUseCase: MapFriendUseCase,
     private val stopSharingUseCase: StopSharingUseCase,
     private val resumeSharingUseCase: ResumeSharingUseCase,
-    private val getPausedFriendsUseCase: GetPausedFriendsUseCase
+    private val getPausedFriendsUseCase: GetPausedFriendsUseCase,
+    private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : BaseViewModel<MapViewModel.State, MapViewModel.ViewState, MapViewModel.Event, MapViewModel.Action>(
-    State()
+    State(),
+    viewStateDispatcher = defaultDispatcher
 ) {
 
     init {
@@ -53,65 +59,50 @@ class MapViewModel(
             }
         }
         viewModelScope.launch {
-            friendsManager.observeFriends().collect { response ->
-                trigger(Event.OnFriendsUpdate(response))
-                checkPaused()
+            try {
+                friendsManager.observeFriends().collect { response ->
+                    val event = when (response) {
+                        is FriendsResponse.FriendsData -> {
+                            val friends = withContext(defaultDispatcher) {
+                                response.positions.map { it.toLocalData() }
+                            }
+                            Event.OnFriendsLoaded(friends)
+                        }
+                        is FriendsResponse.ErrorData -> Event.OnError(R.string.error_getting_friends)
+                    }
+                    trigger(event)
+                    trigger(Event.CheckPaused)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.tag(TAG).w(e, "Unable to observe friends")
+                trigger(Event.OnError(R.string.error_getting_friends))
             }
         }
     }
 
-    private fun checkPaused() {
-        viewModelScope.launch {
-            try {
-                when (val response = getPausedFriendsUseCase.execute()) {
-                    is SharingResponse.PausedFriends -> {
-                        trigger(Event.OnPausedFriendsLoaded(response.usernames))
-                    }
-
-                    is SharingResponse.ErrorData -> {
-                        Timber.tag(TAG).d("Paused friends request rejected")
-                    }
+    private suspend fun checkPaused(): Event {
+        return try {
+            when (val response = getPausedFriendsUseCase.execute()) {
+                is SharingResponse.PausedFriends -> Event.OnPausedFriendsLoaded(response.usernames)
+                is SharingResponse.ErrorData -> {
+                    Timber.tag(TAG).d("Paused friends request rejected")
+                    Event.NoOp
                 }
-            } catch (e: Exception) {
-                Timber.tag(TAG).w(e, "Unable to load paused friends")
             }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.tag(TAG).w(e, "Unable to load paused friends")
+            Event.NoOp
         }
     }
 
     override fun reduce(state: State, event: Event): ReducerResult<State, Event, Action> {
         return when (event) {
             is Event.OnLocationUpdate -> state.copy(user = event.location).toResult()
-            is Event.OnFriendsUpdate -> {
-                when (val response = event.response) {
-                    is FriendsResponse.FriendsData -> {
-                        val friends = response.positions.map { friendData ->
-                            FriendLocalData(
-                                username = friendData.username,
-                                status = friendData.status,
-                                state = friendData.state.toFriendState(),
-                                location = friendData.location?.let { loc ->
-                                    LocationData(
-                                        lat = loc.latitude,
-                                        lon = loc.longitude,
-                                        bearing = loc.bearing,
-                                        alt = loc.altitude,
-                                        accuracy = loc.accuracy,
-                                        speed = loc.speed,
-                                        lastUpdate = loc.last_update,
-                                    )
-                                },
-                                friendSince = friendData.friend_since
-                            )
-                        }
-                        state.copy(friends = friends).toResult()
-                    }
-
-                    is FriendsResponse.ErrorData -> {
-                        Timber.tag(TAG).d("Friends request rejected")
-                        state.toResult(SideEffect.Effect(Action.Toast(R.string.error_getting_friends)))
-                    }
-                }
-            }
+            is Event.OnFriendsLoaded -> state.copy(friends = event.friends).toResult()
 
             is Event.OnPausedFriendsLoaded -> state.copy(pausedFriends = event.pausedFriends).toResult()
 
@@ -146,6 +137,8 @@ class MapViewModel(
                             } else {
                                 Event.OnError(errorMsg as Int)
                             }
+                        } catch (e: CancellationException) {
+                            throw e
                         } catch (e: Exception) {
                             Timber.tag(TAG).w(e, "Unable to change sharing")
                             Event.OnError(errorMsg as Int)
@@ -158,10 +151,9 @@ class MapViewModel(
                 SideEffect.InternalEvent(Event.CheckPaused)
             )
 
-            Event.CheckPaused -> {
-                checkPaused()
-                state.toResult()
-            }
+            Event.CheckPaused -> state.toResult(SideEffect.AsyncWork { checkPaused() })
+
+            Event.NoOp -> state.toResult()
 
             is Event.OnError -> state.toResult(SideEffect.Effect(Action.Toast(event.id)))
 
@@ -238,12 +230,13 @@ class MapViewModel(
 
     sealed class Event {
         data class OnLocationUpdate(val location: LocationData?) : Event()
-        data class OnFriendsUpdate(val response: FriendsResponse) : Event()
+        data class OnFriendsLoaded(val friends: List<FriendLocalData>) : Event()
         data class OnPausedFriendsLoaded(val pausedFriends: List<String>) : Event()
         data class ToggleSharing(val nick: String) : Event()
         data class OnActionSuccess(@StringRes val messageId: Int) : Event()
         data class OnError(@StringRes val id: Int) : Event()
         data object CheckPaused : Event()
+        data object NoOp : Event()
         data object ZoomOut : Event()
         data object ZoomIn : Event()
         data object CenterMap : Event()
