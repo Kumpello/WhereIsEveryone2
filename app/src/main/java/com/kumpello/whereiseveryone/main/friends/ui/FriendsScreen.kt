@@ -16,6 +16,8 @@ import android.widget.Toast
 import timber.log.Timber
 import com.kumpello.whereiseveryone.common.extension.isAddFriendDeepLink
 import androidx.activity.compose.BackHandler
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
@@ -71,6 +73,7 @@ import com.kumpello.whereiseveryone.main.common.entity.Location
 import com.kumpello.whereiseveryone.main.common.ui.FriendDetailsCard
 import com.kumpello.whereiseveryone.main.friends.nfc.NdefHceService
 import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
+import com.kumpello.whereiseveryone.main.friends.presentation.AddFriendViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
@@ -82,8 +85,12 @@ const val TAG = "FRIENDS_SCREEN"
 fun FriendsScreen(
     navController: NavController,
     friendsViewModel: FriendsViewModel = koinViewModel(),
+    addFriendViewModel: AddFriendViewModel = koinViewModel(
+        viewModelStoreOwner = LocalActivity.current as ComponentActivity
+    ),
 ) {
     val friendsState by friendsViewModel.state.collectAsStateWithLifecycle()
+    val addFriendState by addFriendViewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val focusManager = LocalFocusManager.current
@@ -147,6 +154,8 @@ fun FriendsScreen(
 
     FriendsScreen(
         friendsViewState = friendsState,
+        pendingLinkedFriend = addFriendState.pendingLinkedFriend,
+        onAddFriendEvent = addFriendViewModel::trigger,
         onFriendsEvent = friendsViewModel::trigger,
         onFriendAdded = { friendsViewModel.trigger(FriendsViewModel.Event.CheckFriends) },
         onOpenNfcReading = { friendsViewModel.trigger(FriendsViewModel.Event.OpenNfcReadingDialog) }
@@ -159,8 +168,16 @@ private fun FriendsScreen(
     onFriendsEvent: (FriendsViewModel.Event) -> Unit,
     onFriendAdded: () -> Unit,
     onOpenNfcReading: () -> Unit,
+    pendingLinkedFriend: String? = null,
+    onAddFriendEvent: (AddFriendViewModel.Event) -> Unit = {},
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
+        pendingLinkedFriend?.let { username ->
+            AddFriendDialog(
+                username = username,
+                trigger = onAddFriendEvent
+            )
+        }
         if (friendsViewState.deleteFriendDialogState is FriendsViewModel.DeleteFriendDialogState.Open) {
             DeleteFriendDialog(
                 friend = friendsViewState.deleteFriendDialogState.friend,

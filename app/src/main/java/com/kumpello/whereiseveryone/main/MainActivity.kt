@@ -16,10 +16,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -259,8 +263,18 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun MainScreen() {
+        val addFriendState by addFriendViewModel.state.collectAsStateWithLifecycle()
         val controller = rememberNavController()
         navController = controller
+        LaunchedEffect(addFriendState.pendingLinkedFriend) {
+            if (addFriendState.pendingLinkedFriend != null &&
+                controller.currentDestination?.hasRoute<MainRoute.Friends>() != true
+            ) {
+                controller.navigate(MainRoute.Friends) {
+                    launchSingleTop = true
+                }
+            }
+        }
         NavHost(
             navController = controller,
             startDestination = MainRoute.Map
