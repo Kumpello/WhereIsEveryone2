@@ -16,6 +16,7 @@ import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -36,7 +37,10 @@ class SettingsViewModel(
 
     init {
         viewModelScope.launch {
-            locationService.observeIsServiceRunning().collect { isRunning ->
+            combine(
+                locationService.observeIsServiceRunning(),
+                preferencesManager.observe(PreferencesKey.LocationSharingEnabled)
+            ) { running, enabled -> running && enabled != false }.collect { isRunning ->
                 trigger(OnLocationServiceStateUpdate(isRunning))
             }
         }
@@ -108,11 +112,10 @@ class SettingsViewModel(
                 Timber.tag(TAG).d("Switching location service state, new state: %s", newState)
                 if (state.locationServiceState) {
                     locationService.stopLocationService()
-                } else {
-                    locationService.startLocationService()
                 }
                 state.toResult(AsyncWork {
                     preferencesManager.save(PreferencesKey.LocationSharingEnabled, newState)
+                    if (newState) locationService.startLocationService()
                     NoOp
                 })
             }

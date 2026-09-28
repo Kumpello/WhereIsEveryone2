@@ -1,7 +1,6 @@
 package com.kumpello.whereiseveryone.main.settings.presentation
 
 import app.cash.turbine.test
-import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.common.domain.manager.PreferencesKey
 import com.kumpello.whereiseveryone.common.domain.manager.PreferencesManager
 import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
@@ -11,6 +10,7 @@ import com.kumpello.whereiseveryone.main.map.presentation.LocationService
 import com.kumpello.whereiseveryone.utils.MainDispatcherRule
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,8 +32,10 @@ class SettingsViewModelTest {
         every { observeIsServiceRunning() } returns MutableStateFlow(true).asStateFlow()
     }
     private val wipeLocationUseCase: WipeLocationUseCase = mockk()
+    private val sharingEnabled = MutableStateFlow<Boolean?>(true)
     private val preferencesManager: PreferencesManager = mockk(relaxed = true) {
         every { observe(PreferencesKey.ProximityDistance) } returns emptyFlow()
+        every { observe(PreferencesKey.LocationSharingEnabled) } returns sharingEnabled
     }
     private val logoutUseCase: LogoutUseCase = mockk(relaxed = true)
 
@@ -57,6 +59,27 @@ class SettingsViewModelTest {
         coVerify {
             locationService.stopLocationService()
             preferencesManager.save(PreferencesKey.LocationSharingEnabled, false)
+        }
+    }
+
+    @Test
+    fun `notification pause shows sharing stopped while service remains alive`() = runTest {
+        setupViewModel()
+        viewModel.state.test {
+            assertTrue(awaitItem().isLocationServiceRunning)
+            sharingEnabled.value = false
+            assertFalse(awaitItem().isLocationServiceRunning)
+        }
+    }
+
+    @Test
+    fun `resuming from settings saves enabled before starting service`() = runTest {
+        sharingEnabled.value = false
+        setupViewModel()
+        viewModel.trigger(SettingsViewModel.Event.SwitchLocationServiceState)
+        coVerifyOrder {
+            preferencesManager.save(PreferencesKey.LocationSharingEnabled, true)
+            locationService.startLocationService()
         }
     }
 
