@@ -1,6 +1,7 @@
 package com.kumpello.whereiseveryone.main.friends.ui
 
 import android.app.Activity
+import android.app.KeyguardManager
 import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
@@ -56,6 +57,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
@@ -72,11 +74,13 @@ import com.kumpello.whereiseveryone.main.common.entity.LastUpdateAge
 import com.kumpello.whereiseveryone.main.common.entity.Location
 import com.kumpello.whereiseveryone.main.common.ui.FriendDetailsCard
 import com.kumpello.whereiseveryone.main.friends.nfc.NdefHceService
+import com.kumpello.whereiseveryone.main.friends.nfc.NfcSharingSession
 import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
 import com.kumpello.whereiseveryone.main.friends.presentation.AddFriendViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
+import org.koin.compose.koinInject
 import kotlin.time.Duration.Companion.seconds
 
 const val TAG = "FRIENDS_SCREEN"
@@ -93,6 +97,7 @@ fun FriendsScreen(
     val addFriendState by addFriendViewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val nfcSharingSession = koinInject<NfcSharingSession>()
     val focusManager = LocalFocusManager.current
 
     val keyboardVisible =
@@ -111,17 +116,26 @@ fun FriendsScreen(
         }
     }
 
-    DisposableEffect(Unit) {
+    DisposableEffect(lifecycle, context, friendsViewModel) {
+        fun stopSharing() {
+            nfcSharingSession.stop()
+            friendsViewModel.trigger(FriendsViewModel.Event.CloseNfcSharingDialog)
+            stopNfcSharing(context)
+        }
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_PAUSE) stopSharing()
+        }
+        lifecycle.addObserver(observer)
         val nfcReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 Timber.tag(TAG).d("Broadcast received: ${intent?.action}")
-                if (intent?.action == "com.kumpello.whereiseveryone.NFC_SUCCESS") {
+                if (intent?.action == NdefHceService.ACTION_PROFILE_SHARED) {
                     friendsViewModel.trigger(FriendsViewModel.Event.CloseNfcSharingDialog)
                     Toast.makeText(context, context?.getString(R.string.profile_shared_successfully), Toast.LENGTH_SHORT).show()
                 }
             }
         }
-        val filter = IntentFilter("com.kumpello.whereiseveryone.NFC_SUCCESS")
+        val filter = IntentFilter(NdefHceService.ACTION_PROFILE_SHARED)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             context.registerReceiver(nfcReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
         } else {
@@ -130,6 +144,8 @@ fun FriendsScreen(
         }
 
         onDispose {
+            stopSharing()
+            lifecycle.removeObserver(observer)
             context.unregisterReceiver(nfcReceiver)
         }
     }
@@ -144,7 +160,16 @@ fun FriendsScreen(
                     Toast.LENGTH_SHORT
                 ).show()
 
-                is FriendsViewModel.Action.TriggerNfcSharing -> triggerNfcSharing(context)
+                is FriendsViewModel.Action.TriggerNfcSharing -> {
+                    if (nfcSharingSession.current() != null) {
+                        val started = lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) &&
+                            triggerNfcSharing(context)
+                        if (!started) {
+                            friendsViewModel.trigger(FriendsViewModel.Event.CloseNfcSharingDialog)
+                            Toast.makeText(context, R.string.could_not_start_sharing, Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
                 FriendsViewModel.Action.StopNfcSharing -> stopNfcSharing(context)
                 is FriendsViewModel.Action.TriggerNfcReading -> triggerNfcReading(context, friendsViewModel)
                 FriendsViewModel.Action.StopNfcReading -> stopNfcReading(context)
@@ -368,36 +393,32 @@ private fun processNdefMessage(message: NdefMessage?, context: Context, viewMode
     }
 }
 
-private fun triggerNfcSharing(context: Context) {
-    Timber.tag(TAG).d("Triggering NFC Sharing")
-    val nfcAdapter = NfcAdapter.getDefaultAdapter(context)
-    if (nfcAdapter == null) {
-        Timber.tag(TAG).w("NFC is unavailable")
-    } else {
-        val cardEmulation = CardEmulation.getInstance(nfcAdapter)
-        val componentName = ComponentName(context, NdefHceService::class.java)
-        Timber.tag(TAG).d("Setting preferred service: $componentName")
-        try {
-            val success = cardEmulation.setPreferredService(context as Activity, componentName)
-            Timber.tag(TAG).d("SetPreferredService success: $success")
-            if (success) {
-                Toast.makeText(context, context.getString(R.string.ready_to_share), Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(context, context.getString(R.string.could_not_start_sharing), Toast.LENGTH_SHORT).show()
-            }
-        } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "Error calling setPreferredService")
-        }
+private fun triggerNfcSharing(context: Context): Boolean {
+    val activity = context as? Activity ?: return false
+    val keyguard = context.getSystemService(KeyguardManager::class.java) ?: return false
+    if (keyguard.isDeviceLocked || keyguard.isKeyguardLocked) return false
+    return try {
+        val adapter = NfcAdapter.getDefaultAdapter(context) ?: return false
+        if (!adapter.isEnabled) return false
+        val started = CardEmulation.getInstance(adapter).setPreferredService(
+            activity, ComponentName(context, NdefHceService::class.java)
+        )
+        if (started) Toast.makeText(context, R.string.ready_to_share, Toast.LENGTH_SHORT).show()
+        started
+    } catch (exception: Exception) {
+        Timber.tag(TAG).e(exception, "Unable to prefer NFC sharing service")
+        false
     }
 }
 
 private fun stopNfcSharing(context: Context) {
-    Timber.tag(TAG).d("Stopping NFC Sharing")
-    val nfcAdapter = NfcAdapter.getDefaultAdapter(context)
-    if (nfcAdapter != null) {
-        val cardEmulation = CardEmulation.getInstance(nfcAdapter)
-        val success = cardEmulation.unsetPreferredService(context as Activity)
-        Timber.tag(TAG).d("UnsetPreferredService success: $success")
+    // Session authorization is revoked separately, even if platform cleanup fails.
+    try {
+        val activity = context as? Activity ?: return
+        val adapter = NfcAdapter.getDefaultAdapter(context) ?: return
+        CardEmulation.getInstance(adapter).unsetPreferredService(activity)
+    } catch (exception: Exception) {
+        Timber.tag(TAG).w(exception, "Unable to clear NFC service preference")
     }
 }
 

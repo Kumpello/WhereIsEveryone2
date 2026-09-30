@@ -73,7 +73,7 @@
     <string name="nfc_share_cd">NFC Share</string>
     <string name="reading_nfc_tag_title">Reading NFC Tag</string>
     <string name="reading_nfc_tag_message">Bring another device or NFC tag closer to read friend information.</string>
-    <string name="nfc_sharing_message_active">Your device is now acting as an NFC tag. Bring another device closer to share your profile.</string>
+    <string name="nfc_sharing_message_active">Bring another device closer to share your profile. Keep this screen open and your device unlocked. Sharing ends after one minute or one transfer.</string>
 
     <!-- Sharing Controls -->
     <string name="stop_sharing">Stop sharing</string>

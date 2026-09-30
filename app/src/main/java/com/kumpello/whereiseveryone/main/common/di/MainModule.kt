@@ -22,6 +22,7 @@ import com.kumpello.whereiseveryone.main.friends.domain.usecase.StopSharingUseCa
 import com.kumpello.whereiseveryone.main.friends.presentation.AddFriendViewModel
 import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
 import com.kumpello.whereiseveryone.main.friends.presentation.ShareProfileViewModel
+import com.kumpello.whereiseveryone.main.friends.nfc.NfcSharingSession
 import com.kumpello.whereiseveryone.main.map.domain.usecase.GetPermissionsStatusUseCase
 import com.kumpello.whereiseveryone.main.map.domain.usecase.UpdateStatusUseCase
 import com.kumpello.whereiseveryone.main.map.presentation.LocationService
@@ -87,11 +88,14 @@ val mainModule = module {
             stopSharingUseCase = get(),
             resumeSharingUseCase = get(),
             getPausedFriendsUseCase = get(),
-            preferencesManager = get()
+            preferencesManager = get(),
+            nfcSharingSession = get()
         )
     }
     viewModel { AddFriendViewModel(get()) }
     viewModel { ShareProfileViewModel(get()) }
+
+    single { NfcSharingSession() }
 
     single { LocationServiceProxy() }
     single<LocationService> { get<LocationServiceProxy>() }

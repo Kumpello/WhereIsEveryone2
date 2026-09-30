@@ -22,13 +22,17 @@ import com.kumpello.whereiseveryone.main.friends.domain.usecase.RejectFriendUseC
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.RemoveFriendUseCase
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.ResumeSharingUseCase
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.StopSharingUseCase
+import com.kumpello.whereiseveryone.main.friends.nfc.NfcSharingSession
 import com.kumpello.whereiseveryone.main.map.domain.model.FriendsResponse
 import com.kumpello.whereiseveryone.main.map.presentation.LocationService
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import kotlin.time.Duration.Companion.milliseconds
 
 class FriendsViewModel(
     private val removeFriendUseCase: RemoveFriendUseCase,
@@ -41,11 +45,19 @@ class FriendsViewModel(
     private val resumeSharingUseCase: ResumeSharingUseCase,
     private val getPausedFriendsUseCase: GetPausedFriendsUseCase,
     private val preferencesManager: PreferencesManager,
+    private val nfcSharingSession: NfcSharingSession,
     private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : BaseViewModel<FriendsViewModel.State, FriendsViewModel.ViewState, FriendsViewModel.Event, FriendsViewModel.Action>(
     State(),
     viewStateDispatcher = defaultDispatcher
 ) {
+
+    private var nfcSharingTimeout: Job? = null
+
+    override fun onCleared() {
+        nfcSharingSession.stop()
+        super.onCleared()
+    }
 
     init {
         viewModelScope.launch {
@@ -217,8 +229,25 @@ class FriendsViewModel(
             Event.ClearSelectedFriend -> state.copy(selectedFriend = null).toResult()
             Event.OpenShareDialog -> state.copy(isShareDialogOpen = true).toResult()
             Event.CloseShareDialog -> state.copy(isShareDialogOpen = false).toResult()
-            Event.OpenNfcSharingDialog -> state.copy(isNfcSharingDialogOpen = true).toResult(SideEffect.Effect(Action.TriggerNfcSharing(state.username)))
-            Event.CloseNfcSharingDialog -> state.copy(isNfcSharingDialogOpen = false).toResult(SideEffect.Effect(Action.StopNfcSharing))
+            Event.OpenNfcSharingDialog -> {
+                if (state.isNfcSharingDialogOpen) return state.toResult()
+                if (!nfcSharingSession.start(state.username)) {
+                    return state.toResult(SideEffect.Effect(Action.Toast(R.string.could_not_start_sharing)))
+                }
+                nfcSharingTimeout = viewModelScope.launch {
+                    delay(NfcSharingSession.TIMEOUT_MILLIS.milliseconds)
+                    trigger(Event.CloseNfcSharingDialog)
+                }
+                state.copy(isNfcSharingDialogOpen = true).toResult(
+                    SideEffect.Effect(Action.TriggerNfcSharing(state.username))
+                )
+            }
+            Event.CloseNfcSharingDialog -> {
+                nfcSharingSession.stop()
+                nfcSharingTimeout?.cancel()
+                nfcSharingTimeout = null
+                state.copy(isNfcSharingDialogOpen = false).toResult(SideEffect.Effect(Action.StopNfcSharing))
+            }
             Event.OpenNfcReadingDialog -> state.copy(isNfcReadingDialogOpen = true).toResult(SideEffect.Effect(Action.TriggerNfcReading))
             Event.CloseNfcReadingDialog -> state.copy(isNfcReadingDialogOpen = false).toResult(SideEffect.Effect(Action.StopNfcReading))
         }
