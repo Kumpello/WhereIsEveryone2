@@ -42,13 +42,16 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.tasks.await
 import org.koin.android.ext.android.inject
 import timber.log.Timber
@@ -67,12 +70,10 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
         capacity = Channel.CONFLATED
     )
     private val state = MutableStateFlow(State())
-    private val exposedState = state.asStateFlow()
 
     private val forcedForegroundStatus = MutableStateFlow(LocationService.ForcedForegroundStatus())
 
-    private val desiredUpdateType =
-        MutableStateFlow<LocationService.UpdateType>(LocationService.UpdateType.Foreground)
+    private var desiredUpdateType: LocationService.UpdateType = LocationService.UpdateType.Foreground
 
     private val binder: IBinder = LocationBinder()
 
@@ -81,14 +82,13 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
     private val proximityNotificationID = 422
     private val job = SupervisorJob()
 
-    private val scope = CoroutineScope(Dispatchers.IO + job)
+    private val scope = CoroutineScope(Dispatchers.Main.immediate + job)
     private var locationUpdatesJob: Job? = null
     private var locationSenderJob: Job? = null
-    private val sharingGate by lazy { LocationSharingGate(preferencesManager) }
-    private var sharingChangePending = false
+    private val sharingMutex = Mutex()
+    private var isServiceStarted = false
     private var previousNearbyFriends = emptySet<String>()
 
-    @Volatile
     private var latestLocation: Location? = null
 
     private var lastSendTimestamp: Long = 0L
@@ -97,6 +97,21 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
         Timber.tag(TAG).d("LocationForegroundService onCreate")
         super.onCreate()
         locationServiceProxy.registerDelegate(this)
+
+        scope.launch {
+            preferencesManager.observe(PreferencesKey.LocationSharingEnabled)
+                .map { it != false }
+                .distinctUntilChanged()
+                .catch { exception ->
+                    Timber.tag(TAG).e(exception, "Unable to observe location sharing preference")
+                    stopService()
+                }
+                .collect { enabled ->
+                    state.update { it.copy(isSharingEnabled = enabled) }
+                    if (enabled) startLocationUpdates(state.value.updateType) else stopUpdates()
+                    updateNotification()
+                }
+        }
 
         scope.launch {
             getLastLocation()?.let {
@@ -204,8 +219,10 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
     override fun onDestroy() {
         Timber.tag(TAG).d("LocationForegroundService stopping")
         saveLatestLocationToDatabase()
+        isServiceStarted = false
         locationServiceProxy.unregisterDelegate()
         stopUpdates()
+        locationSendChannel.cancel()
         scope.cancel()
         super.onDestroy()
     }
@@ -220,6 +237,7 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
     }
 
     private fun startServiceInternal(startUpdates: Boolean = true) {
+        if (!scope.isActive) return
         if (!checkPermissions()) {
             Timber.tag(TAG).e("Missing permissions to start LocationForegroundService")
             stopSelf()
@@ -235,8 +253,9 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
             startForeground(420, createNotification())
         }
 
-        if (startUpdates && !state.value.isLocationUpdatesStarted) {
-            startLocationUpdates(updateType = exposedState.value.updateType)
+        isServiceStarted = true
+        if (startUpdates) {
+            startLocationUpdates(updateType = state.value.updateType)
         }
     }
 
@@ -285,7 +304,7 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
             }
         }
 
-        val toggleActionText = if (state.value.isSharingEnabled != false) {
+        val toggleActionText = if (state.value.isSharingEnabled) {
             getString(R.string.stop_sharing)
         } else {
             getString(R.string.resume_sharing)
@@ -317,6 +336,7 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
     }
 
     private fun updateNotification() {
+        if (!isServiceStarted) return
         val manager = getSystemService(NotificationManager::class.java)
         manager.notify(420, createNotification())
     }
@@ -373,7 +393,7 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
     }
 
     override fun changeUpdateType(updateType: LocationService.UpdateType) {
-        desiredUpdateType.value = updateType
+        desiredUpdateType = updateType
         if (forcedForegroundStatus.value.isEnabled) {
             Timber.tag(TAG).d("Change ignored due to forced foreground mode, but saved as desired: %s", updateType)
             return
@@ -382,6 +402,7 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
     }
 
     private fun applyUpdateType(updateType: LocationService.UpdateType) {
+        if (state.value.updateType == updateType) return
         state.update { it.copy(updateType = updateType) }
         stopUpdates()
         startLocationUpdates(updateType)
@@ -406,102 +427,74 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
 
     override fun disableForcedForeground() {
         forcedForegroundStatus.value = LocationService.ForcedForegroundStatus(isEnabled = false, endTime = null)
-        applyUpdateType(desiredUpdateType.value)
+        applyUpdateType(desiredUpdateType)
     }
 
     override fun stopService() {
         Timber.tag(TAG).d("stopService called")
+        isServiceStarted = false
         stopUpdates()
+        locationSendChannel.cancel()
+        scope.cancel()
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
 
     override fun toggleSharing() {
-        scope.launch(Dispatchers.Main.immediate) {
-            if (sharingChangePending) return@launch
-            sharingChangePending = true
-            sharingGate.blockStarts()
-            stopUpdates()
+        scope.launch {
             try {
-                val enabled = !(state.value.isSharingEnabled
-                    ?: preferencesManager.get(PreferencesKey.LocationSharingEnabled)
-                    ?: true)
-                state.update { it.copy(isSharingEnabled = enabled) }
-                updateNotification()
-                sharingGate.saveEnabled(enabled)
-                sharingChangePending = false
-                if (enabled) startLocationUpdates(exposedState.value.updateType)
+                sharingMutex.withLock {
+                    val enabled = preferencesManager.get(PreferencesKey.LocationSharingEnabled) != false
+                    preferencesManager.save(PreferencesKey.LocationSharingEnabled, !enabled)
+                }
             } catch (exception: CancellationException) {
                 throw exception
             } catch (exception: Exception) {
-                // Fail closed if the user's preference cannot be persisted.
-                state.update { it.copy(isSharingEnabled = false) }
                 Timber.tag(TAG).e(exception, "Unable to save location sharing preference")
-            } finally {
-                sharingChangePending = false
-                if (isActive) updateNotification()
             }
         }
     }
 
     private fun startLocationUpdates(updateType: LocationService.UpdateType) {
-        scope.launch(Dispatchers.Main.immediate) {
-            if (locationUpdatesJob?.isActive == true) return@launch
-            val enabled = try {
-                sharingGate.readEnabledForStart() ?: return@launch
-            } catch (exception: CancellationException) {
-                throw exception
-            } catch (exception: Exception) {
-                Timber.tag(TAG).e(exception, "Unable to read location sharing preference")
-                return@launch
-            }
-            if (locationUpdatesJob?.isActive == true) return@launch
-            state.update { it.copy(isSharingEnabled = enabled) }
-            if (!enabled) {
-                updateNotification()
-                return@launch
-            }
+        if (!isServiceStarted || !scope.isActive || !state.value.isSharingEnabled || locationUpdatesJob?.isActive == true) return
 
-            val request = when (updateType) {
-                LocationService.UpdateType.Background -> getBackgroundRequest()
-                LocationService.UpdateType.Foreground -> getForegroundRequest()
-            }
-            state.update { it.copy(isLocationUpdatesStarted = true, updateType = updateType) }
-            updateNotification()
-            startLocationSender()
-            locationUpdatesJob = scope.launch(Dispatchers.Main) {
-                try {
-                    fusedLocationClient.locationUpdates(request, Looper.getMainLooper())
-                        .catch { exception ->
-                            Timber.tag(TAG).e(exception, "Unable to receive location updates")
-                        }
-                        .collect { location ->
-                            Timber.tag(TAG).d("Emitting location update")
-                            latestLocation = location
-                            locationServiceProxy.updateLocation(location)
-                            locationSendChannel.send(LocationUpload(location, System.currentTimeMillis()))
-                        }
-                } finally {
-                    // A cancelled collection must not reset a replacement collection's state.
-                    if (locationUpdatesJob === coroutineContext[Job]) {
-                        stopUpdates()
-                        updateNotification()
+        val request = when (updateType) {
+            LocationService.UpdateType.Background -> getBackgroundRequest()
+            LocationService.UpdateType.Foreground -> getForegroundRequest()
+        }
+        state.update { it.copy(isLocationUpdatesStarted = true, updateType = updateType) }
+        updateNotification()
+        startLocationSender()
+        locationUpdatesJob = scope.launch(Dispatchers.Main) {
+            try {
+                fusedLocationClient.locationUpdates(request, Looper.getMainLooper())
+                    .catch { exception ->
+                        Timber.tag(TAG).e(exception, "Unable to receive location updates")
                     }
+                    .collect { location ->
+                        Timber.tag(TAG).d("Emitting location update")
+                        latestLocation = location
+                        locationServiceProxy.updateLocation(location)
+                        locationSendChannel.send(LocationUpload(location, System.currentTimeMillis()))
+                    }
+            } finally {
+                // A cancelled collection must not reset a replacement collection's state.
+                if (locationUpdatesJob === coroutineContext[Job]) {
+                    stopUpdates()
+                    updateNotification()
                 }
             }
         }
     }
 
     private fun stopUpdates() {
-        scope.launch(Dispatchers.Main.immediate) {
-            sharingGate.invalidateStarts()
-            locationUpdatesJob?.cancel()
-            locationUpdatesJob = null
-            locationSenderJob?.cancel()
-            locationSenderJob = null
-            locationSendChannel.tryReceive()
-            state.update { it.copy(isLocationUpdatesStarted = false) }
-        }
+        val updates = locationUpdatesJob
+        locationUpdatesJob = null
+        updates?.cancel()
+        locationSenderJob?.cancel()
+        locationSenderJob = null
+        locationSendChannel.tryReceive()
+        state.update { it.copy(isLocationUpdatesStarted = false) }
     }
 
     private suspend fun sendLocation(initialUpload: LocationUpload) {
@@ -588,7 +581,7 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
             maxAge = 300_000L
         ),
         val isLocationUpdatesStarted: Boolean = false,
-        val isSharingEnabled: Boolean? = null,
+        val isSharingEnabled: Boolean = false,
         val updateType: LocationService.UpdateType = LocationService.UpdateType.Foreground
     ) {
         data class LocationRequestSettings(
@@ -625,32 +618,3 @@ internal fun FusedLocationProviderClient.locationUpdates(
         removeLocationUpdates(callback)
     }
 }.conflate()
-
-/** Confined to Main, like the service's start/stop operations. */
-internal class LocationSharingGate(private val preferencesManager: PreferencesManager) {
-    private var generation = 0L
-    private var blocked = false
-
-    fun invalidateStarts() {
-        generation++
-    }
-
-    fun blockStarts() {
-        blocked = true
-        invalidateStarts()
-    }
-
-    suspend fun saveEnabled(enabled: Boolean) {
-        blockStarts()
-        preferencesManager.save(PreferencesKey.LocationSharingEnabled, enabled)
-        // A failed write must leave starts blocked until an explicit successful retry.
-        blocked = false
-    }
-
-    suspend fun readEnabledForStart(): Boolean? {
-        if (blocked) return null
-        val requestedGeneration = generation
-        val enabled = preferencesManager.get(PreferencesKey.LocationSharingEnabled) ?: true
-        return enabled.takeIf { !blocked && requestedGeneration == generation }
-    }
-}

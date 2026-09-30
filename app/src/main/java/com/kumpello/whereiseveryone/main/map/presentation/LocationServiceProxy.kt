@@ -23,10 +23,16 @@ class LocationServiceProxy : LocationService, KoinComponent {
     private val _forcedForegroundStatus = MutableStateFlow(LocationService.ForcedForegroundStatus())
     private val _isServiceRunning = MutableStateFlow(false)
 
+    private var stopRequested = false
+
     fun registerDelegate(delegate: LocationServiceDelegate) {
         Timber.tag(TAG).d("Registering service delegate")
         this.delegate = delegate
-        _isServiceRunning.value = true
+        if (stopRequested) {
+            delegate.stopService()
+        } else {
+            _isServiceRunning.value = true
+        }
     }
 
     fun unregisterDelegate() {
@@ -49,6 +55,7 @@ class LocationServiceProxy : LocationService, KoinComponent {
     }
 
     override fun startLocationService() {
+        stopRequested = false
         Timber.tag(TAG).d("Starting foreground location service")
         val intent = Intent(context, LocationForegroundService::class.java)
         context.startForegroundService(intent)
@@ -56,6 +63,8 @@ class LocationServiceProxy : LocationService, KoinComponent {
     }
 
     override fun stopLocationService() {
+        stopRequested = true
+        _isServiceRunning.value = false
         Timber.tag(TAG).d("Stopping foreground location service")
         delegate?.stopService()
         try {
@@ -106,7 +115,7 @@ class LocationServiceProxy : LocationService, KoinComponent {
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             Timber.tag(TAG).d("Service bound")
-            _isServiceRunning.value = true
+            _isServiceRunning.value = delegate != null && !stopRequested
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {

@@ -20,6 +20,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import timber.log.Timber
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -33,6 +35,8 @@ class SettingsViewModel(
     State()
 ) {
 
+    private val locationOperationMutex = Mutex()
+
     private val proximityDistanceFlow = MutableStateFlow<Int?>(null)
 
     init {
@@ -40,8 +44,8 @@ class SettingsViewModel(
             combine(
                 locationService.observeIsServiceRunning(),
                 preferencesManager.observe(PreferencesKey.LocationSharingEnabled)
-            ) { running, enabled -> running && enabled != false }.collect { isRunning ->
-                trigger(OnLocationServiceStateUpdate(isRunning))
+            ) { running, enabled -> OnLocationServiceStateUpdate(running, enabled != false) }.collect { event ->
+                trigger(event)
             }
         }
         viewModelScope.launch {
@@ -68,7 +72,10 @@ class SettingsViewModel(
         return when (event) {
             is OnLocationServiceStateUpdate -> {
                 Timber.tag(TAG).d("Location service state updated: %s", event.isRunning)
-                state.copy(locationServiceState = event.isRunning).toResult()
+                state.copy(
+                    locationServiceState = event.isRunning,
+                    isSharingEnabled = event.isSharingEnabled
+                ).toResult()
             }
 
             is OnProximityDistanceUpdate -> {
@@ -82,8 +89,10 @@ class SettingsViewModel(
 
             ClearData -> {
                 Timber.tag(TAG).d("Clearing user location data and stopping service")
-                state.toResult(AsyncWork {
+                state.toResult(locationWork {
                     try {
+                        locationService.stopLocationService()
+                        preferencesManager.save(PreferencesKey.LocationSharingEnabled, false)
                         Timber.tag(TAG).d("Sending wipe location request to backend")
                         when (val response = wipeLocationUseCase.execute()) {
                             is CodeResponse.ErrorData -> {
@@ -93,8 +102,6 @@ class SettingsViewModel(
 
                             CodeResponse.SuccessNoContent -> {
                                 Timber.tag(TAG).d("Location wiped successfully")
-                                locationService.stopLocationService()
-                                preferencesManager.save(PreferencesKey.LocationSharingEnabled, false)
                                 OnDataCleared
                             }
                         }
@@ -110,19 +117,22 @@ class SettingsViewModel(
             SwitchLocationServiceState -> {
                 val newState = !state.locationServiceState
                 Timber.tag(TAG).d("Switching location service state, new state: %s", newState)
-                if (state.locationServiceState) {
-                    locationService.stopLocationService()
-                }
-                state.toResult(AsyncWork {
+                state.toResult(locationWork {
+                    if (!newState) locationService.stopLocationService()
                     preferencesManager.save(PreferencesKey.LocationSharingEnabled, newState)
                     if (newState) locationService.startLocationService()
                     NoOp
                 })
             }
 
+            ToggleSharing -> state.toResult(locationWork {
+                if (locationService.observeIsServiceRunning().value) locationService.toggleSharing()
+                NoOp
+            })
+
             Logout -> {
                 Timber.tag(TAG).d("Logging out user")
-                state.toResult(AsyncWork {
+                state.toResult(locationWork {
                     locationService.stopLocationService()
                     logoutUseCase.execute()
                     OnLogoutComplete
@@ -145,10 +155,20 @@ class SettingsViewModel(
         }
     }
 
+    private fun locationWork(work: suspend () -> Event) = AsyncWork {
+        locationOperationMutex.withLock { work() }
+    }
+
     override fun State.toViewState(): ViewState {
         return ViewState(
             isLocationServiceRunning = locationServiceState,
+            isSharingEnabled = locationServiceState && isSharingEnabled,
             locationSwitchTextId = if (locationServiceState) {
+                R.string.settings_stop_location_service
+            } else {
+                R.string.settings_start_location_service
+            },
+            sharingSwitchTextId = if (isSharingEnabled) {
                 R.string.settings_stop_sharing_location
             } else {
                 R.string.settings_start_sharing_location
@@ -166,11 +186,12 @@ class SettingsViewModel(
     }
 
     sealed class Event {
-        data class OnLocationServiceStateUpdate(val isRunning: Boolean) : Event()
+        data class OnLocationServiceStateUpdate(val isRunning: Boolean, val isSharingEnabled: Boolean) : Event()
         data class OnProximityDistanceUpdate(val distance: Int) : Event()
         data class ChangeProximityDistance(val distance: Int) : Event()
         data object ClearData : Event()
         data object SwitchLocationServiceState : Event()
+        data object ToggleSharing : Event()
         data object Logout : Event()
         data object OnLogoutComplete : Event()
         data object OnDataCleared : Event()
@@ -179,14 +200,17 @@ class SettingsViewModel(
     }
 
     data class State(
-        val locationServiceState: Boolean = true,
+        val locationServiceState: Boolean = false,
+        val isSharingEnabled: Boolean = true,
         val proximityDistance: Int = 50
     )
 
     @Immutable
     data class ViewState(
         val isLocationServiceRunning: Boolean,
+        val isSharingEnabled: Boolean,
         @param:StringRes val locationSwitchTextId: Int,
+        @param:StringRes val sharingSwitchTextId: Int,
         @param:StringRes val deleteLocationDataId: Int,
         @param:StringRes val logoutTextId: Int,
         val proximityDistance: Int

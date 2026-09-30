@@ -142,6 +142,14 @@ private fun SettingsScreen(
                 ) {
                     trigger(SettingsViewModel.Event.SwitchLocationServiceState)
                 }
+                if (viewState.isLocationServiceRunning) {
+                    Button.Animated(
+                        text = stringResource(viewState.sharingSwitchTextId),
+                        textSize = 18
+                    ) {
+                        trigger(SettingsViewModel.Event.ToggleSharing)
+                    }
+                }
                 Button.Animated(
                     text = stringResource(viewState.deleteLocationDataId),
                     textSize = 18
@@ -231,7 +239,9 @@ fun SettingsPreview() {
         SettingsScreen(
             viewState = SettingsViewModel.ViewState(
                 isLocationServiceRunning = true,
-                locationSwitchTextId = R.string.settings_stop_sharing_location,
+                isSharingEnabled = true,
+                locationSwitchTextId = R.string.settings_stop_location_service,
+                sharingSwitchTextId = R.string.settings_stop_sharing_location,
                 deleteLocationDataId = R.string.settings_delete_location_data,
                 logoutTextId = R.string.settings_logout,
                 proximityDistance = 50
