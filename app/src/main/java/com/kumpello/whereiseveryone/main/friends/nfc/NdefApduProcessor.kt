@@ -39,9 +39,9 @@ internal class NdefApduProcessor(
                 selectedFile = SelectedFile.NDEF
                 STATUS_SUCCESS
             }
-            hex.startsWith("00B0") && command.size >= 4 -> {
+            hex.startsWith("00B0") && command.size == 5 -> {
                 val offset = ((command[2].toInt() and 0xFF) shl 8) or (command[3].toInt() and 0xFF)
-                val length = if (command.size > 4) command[4].toInt() and 0xFF else 0
+                val length = command[4].toInt() and 0xFF
                 val file = when (selectedFile) {
                     SelectedFile.CC -> CAPABILITY_CONTAINER
                     SelectedFile.NDEF -> ndefFile

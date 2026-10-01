@@ -107,6 +107,23 @@ class NdefApduProcessorTest {
     }
 
     @Test
+    fun `incomplete and oversized reads fail without consuming the active transfer`() {
+        beginTransfer()
+        val malformedCommands = (0 until readLength.size).map(readLength::copyOf) + listOf(
+            hex("00B000000200"),
+            hex("00B00000000002")
+        )
+        for (command in malformedCommands) {
+            assertArrayEquals(failure, processor.process(command, true))
+        }
+        assertEquals("alice", session.current()?.username)
+        assertEquals(0, completions)
+        assertArrayEquals(file.copyOfRange(0, 2) + success, processor.process(readLength, true))
+        assertArrayEquals(file.copyOfRange(2, 6) + success, processor.process(readContent, true))
+        assertEquals(1, completions)
+    }
+
+    @Test
     fun `capability reads and malformed commands cannot complete sharing`() {
         beginTransfer()
         assertArrayEquals(success, processor.process(hex("00A4000C02E103"), true))
