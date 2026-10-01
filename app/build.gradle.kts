@@ -72,9 +72,8 @@ android {
             )
         }
         debug {
-            // Optional: makes plain "Run" install a release-signed APK too.
-            // Remove this block if you want Run to keep using the debug keystore.
-            signingConfig = signingConfigs.getByName("release")
+            applicationIdSuffix = ".debug"
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 
