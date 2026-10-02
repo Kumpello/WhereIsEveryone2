@@ -11,7 +11,7 @@ plugins {
 
 configurations.all {
     resolutionStrategy {
-        force("androidx.concurrent:concurrent-futures:1.2.0")
+        force("androidx.concurrent:concurrent-futures:1.3.0")
     }
 }
 
