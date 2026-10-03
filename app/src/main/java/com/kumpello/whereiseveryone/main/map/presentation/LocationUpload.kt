@@ -13,7 +13,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 internal data class LocationUpload(
     val location: Location,
-    val lastUpdate: Long
+    val lastUpdate: Long = location.time
 )
 
 internal suspend fun sendLocationWithRetry(

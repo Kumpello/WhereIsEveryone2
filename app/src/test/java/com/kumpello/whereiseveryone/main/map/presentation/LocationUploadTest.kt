@@ -1,6 +1,8 @@
 package com.kumpello.whereiseveryone.main.map.presentation
 
+import android.location.Location
 import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -21,6 +23,13 @@ import javax.net.ssl.SSLHandshakeException
 @OptIn(ExperimentalCoroutinesApi::class)
 class LocationUploadTest {
     private val upload = LocationUpload(mockk(), 123L)
+
+    @Test
+    fun `upload uses cached fix timestamp rather than callback time`() {
+        val location = mockk<Location> { every { time } returns 1_719_859_200_000L }
+
+        assertEquals(1_719_859_200_000L, LocationUpload(location).lastUpdate)
+    }
 
     @Test
     fun `network failures retry three times with exponential delays and preserve timestamp`() = runTest {

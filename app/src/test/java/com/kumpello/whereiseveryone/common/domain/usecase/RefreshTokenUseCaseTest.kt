@@ -8,6 +8,9 @@ import com.kumpello.whereiseveryone.common.model.AuthResponse
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.async
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -97,5 +100,37 @@ class RefreshTokenUseCaseTest {
             preferencesManager.save(PreferencesKey.AuthToken, "new_access_token")
             preferencesManager.save(PreferencesKey.AuthRefreshToken, "new_refresh_token")
         }
+    }
+
+    @Test
+    fun `concurrent callers share one rotation and later calls use the new refresh token`() = runTest {
+        var storedRefreshToken = "old_refresh_token"
+        coEvery { preferencesManager.get(PreferencesKey.AuthRefreshToken) } coAnswers { storedRefreshToken }
+        coEvery { preferencesManager.save(PreferencesKey.AuthRefreshToken, any()) } coAnswers {
+            storedRefreshToken = secondArg()
+        }
+        coEvery { deviceIdProvider.getDeviceId() } returns "device_123"
+        val releaseResponse = CompletableDeferred<Unit>()
+        coEvery { authenticationRepository.refreshToken("old_refresh_token", "device_123") } coAnswers {
+            releaseResponse.await()
+            AuthResponse.AuthData("1", "new_refresh_token", "new_access_token")
+        }
+        coEvery { authenticationRepository.refreshToken("new_refresh_token", "device_123") } returns
+            AuthResponse.AuthData("1", "next_refresh_token", "next_access_token")
+
+        val splashRefresh = async(start = CoroutineStart.UNDISPATCHED) { useCase.execute() }
+        val interceptorRefresh = async(start = CoroutineStart.UNDISPATCHED) { useCase.execute() }
+        coVerify(exactly = 1) { authenticationRepository.refreshToken(any(), any()) }
+
+        releaseResponse.complete(Unit)
+
+        assertEquals(RefreshTokenUseCase.Response.Success, splashRefresh.await())
+        assertEquals(RefreshTokenUseCase.Response.Success, interceptorRefresh.await())
+        assertEquals("new_refresh_token", storedRefreshToken)
+        coVerify(exactly = 1) { authenticationRepository.refreshToken(any(), any()) }
+
+        assertEquals(RefreshTokenUseCase.Response.Success, useCase.execute())
+        assertEquals("next_refresh_token", storedRefreshToken)
+        coVerify(exactly = 1) { authenticationRepository.refreshToken("new_refresh_token", "device_123") }
     }
 }

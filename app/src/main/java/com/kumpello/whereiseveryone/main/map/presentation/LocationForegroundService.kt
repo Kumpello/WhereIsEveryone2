@@ -475,7 +475,7 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
                         Timber.tag(TAG).d("Emitting location update")
                         latestLocation = location
                         locationServiceProxy.updateLocation(location)
-                        locationSendChannel.send(LocationUpload(location, System.currentTimeMillis()))
+                        locationSendChannel.send(LocationUpload(location))
                     }
             } finally {
                 // A cancelled collection must not reset a replacement collection's state.

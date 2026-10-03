@@ -6,6 +6,8 @@ import com.kumpello.whereiseveryone.common.domain.provider.DeviceIdProvider
 import com.kumpello.whereiseveryone.common.domain.repository.AuthenticationRepository
 import com.kumpello.whereiseveryone.common.model.AuthResponse
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import timber.log.Timber
 import java.io.IOException
 import kotlin.time.Duration.Companion.milliseconds
@@ -15,6 +17,7 @@ class RefreshTokenUseCase(
     private val preferencesManager: PreferencesManager,
     private val deviceIdProvider: DeviceIdProvider,
 ) {
+    private val refreshMutex = Mutex()
 
     suspend fun execute(
         maxRetries: Int = DEFAULT_MAX_RETRIES,
@@ -23,6 +26,22 @@ class RefreshTokenUseCase(
         val refreshToken = preferencesManager.get(PreferencesKey.AuthRefreshToken)
         if (refreshToken.isNullOrEmpty()) return Response.Error
 
+        return refreshMutex.withLock {
+            val currentRefreshToken = preferencesManager.get(PreferencesKey.AuthRefreshToken)
+            when {
+                currentRefreshToken.isNullOrEmpty() -> Response.Error
+                // Another caller already rotated this single-use credential while we waited.
+                currentRefreshToken != refreshToken -> Response.Success
+                else -> refresh(refreshToken, maxRetries, initialDelayMs)
+            }
+        }
+    }
+
+    private suspend fun refresh(
+        refreshToken: String,
+        maxRetries: Int,
+        initialDelayMs: Long
+    ): Response {
         val deviceToken = deviceIdProvider.getDeviceId()
 
         var currentDelay = initialDelayMs
