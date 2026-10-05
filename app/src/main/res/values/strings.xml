@@ -52,9 +52,11 @@
     <string name="friend_deleted_successfully">Friend deleted successfully</string>
     <string name="rejected_successfully">Rejected successfully!</string>
     <string name="error_adding_friend">Error occurred during adding friend</string>
+    <string name="friend_request_limit_reached">A friend or request limit has been reached for one of you. Remove a friend or clear pending requests, then try again.</string>
     <string name="error_getting_friends">Error getting friends!</string>
     <string name="error_deleting_friend">Error occurred during deleting friend</string>
     <string name="error_occurred_during_accepting_friend">Error occurred during accepting friend</string>
+    <string name="friend_limit_reached">One of you has reached the limit of 2,048 friends. Remove a friend before accepting this request.</string>
     <string name="error_during_reject">Error during reject</string>
     <string name="delete_cd">Delete</string>
     <string name="accept_cd">Accept</string>

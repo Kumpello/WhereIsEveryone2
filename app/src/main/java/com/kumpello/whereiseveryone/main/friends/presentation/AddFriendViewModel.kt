@@ -48,7 +48,10 @@ class AddFriendViewModel(
 
                             is CodeResponse.ErrorData -> {
                                 Timber.tag(TAG).d("Add-friend request rejected")
-                                Event.OnError(R.string.error_adding_friend)
+                                Event.OnError(
+                                    if (response.code == 409) R.string.friend_request_limit_reached
+                                    else R.string.error_adding_friend
+                                )
                             }
                         }
                     } catch (e: CancellationException) {

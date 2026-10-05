@@ -2,6 +2,7 @@ package com.kumpello.whereiseveryone.main.friends.presentation
 
 import android.net.Uri
 import app.cash.turbine.test
+import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
 import com.kumpello.whereiseveryone.common.presentation.AsyncState
 import com.kumpello.whereiseveryone.main.friends.domain.usecase.AddFriendUseCase
@@ -171,6 +172,27 @@ class AddFriendViewModelTest {
         viewModel.action.test {
             viewModel.trigger(AddFriendViewModel.Event.ScanQrCode)
             assertTrue(awaitItem() is AddFriendViewModel.Action.OpenQrScanner)
+        }
+    }
+
+    @Test
+    fun `capacity conflict shows a limit message and preserves entered nickname`() = runTest {
+        coEvery { addFriendUseCase.execute(any()) } returns CodeResponse.ErrorData(409, "", "Conflict")
+        setupViewModel()
+        viewModel.trigger(AddFriendViewModel.Event.SetAddFriendNick("alice"))
+        viewModel.state.test {
+            awaitItem()
+            runCurrent()
+            viewModel.action.test {
+                viewModel.trigger(AddFriendViewModel.Event.AddFriend)
+                assertEquals(AddFriendViewModel.Action.Toast(R.string.friend_request_limit_reached), awaitItem())
+                runCurrent()
+                assertEquals("alice", viewModel.state.value.addFriendNick)
+                assertTrue(viewModel.state.value.actionState is AsyncState.Idle)
+                coVerify(exactly = 1) { addFriendUseCase.execute("alice") }
+                expectNoEvents()
+            }
+            cancelAndIgnoreRemainingEvents()
         }
     }
 }

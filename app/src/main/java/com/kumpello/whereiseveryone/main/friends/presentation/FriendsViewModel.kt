@@ -161,7 +161,10 @@ class FriendsViewModel(
                             }
 
                             is CodeResponse.ErrorData -> {
-                                Event.OnError(R.string.error_occurred_during_accepting_friend)
+                                Event.OnError(
+                                    if (response.code == 409) R.string.friend_limit_reached
+                                    else R.string.error_occurred_during_accepting_friend
+                                )
                             }
                         }
                     })

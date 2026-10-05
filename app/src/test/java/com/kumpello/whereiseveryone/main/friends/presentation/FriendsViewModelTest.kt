@@ -2,6 +2,8 @@ package com.kumpello.whereiseveryone.main.friends.presentation
 
 import android.location.Location
 import app.cash.turbine.test
+import com.kumpello.whereiseveryone.R
+import com.kumpello.whereiseveryone.common.domain.model.CodeResponse
 import androidx.lifecycle.ViewModelStore
 import com.kumpello.whereiseveryone.common.domain.manager.PreferencesKey
 import com.kumpello.whereiseveryone.common.domain.manager.PreferencesManager
@@ -197,5 +199,19 @@ class FriendsViewModelTest {
             assertTrue(awaitItem() is FriendsViewModel.Action.Toast)
         }
         assertEquals(null, nfcSharingSession.current())
+    }
+
+    @Test
+    fun `accept capacity conflict shows a friend limit message`() = runTest {
+        coEvery { acceptFriendUseCase.execute("alice") } returns CodeResponse.ErrorData(409, "", "Conflict")
+        setupViewModel()
+        runCurrent()
+        viewModel.action.test {
+            viewModel.trigger(FriendsViewModel.Event.AcceptFriend("alice"))
+            assertEquals(FriendsViewModel.Action.Toast(R.string.friend_limit_reached), awaitItem())
+            runCurrent()
+            assertFalse(viewModel.state.value.actionState.isLoading)
+            coVerify(exactly = 1) { acceptFriendUseCase.execute("alice") }
+        }
     }
 }

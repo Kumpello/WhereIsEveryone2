@@ -14,6 +14,20 @@ class FriendDataTest {
         .adapter<List<FriendData>>(Types.newParameterizedType(List::class.java, FriendData::class.java))
 
     @Test
+    fun `paginated response preserves opaque cursor and pending privacy`() {
+        val page = requireNotNull(Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
+            .adapter(FriendsPage::class.java).fromJson("""
+                {"items":[{"username":"incoming","state":"pending_incoming","friend_since":null}],
+                 "next_cursor":"opaque-next-page"}
+            """.trimIndent()))
+
+        assertEquals("opaque-next-page", page.next_cursor)
+        assertEquals("", page.items.single().status)
+        assertNull(page.items.single().location)
+        assertNull(page.items.single().friend_since)
+    }
+
+    @Test
     fun `friend list accepts pending entries without private status or location`() {
         val friends = requireNotNull(adapter.fromJson("""
             [
