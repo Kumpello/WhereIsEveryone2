@@ -84,6 +84,12 @@ com.kumpello.whereiseveryone/
     └── extension/              # Kotlin extension functions
 ```
 
+## Android Studio run configurations
+
+Shared profiles in [`.run`](.run/README.md) cover all six app variants, APK and bundle
+builds, per-variant lint, unit tests, device tests, and the complete debug validation
+suite. Use `App (selected build variant)` for native IDE debugging.
+
 ## UI design system
 
 The UI foundations, reusable components, accessibility rules, and design audit are

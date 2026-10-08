@@ -1,5 +1,20 @@
 import java.util.Properties
 import java.io.FileInputStream
+import java.io.ByteArrayOutputStream
+import com.android.build.api.artifact.SingleArtifact
+import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputDirectory
+import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.TaskAction
+import org.gradle.process.ExecOperations
+import org.gradle.work.DisableCachingByDefault
+import javax.inject.Inject
 
 plugins {
     id(libs.plugins.android.application.get().pluginId)
@@ -163,4 +178,77 @@ dependencies {
 
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)
+}
+
+@DisableCachingByDefault(because = "Installs and launches an app on a connected device")
+abstract class RunAndroidVariantTask : DefaultTask() {
+    @get:InputDirectory
+    abstract val apkDirectory: DirectoryProperty
+
+    @get:Input
+    abstract val applicationId: Property<String>
+
+    @get:Internal
+    abstract val adbExecutable: RegularFileProperty
+
+    @get:Input
+    @get:Optional
+    abstract val deviceSerial: Property<String>
+
+    @get:Inject
+    abstract val execOperations: ExecOperations
+
+    @TaskAction
+    fun installAndLaunch() {
+        val adb = adbExecutable.get().asFile.absolutePath
+        val output = ByteArrayOutputStream()
+        execOperations.exec {
+            commandLine(adb, "devices")
+            standardOutput = output
+        }.assertNormalExitValue()
+
+        val devices = output.toString(Charsets.UTF_8.name()).lineSequence()
+            .map { it.trim().split(Regex("\\s+")) }
+            .filter { it.size == 2 && it[1] == "device" }
+            .map { it[0] }
+            .toList()
+        val requestedSerial = deviceSerial.orNull?.takeIf { it.isNotBlank() }
+        val serial = if (requestedSerial != null) {
+            if (requestedSerial !in devices) {
+                throw GradleException("The selected Android device is not connected and authorized.")
+            }
+            requestedSerial
+        } else {
+            devices.singleOrNull() ?: throw GradleException(
+                "Connect one authorized Android device, or select one with -PandroidRunSerial=SERIAL or ANDROID_SERIAL."
+            )
+        }
+        val apk = apkDirectory.get().asFile.listFiles { file -> file.extension == "apk" }
+            ?.singleOrNull() ?: throw GradleException("Expected one APK for this variant.")
+
+        execOperations.exec {
+            commandLine(adb, "-s", serial, "install", "-r", apk.absolutePath)
+        }.assertNormalExitValue()
+        execOperations.exec {
+            commandLine(
+                adb, "-s", serial, "shell", "am", "start", "-W",
+                "-a", "android.intent.action.MAIN",
+                "-c", "android.intent.category.LAUNCHER",
+                "-p", applicationId.get()
+            )
+        }.assertNormalExitValue()
+    }
+}
+
+androidComponents.onVariants { variant ->
+    val variantTaskSuffix = variant.name.replaceFirstChar { it.uppercaseChar() }
+    tasks.register<RunAndroidVariantTask>("run$variantTaskSuffix") {
+        group = "application"
+        description = "Builds, installs, and launches ${variant.name} on one Android device."
+        dependsOn("assemble$variantTaskSuffix")
+        apkDirectory.set(variant.artifacts.get(SingleArtifact.APK))
+        applicationId.set(variant.applicationId)
+        adbExecutable.set(androidComponents.sdkComponents.adb)
+        deviceSerial.set(providers.gradleProperty("androidRunSerial").orElse(providers.environmentVariable("ANDROID_SERIAL")))
+    }
 }
