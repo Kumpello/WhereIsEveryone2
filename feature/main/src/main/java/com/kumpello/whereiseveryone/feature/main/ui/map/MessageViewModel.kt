@@ -1,0 +1,109 @@
+package com.kumpello.whereiseveryone.feature.main.ui.map
+
+import com.kumpello.whereiseveryone.feature.main.R
+import androidx.annotation.StringRes
+import androidx.compose.runtime.Immutable
+import com.kumpello.whereiseveryone.data.repository.preferences.PreferencesKey
+import com.kumpello.whereiseveryone.data.repository.preferences.PreferencesManager
+import com.kumpello.whereiseveryone.data.model.CodeResponse
+import com.kumpello.whereiseveryone.core.presentation.BaseViewModel
+import com.kumpello.whereiseveryone.feature.main.domain.usecase.UpdateStatusUseCase
+import kotlinx.coroutines.CancellationException
+import timber.log.Timber
+
+class MessageViewModel(
+    private val preferencesManager: PreferencesManager,
+    private val updateStatusUseCase: UpdateStatusUseCase,
+) : BaseViewModel<MessageViewModel.State, MessageViewModel.ViewState, MessageViewModel.Event, MessageViewModel.Action>(
+    State()
+) {
+
+    init {
+        trigger(Event.LoadUserMessage)
+    }
+
+    override fun reduce(state: State, event: Event): ReducerResult<State, Event, Action> {
+        return when (event) {
+            Event.LoadUserMessage -> state.toResult(SideEffect.AsyncWork {
+                val message = preferencesManager.get(PreferencesKey.UserMessage).orEmpty()
+                Timber.tag(TAG).d("Loaded user message")
+                Event.OnUserMessageLoaded(message)
+            })
+
+            is Event.OnUserMessageLoaded -> state.copy(userMessage = event.message).toResult()
+
+            is Event.WriteMessage -> state.copy(userMessageField = event.message).toResult()
+
+            Event.SendMessage -> state.toResult(SideEffect.AsyncWork {
+                try {
+                    val message = state.userMessageField
+                    when (updateStatusUseCase.execute(message)) {
+                        is CodeResponse.SuccessNoContent -> {
+                            preferencesManager.save(PreferencesKey.UserMessage, message)
+                            Timber.tag(TAG).d("Message saved to DataStore")
+                            Event.OnMessageSent(message)
+                        }
+
+                        is CodeResponse.ErrorData -> {
+                            Timber.tag(TAG).d("Status update rejected")
+                            Event.OnMessageError(R.string.error_updating_message)
+                        }
+                    }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Timber.tag(TAG).w(e, "Unable to update status")
+                    Event.OnMessageError(R.string.error_updating_message)
+                }
+            })
+
+            is Event.OnMessageSent -> {
+                Timber.tag(TAG).d("Message updated successfully")
+                state.copy(userMessage = event.message, userMessageField = "").toResult(
+                    SideEffect.Effect(Action.NotifyMessageSent)
+                )
+            }
+
+            is Event.OnMessageError -> state.toResult(SideEffect.Effect(Action.Toast(event.errorId)))
+
+            Event.ClearMessage -> state.copy(userMessageField = "").toResult(SideEffect.InternalEvent(Event.SendMessage))
+        }
+    }
+
+    override fun State.toViewState(): ViewState {
+        return ViewState(
+            userMessage = userMessage,
+            userMessageField = userMessageField
+        )
+    }
+
+    sealed class Action {
+        data object NotifyMessageSent : Action()
+        data class Toast(@StringRes val id: Int) : Action()
+    }
+
+    sealed class Event {
+        data object LoadUserMessage : Event()
+        data class OnUserMessageLoaded(val message: String) : Event()
+        data class WriteMessage(val message: String) : Event()
+        data object SendMessage : Event()
+        data class OnMessageSent(val message: String) : Event()
+        data class OnMessageError(@StringRes val errorId: Int) : Event()
+        data object ClearMessage : Event()
+    }
+
+    data class State(
+        val userMessage: String = "",
+        val userMessageField: String = ""
+    )
+
+    @Immutable
+    data class ViewState(
+        val userMessage: String,
+        val userMessageField: String,
+    )
+
+    companion object {
+        private const val TAG = "MESSAGE_VM"
+    }
+}

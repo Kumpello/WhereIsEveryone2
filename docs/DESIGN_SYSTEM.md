@@ -18,7 +18,7 @@ No dependency or navigation route is added by the UI revision.
 | Elevation | Floating controls 4 dp; dialogs 6 dp | Regular cards use surface color and borders instead of heavy shadows |
 | Type | Material roles, default sans serif, explicit line heights | Headlines for screen/dialog titles, title medium for rows/sections, body for supporting text, label large for actions |
 
-Definitions live in `common/ui/theme/{Color,Theme,Type,Shape,Dimens}.kt`.
+Definitions live in `core/src/main/java/com/kumpello/whereiseveryone/core/ui/theme/`.
 `WhereIsEveryoneTheme` installs the typography and shapes as well as the full color
 scheme, including surface containers, inverse colors, and fixed accent roles used by
 Material components. Fixed roles stay the same in light and dark themes.

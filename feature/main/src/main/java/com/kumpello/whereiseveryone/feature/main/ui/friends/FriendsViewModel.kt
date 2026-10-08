@@ -1,0 +1,350 @@
+package com.kumpello.whereiseveryone.feature.main.ui.friends
+
+import com.kumpello.whereiseveryone.feature.main.R
+import androidx.annotation.StringRes
+import androidx.compose.runtime.Immutable
+import androidx.lifecycle.viewModelScope
+import com.kumpello.whereiseveryone.data.repository.preferences.PreferencesKey
+import com.kumpello.whereiseveryone.data.repository.preferences.PreferencesManager
+import com.kumpello.whereiseveryone.data.model.CodeResponse
+import com.kumpello.whereiseveryone.core.presentation.AsyncState
+import com.kumpello.whereiseveryone.core.presentation.BaseViewModel
+import com.kumpello.whereiseveryone.feature.main.domain.usecase.GetFriendsDataUseCase
+import com.kumpello.whereiseveryone.feature.main.ui.mapper.MapFriendUseCase
+import com.kumpello.whereiseveryone.feature.main.ui.model.Friend
+import com.kumpello.whereiseveryone.data.model.FriendLocalData
+import com.kumpello.whereiseveryone.data.model.LocationData
+import com.kumpello.whereiseveryone.data.model.toLocalData
+import com.kumpello.whereiseveryone.data.network.model.SharingResponse
+import com.kumpello.whereiseveryone.feature.main.domain.usecase.AcceptFriendUseCase
+import com.kumpello.whereiseveryone.feature.main.domain.usecase.GetPausedFriendsUseCase
+import com.kumpello.whereiseveryone.feature.main.domain.usecase.RejectFriendUseCase
+import com.kumpello.whereiseveryone.feature.main.domain.usecase.RemoveFriendUseCase
+import com.kumpello.whereiseveryone.feature.main.domain.usecase.ResumeSharingUseCase
+import com.kumpello.whereiseveryone.feature.main.domain.usecase.StopSharingUseCase
+import com.kumpello.whereiseveryone.feature.main.sharing.nfc.NfcSharingSession
+import com.kumpello.whereiseveryone.data.model.FriendsResponse
+import com.kumpello.whereiseveryone.feature.main.location.LocationService
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import timber.log.Timber
+import kotlin.time.Duration.Companion.milliseconds
+
+class FriendsViewModel(
+    private val removeFriendUseCase: RemoveFriendUseCase,
+    private val getFriendsDataUseCase: GetFriendsDataUseCase,
+    private val acceptFriendUseCase: AcceptFriendUseCase,
+    private val rejectFriendUseCase: RejectFriendUseCase,
+    private val locationService: LocationService,
+    private val mapFriendUseCase: MapFriendUseCase,
+    private val stopSharingUseCase: StopSharingUseCase,
+    private val resumeSharingUseCase: ResumeSharingUseCase,
+    private val getPausedFriendsUseCase: GetPausedFriendsUseCase,
+    private val preferencesManager: PreferencesManager,
+    private val nfcSharingSession: NfcSharingSession,
+    private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
+) : BaseViewModel<FriendsViewModel.State, FriendsViewModel.ViewState, FriendsViewModel.Event, FriendsViewModel.Action>(
+    State(),
+    viewStateDispatcher = defaultDispatcher
+) {
+
+    private var nfcSharingTimeout: Job? = null
+
+    override fun onCleared() {
+        nfcSharingSession.stop()
+        super.onCleared()
+    }
+
+    init {
+        viewModelScope.launch {
+            locationService.observeLocation().collect { location ->
+                trigger(Event.OnLocationUpdate(location?.let {
+                    LocationData(
+                        lat = it.latitude,
+                        lon = it.longitude,
+                        bearing = it.bearing,
+                        alt = it.altitude,
+                        accuracy = it.accuracy,
+                        speed = it.speed,
+                        lastUpdate = System.currentTimeMillis()
+                    )
+                }))
+            }
+        }
+        // These operations are independent: slow preferences must not delay location observation.
+        trigger(Event.LoadUsername)
+        trigger(Event.CheckFriends)
+    }
+
+    override fun handleGlobalError(e: Exception) {
+        if (e is java.io.IOException) {
+            Timber.tag(TAG).w(e, "Friends operation failed due to network error")
+            trigger(Event.OnError(R.string.server_unreachable))
+        } else {
+            Timber.tag(TAG).e(e, "Unexpected friends operation failure")
+        }
+    }
+
+    override fun reduce(state: State, event: Event): ReducerResult<State, Event, Action> {
+        return when (event) {
+            is Event.OnLocationUpdate -> state.copy(userLocation = event.location).toResult()
+            Event.CheckFriends -> {
+                Timber.tag(TAG).d("Checking friends")
+                state.toResult(SideEffect.AsyncWork {
+                    val friendsResponse = getFriendsDataUseCase.execute()
+                    val pausedResponse = getPausedFriendsUseCase.execute()
+
+                    val paused = if (pausedResponse is SharingResponse.PausedFriends) {
+                        pausedResponse.usernames
+                    } else {
+                        Timber.tag(TAG).d("Paused friends request rejected")
+                        emptyList()
+                    }
+
+                    when (friendsResponse) {
+                        is FriendsResponse.FriendsData -> {
+                            val friendList = withContext(defaultDispatcher) {
+                                friendsResponse.positions.map { it.toLocalData() }
+                            }
+                            Event.OnFriendsLoaded(friendList, paused)
+                        }
+
+                        is FriendsResponse.ErrorData -> {
+                            Timber.tag(TAG).d("Friends request rejected")
+                            Event.OnError(R.string.error_getting_friends)
+                        }
+                    }
+                })
+            }
+
+            is Event.OnFriendsLoaded -> state.copy(
+                friends = event.friends,
+                pausedFriends = event.pausedFriends
+            ).toResult()
+
+            Event.LoadUsername -> state.toResult(SideEffect.AsyncWork {
+                Event.OnUsernameLoaded(preferencesManager.get(PreferencesKey.UserName).orEmpty())
+            })
+
+            is Event.OnUsernameLoaded -> state.copy(username = event.username).toResult()
+
+            is Event.OnError -> state.copy(actionState = AsyncState.Idle)
+                .toResult(SideEffect.Effect(Action.Toast(event.id)))
+
+            is Event.DeleteFriend -> {
+                Timber.tag(TAG).d("Deleting friend")
+                state.copy(actionState = AsyncState.Loading(message = "Deleting friend..."))
+                    .toResult(SideEffect.AsyncWork {
+                        when (removeFriendUseCase.execute(event.nick)) {
+                            CodeResponse.SuccessNoContent -> {
+                                Event.OnActionSuccess(R.string.friend_deleted_successfully)
+                            }
+
+                            is CodeResponse.ErrorData -> {
+                                Event.OnError(R.string.error_deleting_friend)
+                            }
+                        }
+                    })
+            }
+
+            is Event.AcceptFriend -> {
+                Timber.tag(TAG).d("Accepting friend")
+                state.copy(actionState = AsyncState.Loading(message = "Accepting request..."))
+                    .toResult(SideEffect.AsyncWork {
+                        when (val response = acceptFriendUseCase.execute(event.nick)) {
+                            CodeResponse.SuccessNoContent -> {
+                                Event.OnActionSuccess(R.string.friend_accepted)
+                            }
+
+                            is CodeResponse.ErrorData -> {
+                                Event.OnError(
+                                    if (response.code == 409) R.string.friend_limit_reached
+                                    else R.string.error_occurred_during_accepting_friend
+                                )
+                            }
+                        }
+                    })
+            }
+
+            is Event.RejectFriend -> {
+                Timber.tag(TAG).d("Rejecting friend")
+                state.copy(actionState = AsyncState.Loading(message = "Rejecting request..."))
+                    .toResult(SideEffect.AsyncWork {
+                        when (val response = rejectFriendUseCase.execute(event.nick)) {
+                            CodeResponse.SuccessNoContent -> {
+                                Event.OnActionSuccess(R.string.rejected_successfully)
+                            }
+
+                            is CodeResponse.ErrorData -> {
+                                Event.OnError(R.string.error_during_reject)
+                            }
+                        }
+                    })
+            }
+
+            is Event.OnActionSuccess -> state.copy(actionState = AsyncState.Idle).toResult(
+                SideEffect.Effect(Action.Toast(event.messageId)),
+                SideEffect.InternalEvent(Event.CheckFriends)
+            )
+
+            is Event.ToggleSharing -> {
+                val isPaused = state.pausedFriends.contains(event.nick)
+                val (useCase, loadingMsg, successMsg, errorMsg) = if (isPaused) {
+                    listOf(
+                        resumeSharingUseCase::execute,
+                        "Resuming sharing...",
+                        R.string.sharing_resumed_successfully,
+                        R.string.error_resuming_sharing
+                    )
+                } else {
+                    listOf(
+                        stopSharingUseCase::execute,
+                        "Stopping sharing...",
+                        R.string.sharing_stopped_successfully,
+                        R.string.error_stopping_sharing
+                    )
+                }
+                
+                state.copy(actionState = AsyncState.Loading(message = loadingMsg as String))
+                    .toResult(SideEffect.AsyncWork {
+                        val response = (useCase as suspend (String) -> CodeResponse).invoke(event.nick)
+                        if (response is CodeResponse.SuccessNoContent) {
+                            Event.OnActionSuccess(successMsg as Int)
+                        } else {
+                            Event.OnError(errorMsg as Int)
+                        }
+                    })
+            }
+
+            is Event.OpenDeleteFriendDialog -> state.copy(
+                deleteFriendDialogState = DeleteFriendDialogState.Open(event.friend)
+            ).toResult()
+
+            Event.CloseDeleteFriendDialog -> state.copy(
+                deleteFriendDialogState = DeleteFriendDialogState.Closed
+            ).toResult()
+
+            is Event.SelectFriend -> state.copy(selectedFriend = event.friend).toResult()
+            Event.ClearSelectedFriend -> state.copy(selectedFriend = null).toResult()
+            Event.OpenShareDialog -> state.copy(isShareDialogOpen = true).toResult()
+            Event.CloseShareDialog -> state.copy(isShareDialogOpen = false).toResult()
+            Event.OpenNfcSharingDialog -> {
+                if (state.isNfcSharingDialogOpen) return state.toResult()
+                if (!nfcSharingSession.start(state.username)) {
+                    return state.toResult(SideEffect.Effect(Action.Toast(R.string.could_not_start_sharing)))
+                }
+                nfcSharingTimeout = viewModelScope.launch {
+                    delay(NfcSharingSession.TIMEOUT_MILLIS.milliseconds)
+                    trigger(Event.CloseNfcSharingDialog)
+                }
+                state.copy(isNfcSharingDialogOpen = true).toResult(
+                    SideEffect.Effect(Action.TriggerNfcSharing(state.username))
+                )
+            }
+            Event.CloseNfcSharingDialog -> {
+                nfcSharingSession.stop()
+                nfcSharingTimeout?.cancel()
+                nfcSharingTimeout = null
+                state.copy(isNfcSharingDialogOpen = false).toResult(SideEffect.Effect(Action.StopNfcSharing))
+            }
+            Event.OpenNfcReadingDialog -> state.copy(isNfcReadingDialogOpen = true).toResult(SideEffect.Effect(Action.TriggerNfcReading))
+            Event.CloseNfcReadingDialog -> state.copy(isNfcReadingDialogOpen = false).toResult(SideEffect.Effect(Action.StopNfcReading))
+        }
+    }
+
+    override fun State.toViewState(): ViewState {
+        val mappedFriends = friends.map { friend ->
+            mapFriendUseCase.execute(friend, userLocation).copy(
+                isPaused = pausedFriends.contains(friend.username)
+            )
+        }.sortedBy { it.distance ?: Double.MAX_VALUE }
+
+        return ViewState(
+            friends = mappedFriends,
+            deleteFriendDialogState = deleteFriendDialogState,
+            selectedFriend = selectedFriend,
+            actionState = actionState,
+            isShareDialogOpen = isShareDialogOpen,
+            isNfcSharingDialogOpen = isNfcSharingDialogOpen,
+            isNfcReadingDialogOpen = isNfcReadingDialogOpen,
+            username = username,
+            friendUsername = friendUsername
+        )
+    }
+
+    sealed class Action {
+        data class Toast(@StringRes val id: Int) : Action()
+        data object BackToMap : Action()
+        data class TriggerNfcSharing(val username: String) : Action()
+        data object StopNfcSharing : Action()
+        data object TriggerNfcReading : Action()
+        data object StopNfcReading : Action()
+    }
+
+    sealed class Event {
+        data class OnLocationUpdate(val location: LocationData?) : Event()
+        data object CheckFriends : Event()
+        data class OnFriendsLoaded(
+            val friends: List<FriendLocalData>,
+            val pausedFriends: List<String>
+        ) : Event()
+        data object LoadUsername : Event()
+        data class OnUsernameLoaded(val username: String) : Event()
+        data class OnError(@StringRes val id: Int) : Event()
+        data class DeleteFriend(val nick: String) : Event()
+        data class AcceptFriend(val nick: String) : Event()
+        data class RejectFriend(val nick: String) : Event()
+        data class ToggleSharing(val nick: String) : Event()
+        data class OpenDeleteFriendDialog(val friend: Friend) : Event()
+        data object CloseDeleteFriendDialog : Event()
+        data class SelectFriend(val friend: Friend) : Event()
+        data object ClearSelectedFriend : Event()
+        data class OnActionSuccess(@StringRes val messageId: Int) : Event()
+        data object OpenShareDialog : Event()
+        data object CloseShareDialog : Event()
+        data object OpenNfcSharingDialog : Event()
+        data object CloseNfcSharingDialog : Event()
+        data object OpenNfcReadingDialog : Event()
+        data object CloseNfcReadingDialog : Event()
+    }
+
+    data class State(
+        val friends: List<FriendLocalData> = emptyList(),
+        val pausedFriends: List<String> = emptyList(),
+        val deleteFriendDialogState: DeleteFriendDialogState = DeleteFriendDialogState.Closed,
+        val selectedFriend: Friend? = null,
+        val userLocation: LocationData? = null,
+        val actionState: AsyncState<Unit> = AsyncState.Idle,
+        val isShareDialogOpen: Boolean = false,
+        val isNfcSharingDialogOpen: Boolean = false,
+        val isNfcReadingDialogOpen: Boolean = false,
+        val username: String = "",
+        val friendUsername: String = ""
+    )
+
+    @Immutable
+    data class ViewState(
+        val friends: List<Friend>,
+        val deleteFriendDialogState: DeleteFriendDialogState,
+        val selectedFriend: Friend?,
+        val actionState: AsyncState<Unit>,
+        val isShareDialogOpen: Boolean,
+        val isNfcSharingDialogOpen: Boolean,
+        val isNfcReadingDialogOpen: Boolean,
+        val username: String,
+        val friendUsername: String
+    )
+
+    sealed class DeleteFriendDialogState {
+        data class Open(val friend: Friend) : DeleteFriendDialogState()
+        data object Closed : DeleteFriendDialogState()
+    }
+
+    companion object {
+        private const val TAG = "FRIENDS_VM"
+    }
+}

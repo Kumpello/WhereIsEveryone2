@@ -1,0 +1,17 @@
+package com.kumpello.whereiseveryone.feature.main.ui.model
+
+import androidx.compose.runtime.Immutable
+
+@Immutable
+data class Location(
+    val lat: Double,
+    val lon: Double,
+    val bearing: Float?,
+    val alt: AltDifference,
+    val rawAlt: Double?,
+    val accuracy: AccuracyLevel,
+    val rawAccuracy: Float?,
+    val speed: Float?,
+    val lastUpdateTime: String,
+    val lastUpdateAge: LastUpdateAge,
+)

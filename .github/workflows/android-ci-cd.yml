@@ -43,14 +43,11 @@ jobs:
           org.gradle.parallel=false
           EOF
 
-      - name: Run unit tests (development)
-        run: ./gradlew testDevelopmentDebugUnitTest --stacktrace
+      - name: Run unit tests (all modules and app flavors)
+        run: ./gradlew test --stacktrace
 
-      - name: Run unit tests (production)
-        run: ./gradlew testProductionDebugUnitTest --stacktrace
-
-      - name: Run unit tests (production premium)
-        run: ./gradlew testProductionPremiumDebugUnitTest --stacktrace
+      - name: Build instrumented test APKs
+        run: ./gradlew :data:assembleDebugAndroidTest :feature:main:assembleDebugAndroidTest :app:assembleDevelopmentDebugAndroidTest --stacktrace
 
       - name: Upload test results
         if: always()
@@ -92,8 +89,8 @@ jobs:
           org.gradle.parallel=false
           EOF
 
-      - name: Lint (development)
-        run: ./gradlew lintDevelopmentDebug --stacktrace
+      - name: Lint (all modules and development app)
+        run: ./gradlew lint --stacktrace
 
       - name: Lint (production)
         run: ./gradlew lintProductionDebug --stacktrace

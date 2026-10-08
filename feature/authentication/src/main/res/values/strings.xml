@@ -1,0 +1,23 @@
+<resources>
+    <string name="login_title">Log in</string>
+    <string name="signup_title">Sign up</string>
+    <string name="username_label">Username</string>
+    <string name="password_label">Password</string>
+    <string name="remember_password">Remember password</string>
+    <string name="remember_password_error">Couldn’t access or update saved credentials on this device.</string>
+    <string name="login_here">Log in here</string>
+    <string name="signup_here">Sign up here</string>
+    <string name="condition_cd">Condition</string>
+    <string name="status_icon_cd">status icon</string>
+    <string name="text_color_label">text color</string>
+    <string name="splash_screen_cd">Splash screen</string>
+    <string name="minimum_8_characters">Minimum 8 characters</string>
+    <string name="minimum_1_special_character">Minimum 1 special character</string>
+    <string name="minimum_1_capitalized_letter">Minimum 1 capitalized letter</string>
+    <string name="no_whitespaces">No whitespaces</string>
+    <string name="login_subtitle">Keep up with your friends, wherever they are.</string>
+    <string name="signup_subtitle">Create an account to stay connected with your friends.</string>
+    <string name="password_requirements">Password requirements</string>
+    <string name="requirement_met">Met</string>
+    <string name="requirement_not_met">Not yet met</string>
+</resources>

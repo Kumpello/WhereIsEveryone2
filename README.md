@@ -26,7 +26,7 @@ WhereIsEveryone is a real-time location sharing Android application that allows 
 - **Splashscreen API**: For a smooth app startup experience.
 
 ### Architecture & DI
-- **MVI / Clean Architecture**: Organized code for maintainability and testability.
+- **MVI / Layered Architecture**: UI, repositories, and reusable use cases with clear module boundaries.
 - **Koin**: Lightweight dependency injection framework.
 - **Kotlin Coroutines & Flow**: Asynchronous programming and reactive data streams.
 
@@ -51,38 +51,24 @@ WhereIsEveryone is a real-time location sharing Android application that allows 
 
 ## 📂 Project Structure
 
-The project follows a clean, feature-based MVI architecture. Below is the detailed structure of the `:app` module:
+The app uses five Gradle modules with the existing MVI architecture:
 
-```text
-com.kumpello.whereiseveryone/
-├── authentication/             # Authentication & Onboarding
-│   ├── login/                  # Login feature (UI, Domain, Presentation)
-│   ├── signUp/                 # Sign Up feature (UI, Domain, Presentation)
-│   ├── splash/                 # Splash screen
-│   └── common/                 # Auth-specific shared components
-├── main/                       # Core Application
-│   ├── map/                    # Mapbox & Location Tracking
-│   │   ├── ui/                 # Map Compose screens
-│   │   ├── presentation/       # Map ViewModels & MVI logic
-│   │   ├── domain/             # Location-related use cases
-│   │   └── entity/             # Map-specific data models
-│   ├── friends/                # Friend Management & NFC
-│   │   ├── ui/                 # Friends list & profile UI
-│   │   ├── presentation/       # Friends ViewModels
-│   │   ├── nfc/                # NFC HCE (Host Card Emulation) service
-│   │   └── domain/             # Friend-related business logic
-│   └── settings/               # App configuration
-│       ├── ui/                 # Settings screen
-│       └── presentation/       # Settings ViewModels
-└── common/                     # Shared Infrastructure
-    ├── data/                   # Data providers & remote sources
-    ├── domain/                 # Core repositories, managers, & use cases
-    ├── database/               # Room Persistence (AppDatabase)
-    ├── di/                     # Dependency Injection modules (Koin)
-    ├── ui/                     # Shared UI components, theme, & entities
-    ├── navigation/             # Type-safe navigation definitions
-    └── extension/              # Kotlin extension functions
-```
+| Module | Contents |
+| --- | --- |
+| `:app` | Application, activities, feature navigation, flavors, signing, and run tasks. |
+| `:core` | Compose design system, shared UI, BaseViewModel, state, and utilities. |
+| `:data` | Networking, wire models, repositories, Room, preferences, and session handling. |
+| `:feature:authentication` | Splash, login, sign-up, and their ViewModels/use cases. |
+| `:feature:main` | Map, friends, settings, location tracking, proximity, and NFC. |
+
+The two features depend on core and data, without depending on each other or app.
+Tests live in their owning modules; shared coroutine test support uses core test
+fixtures. See [module boundaries](docs/MODULARIZATION.md) for dependency rules and
+build commands.
+
+Packages follow module ownership and UI/data/domain responsibilities. See the
+[architecture audit and package layout](docs/ARCHITECTURE.md) for the conventions
+and compatibility decisions.
 
 ## Android Studio run configurations
 

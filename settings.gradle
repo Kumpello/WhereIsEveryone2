@@ -27,3 +27,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "WhereIsEveryone"
 include ':app'
+include ':core', ':data', ':feature:authentication', ':feature:main'

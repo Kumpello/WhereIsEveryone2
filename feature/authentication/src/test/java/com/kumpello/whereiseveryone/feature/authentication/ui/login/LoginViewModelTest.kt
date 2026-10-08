@@ -1,0 +1,108 @@
+package com.kumpello.whereiseveryone.feature.authentication.ui.login
+
+import app.cash.turbine.test
+import com.kumpello.whereiseveryone.data.repository.preferences.RememberedCredentialsRepository
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flowOf
+import com.kumpello.whereiseveryone.feature.authentication.domain.usecase.ValidateLoginInputUseCase
+import com.kumpello.whereiseveryone.feature.authentication.domain.usecase.LoginUseCase
+import com.kumpello.whereiseveryone.core.presentation.AsyncState
+import com.kumpello.whereiseveryone.core.testing.MainDispatcherRule
+import io.mockk.coEvery
+import io.mockk.every
+import io.mockk.mockk
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Rule
+import org.junit.Test
+
+class LoginViewModelTest {
+
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule()
+
+    private val loginUseCase: LoginUseCase = mockk()
+    private val validateLoginInputUseCase: ValidateLoginInputUseCase = mockk()
+
+    private val rememberedCredentialsRepository: RememberedCredentialsRepository = mockk(relaxed = true)
+
+    private lateinit var viewModel: LoginViewModel
+
+    private fun setupViewModel() {
+        every { rememberedCredentialsRepository.observe() } returns flowOf(null)
+        viewModel = LoginViewModel(loginUseCase, validateLoginInputUseCase, rememberedCredentialsRepository)
+    }
+
+    @Test
+    fun `initial state is correct`() = runTest {
+        setupViewModel()
+        viewModel.state.filter { it.credentialsReady }.test {
+            val initialState = awaitItem()
+            assertEquals("", initialState.username)
+            assertEquals("", initialState.password)
+            assertTrue(initialState.loginState is AsyncState.Idle)
+        }
+    }
+
+    @Test
+    fun `setUsername updates state with validated input`() = runTest {
+        every { validateLoginInputUseCase.execute("user123!") } returns "user123"
+        setupViewModel()
+
+        viewModel.state.filter { it.credentialsReady }.test {
+            assertEquals("", awaitItem().username) // Initial
+            viewModel.trigger(LoginViewModel.Event.SetUsername("user123!"))
+            assertEquals("user123", awaitItem().username)
+        }
+    }
+
+    @Test
+    fun `setPassword updates state`() = runTest {
+        setupViewModel()
+
+        viewModel.state.filter { it.credentialsReady }.test {
+            assertEquals("", awaitItem().password) // Initial
+            viewModel.trigger(LoginViewModel.Event.SetPassword("password123"))
+            assertEquals("password123", awaitItem().password)
+        }
+    }
+
+    @Test
+    fun `onLoginClick success updates state and navigates`() = runTest {
+        coEvery { loginUseCase.execute(any(), any()) } returns LoginUseCase.Response.Success
+        setupViewModel()
+
+        viewModel.action.test {
+            viewModel.state.filter { it.credentialsReady }.test {
+                assertTrue(awaitItem().loginState is AsyncState.Idle) // Initial
+                viewModel.trigger(LoginViewModel.Event.OnLoginClick)
+                // Loading state
+                assertTrue(awaitItem().loginState is AsyncState.Loading)
+                // Success state
+                assertTrue(awaitItem().loginState is AsyncState.Success)
+            }
+            assertEquals(LoginViewModel.Action.NavigateMain, awaitItem())
+        }
+    }
+
+    @Test
+    fun `onLoginClick failure updates state and shows toast`() = runTest {
+        coEvery { loginUseCase.execute(any(), any()) } returns LoginUseCase.Response.Error
+        setupViewModel()
+
+        viewModel.action.test {
+            viewModel.state.filter { it.credentialsReady }.test {
+                assertTrue(awaitItem().loginState is AsyncState.Idle) // Initial
+                viewModel.trigger(LoginViewModel.Event.OnLoginClick)
+                // Loading state
+                assertTrue(awaitItem().loginState is AsyncState.Loading)
+                // Error state
+                assertTrue(awaitItem().loginState is AsyncState.Error)
+            }
+            val action = awaitItem()
+            assertTrue(action is LoginViewModel.Action.MakeToast)
+            assertEquals("Login failed!", (action as LoginViewModel.Action.MakeToast).string)
+        }
+    }
+}

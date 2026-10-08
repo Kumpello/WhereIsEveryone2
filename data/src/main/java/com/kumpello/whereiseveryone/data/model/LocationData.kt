@@ -1,0 +1,11 @@
+package com.kumpello.whereiseveryone.data.model
+
+data class LocationData(
+    val lat: Double,
+    val lon: Double,
+    val bearing: Float?,
+    val alt: Double?,
+    val accuracy: Float?,
+    val speed: Float?,
+    val lastUpdate: Long
+)

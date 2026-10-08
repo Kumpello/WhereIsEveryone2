@@ -1,5 +1,7 @@
 package com.kumpello.whereiseveryone.authentication
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -16,14 +18,15 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.kumpello.whereiseveryone.authentication.common.AuthenticationRoute
-import com.kumpello.whereiseveryone.authentication.login.presentation.LoginViewModel
-import com.kumpello.whereiseveryone.authentication.login.ui.LoginScreen
-import com.kumpello.whereiseveryone.authentication.signUp.presentation.SignUpViewModel
-import com.kumpello.whereiseveryone.authentication.signUp.ui.SignUpScreen
-import com.kumpello.whereiseveryone.authentication.splash.presentation.SplashViewModel
-import com.kumpello.whereiseveryone.authentication.splash.ui.SplashScreen
-import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
+import com.kumpello.whereiseveryone.feature.authentication.navigation.AuthenticationRoute
+import com.kumpello.whereiseveryone.feature.authentication.ui.login.LoginViewModel
+import com.kumpello.whereiseveryone.feature.authentication.ui.login.LoginScreen
+import com.kumpello.whereiseveryone.feature.authentication.ui.signup.SignUpViewModel
+import com.kumpello.whereiseveryone.feature.authentication.ui.signup.SignUpScreen
+import com.kumpello.whereiseveryone.feature.authentication.ui.splash.SplashViewModel
+import com.kumpello.whereiseveryone.feature.authentication.ui.splash.SplashScreen
+import com.kumpello.whereiseveryone.core.ui.theme.WhereIsEveryoneTheme
+import com.kumpello.whereiseveryone.main.MainActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
@@ -64,15 +67,33 @@ class AuthenticationActivity : ComponentActivity(), CoroutineScope by MainScope(
                 startDestination = AuthenticationRoute.Splash
             ) {
                 composable<AuthenticationRoute.Splash> {
-                    SplashScreen(navController = navController, viewModel = splashViewModel)
+                    SplashScreen(
+                        navController = navController,
+                        initialUri = intent.data,
+                        onAuthenticated = ::navigateMain,
+                        viewModel = splashViewModel
+                    )
                 }
                 composable<AuthenticationRoute.Login> {
-                    LoginScreen(navController = navController, viewModel = loginViewModel)
+                    LoginScreen(
+                        navController = navController,
+                        onAuthenticated = { navigateMain() },
+                        viewModel = loginViewModel
+                    )
                 }
                 composable<AuthenticationRoute.SignUp> {
-                    SignUpScreen(navController = navController, viewModel = signUpViewModel)
+                    SignUpScreen(
+                        navController = navController,
+                        onAuthenticated = { navigateMain() },
+                        viewModel = signUpViewModel
+                    )
                 }
             }
         }
+    }
+
+    private fun navigateMain(uri: Uri? = null) {
+        startActivity(Intent(this, MainActivity::class.java).apply { data = uri })
+        finish()
     }
 }

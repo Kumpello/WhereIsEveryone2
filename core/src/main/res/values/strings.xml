@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">WhereIsEveryone</string>
+    <string name="hide_password_cd">Hide password</string>
+    <string name="show_password_cd">Show password</string>
+    <string name="app_name_full">Where is Everyone!?</string>
+    <string name="back_to_map">Back to map</string>
+</resources>

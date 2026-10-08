@@ -28,20 +28,21 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.kumpello.whereiseveryone.authentication.AuthenticationActivity
-import com.kumpello.whereiseveryone.common.domain.manager.PreferencesKey
-import com.kumpello.whereiseveryone.common.domain.manager.PreferencesManager
-import com.kumpello.whereiseveryone.common.extension.isAddFriendDeepLink
-import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
-import com.kumpello.whereiseveryone.main.common.MainRoute
-import com.kumpello.whereiseveryone.main.common.domain.manager.FriendsManager
-import com.kumpello.whereiseveryone.main.friends.presentation.AddFriendViewModel
-import com.kumpello.whereiseveryone.main.friends.presentation.ShareProfileViewModel
-import com.kumpello.whereiseveryone.main.friends.ui.FriendsScreen
-import com.kumpello.whereiseveryone.main.map.presentation.LocationService
-import com.kumpello.whereiseveryone.main.map.presentation.MapScreenViewModel
-import com.kumpello.whereiseveryone.main.map.ui.MapScreen
-import com.kumpello.whereiseveryone.main.settings.presentation.SettingsViewModel
-import com.kumpello.whereiseveryone.main.settings.ui.SettingsScreen
+import com.kumpello.whereiseveryone.BuildConfig
+import com.kumpello.whereiseveryone.data.repository.preferences.PreferencesKey
+import com.kumpello.whereiseveryone.data.repository.preferences.PreferencesManager
+import com.kumpello.whereiseveryone.core.util.isAddFriendDeepLink
+import com.kumpello.whereiseveryone.core.ui.theme.WhereIsEveryoneTheme
+import com.kumpello.whereiseveryone.feature.main.navigation.MainRoute
+import com.kumpello.whereiseveryone.data.repository.FriendsStateRepository
+import com.kumpello.whereiseveryone.feature.main.ui.friends.AddFriendViewModel
+import com.kumpello.whereiseveryone.feature.main.ui.friends.ShareProfileViewModel
+import com.kumpello.whereiseveryone.feature.main.ui.friends.FriendsScreen
+import com.kumpello.whereiseveryone.feature.main.location.LocationService
+import com.kumpello.whereiseveryone.feature.main.ui.map.MapScreenViewModel
+import com.kumpello.whereiseveryone.feature.main.ui.map.MapScreen
+import com.kumpello.whereiseveryone.feature.main.ui.settings.SettingsViewModel
+import com.kumpello.whereiseveryone.feature.main.ui.settings.SettingsScreen
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.launch
@@ -58,7 +59,7 @@ class MainActivity : ComponentActivity() {
 
     private val preferencesManager: PreferencesManager by inject()
     private val locationService: LocationService by inject()
-    private val friendsManager: FriendsManager by inject()
+    private val friendsManager: FriendsStateRepository by inject()
 
     private lateinit var permissionsLauncher: ActivityResultLauncher<Array<String>>
 
@@ -291,6 +292,11 @@ class MainActivity : ComponentActivity() {
             composable<MainRoute.Settings> {
                 SettingsScreen(
                     navController = controller,
+                    versionName = BuildConfig.VERSION_NAME,
+                    onLoggedOut = {
+                        startActivity(Intent(this@MainActivity, AuthenticationActivity::class.java))
+                        finish()
+                    },
                     viewModel = settingsViewModel
                 )
             }
