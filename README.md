@@ -86,9 +86,23 @@ com.kumpello.whereiseveryone/
 
 ## Android Studio run configurations
 
-Shared profiles in [`.run`](.run/README.md) cover all six app variants, APK and bundle
-builds, per-variant lint, unit tests, device tests, and the complete debug validation
-suite. Use `App (selected build variant)` for native IDE debugging.
+Connect one authorized ADB device, select one of the six profiles below, and click
+**Run**. Each profile builds, installs, and launches that exact variant, regardless
+of the variant selected in Android Studio.
+
+| Flavor | Debug | Release |
+| --- | --- | --- |
+| Development | **Development Debug (ADB)** | **Development Release (ADB)** |
+| Production | **Production Debug (ADB)** | **Production Release (ADB)** |
+| Production Premium | **Production Premium Debug (ADB)** | **Production Premium Release (ADB)** |
+
+These Gradle profiles select the device through ADB; the IDE's device selector shows
+**not applicable**. If multiple devices are connected, set
+`-PandroidRunSerial=SERIAL` in the profile's Gradle arguments. Release variants use
+the existing release signing configuration. Installation preserves app data.
+
+For IDE debugging, use **app**, choose the variant in **Build > Select Build
+Variant**, and select your phone in the IDE. Debug variants support **Debug**.
 
 ## UI design system
 
