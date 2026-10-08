@@ -14,8 +14,15 @@ and do not store device IDs or signing credentials.
 
 These six Gradle profiles invoke the corresponding `:app:run<Variant>` task. Each
 task builds that exact variant, installs its APK with `adb install -r`, and launches
-its launcher activity using the variant's application ID. The profiles do not
+its launcher activity using an explicit component made from the variant's
+application ID and namespace (`am start -n`). The profiles do not
 depend on Android Studio's currently selected build variant.
+
+Explicit component launching avoids implicit intent resolution for the
+launcher-only activity filter, including non-debuggable release builds. The task
+requires Activity Manager to report `Status: ok` and fails if launching is rejected,
+even when `adb` exits with code zero. See the
+[ADB activity manager documentation](https://developer.android.com/tools/adb#am).
 
 Connect one authorized device or emulator before running a profile. If several are
 connected, add `-PandroidRunSerial=SERIAL` to that profile's Gradle arguments, or

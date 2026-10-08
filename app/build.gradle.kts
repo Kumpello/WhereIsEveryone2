@@ -188,6 +188,9 @@ abstract class RunAndroidVariantTask : DefaultTask() {
     @get:Input
     abstract val applicationId: Property<String>
 
+    @get:Input
+    abstract val launcherActivity: Property<String>
+
     @get:Internal
     abstract val adbExecutable: RegularFileProperty
 
@@ -229,14 +232,28 @@ abstract class RunAndroidVariantTask : DefaultTask() {
         execOperations.exec {
             commandLine(adb, "-s", serial, "install", "-r", apk.absolutePath)
         }.assertNormalExitValue()
-        execOperations.exec {
+        val component = "${applicationId.get()}/${launcherActivity.get()}"
+        val launchOutput = ByteArrayOutputStream()
+        val launchResult = execOperations.exec {
             commandLine(
                 adb, "-s", serial, "shell", "am", "start", "-W",
                 "-a", "android.intent.action.MAIN",
                 "-c", "android.intent.category.LAUNCHER",
-                "-p", applicationId.get()
+                "-n", component
             )
-        }.assertNormalExitValue()
+            standardOutput = launchOutput
+            errorOutput = launchOutput
+            isIgnoreExitValue = true
+        }
+        val launchMessage = launchOutput.toString(Charsets.UTF_8.name()).trim()
+        logger.lifecycle(launchMessage)
+        val launchLines = launchMessage.lineSequence().map { it.trim() }.toList()
+        if (launchResult.exitValue != 0 ||
+            launchLines.none { it == "Status: ok" } ||
+            launchLines.any { it.startsWith("Error:") || it.startsWith("Error type ") }
+        ) {
+            throw GradleException("Unable to launch $component. See the Activity Manager output above.")
+        }
     }
 }
 
@@ -248,6 +265,7 @@ androidComponents.onVariants { variant ->
         dependsOn("assemble$variantTaskSuffix")
         apkDirectory.set(variant.artifacts.get(SingleArtifact.APK))
         applicationId.set(variant.applicationId)
+        launcherActivity.set(variant.namespace.map { "$it.authentication.AuthenticationActivity" })
         adbExecutable.set(androidComponents.sdkComponents.adb)
         deviceSerial.set(providers.gradleProperty("androidRunSerial").orElse(providers.environmentVariable("ANDROID_SERIAL")))
     }
