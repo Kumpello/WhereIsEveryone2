@@ -1,77 +1,77 @@
 package com.kumpello.whereiseveryone.main.friends.ui
 
+import android.graphics.Bitmap
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.common.extension.createAddFriendDeepLink
+import com.kumpello.whereiseveryone.common.ui.entity.AppDialog
 import com.kumpello.whereiseveryone.common.ui.entity.Button
-import com.kumpello.whereiseveryone.common.ui.theme.Shapes
+import com.kumpello.whereiseveryone.common.ui.theme.AppSpacing
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
+private data class QrImage(val loading: Boolean = true, val bitmap: Bitmap? = null)
 
 @Composable
-fun QrCodeDialog(
-    username: String,
-    onDismiss: () -> Unit
-) {
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            modifier = Modifier
-                .padding(16.dp),
-            shape = Shapes.large,
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface,
-                contentColor = MaterialTheme.colorScheme.onSurface
-            )
+fun QrCodeDialog(username: String, onDismiss: () -> Unit) {
+    val qrContent = createAddFriendDeepLink(username)
+    val qr by produceState(initialValue = QrImage(), key1 = qrContent) {
+        value = QrImage()
+        value = QrImage(loading = false, bitmap = withContext(Dispatchers.Default) {
+            QrCodeGenerator.generateQrCode(qrContent, 512)
+        })
+    }
+    AppDialog(onDismiss = onDismiss) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.lg),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = stringResource(R.string.your_qr_code),
-                    style = MaterialTheme.typography.headlineSmall
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-
-                val qrContent = createAddFriendDeepLink(username)
-                val qrBitmap = remember(qrContent) {
-                    QrCodeGenerator.generateQrCode(qrContent, 512)
-                }
-
-                qrBitmap?.let {
-                    Image(
-                        bitmap = it.asImageBitmap(),
+            Text(
+                stringResource(R.string.your_qr_code),
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.semantics { heading() }
+            )
+            Text(username, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
+            Box(modifier = Modifier.widthIn(max = 240.dp).fillMaxWidth().aspectRatio(1f), contentAlignment = Alignment.Center) {
+                val bitmap = qr.bitmap
+                when {
+                    qr.loading -> CircularProgressIndicator(modifier = Modifier.size(48.dp))
+                    bitmap != null -> Image(
+                        bitmap = bitmap.asImageBitmap(),
                         contentDescription = stringResource(R.string.qr_code_cd),
-                        modifier = Modifier.size(200.dp)
+                        modifier = Modifier.fillMaxWidth()
                     )
-                } ?: Text(stringResource(R.string.error_generating_qr))
-
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = stringResource(R.string.scan_this_to_add_me_as_a_friend),
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Button.Animated(text = stringResource(R.string.close), width = 150) {
-                    onDismiss()
+                    else -> Text(stringResource(R.string.error_generating_qr), color = MaterialTheme.colorScheme.error)
                 }
             }
+            Text(
+                stringResource(R.string.scan_this_to_add_me_as_a_friend),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            Button.Secondary(text = stringResource(R.string.close), onClick = onDismiss)
         }
     }
 }

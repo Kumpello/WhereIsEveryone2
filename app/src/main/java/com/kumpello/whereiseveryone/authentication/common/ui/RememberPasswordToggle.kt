@@ -1,27 +1,37 @@
 package com.kumpello.whereiseveryone.authentication.common.ui
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.BookmarkBorder
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconToggleButton
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import com.kumpello.whereiseveryone.R
+import com.kumpello.whereiseveryone.common.ui.theme.AppSize
+import com.kumpello.whereiseveryone.common.ui.theme.AppSpacing
 
 @Composable
 fun RememberPasswordToggle(checked: Boolean, enabled: Boolean, onToggle: () -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        IconToggleButton(checked = checked, enabled = enabled, onCheckedChange = { onToggle() }) {
-            Icon(
-                imageVector = if (checked) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
-                contentDescription = stringResource(R.string.remember_password)
-            )
-        }
-        Text(text = stringResource(R.string.remember_password), style = MaterialTheme.typography.bodyMedium)
+    Row(
+        modifier = Modifier.fillMaxWidth().heightIn(min = AppSize.touchTarget)
+            .toggleable(value = checked, enabled = enabled, role = Role.Checkbox, onValueChange = { onToggle() })
+            .padding(vertical = AppSpacing.xs),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(AppSpacing.sm)
+    ) {
+        Checkbox(checked = checked, enabled = enabled, onCheckedChange = null)
+        Text(
+            text = stringResource(R.string.remember_password),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }

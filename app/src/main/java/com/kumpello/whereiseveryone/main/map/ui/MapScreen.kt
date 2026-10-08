@@ -4,8 +4,6 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -18,12 +16,11 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.common.entity.ScreenState
+import com.kumpello.whereiseveryone.common.ui.entity.AppDialog
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.common.MainRoute
 import com.kumpello.whereiseveryone.main.common.ui.Notification
@@ -79,13 +76,12 @@ private fun MapScreenContent(
         )
 
         if (screenViewState.screenState is ScreenState.Message) {
-            MessageFloatingCard(
-                modifier = Modifier
-                    .padding(top = 128.dp)
-                    .align(Alignment.TopCenter)
-                    .fillMaxWidth(0.9f),
-                onMessageSent = { onScreenEvent(MapScreenViewModel.Event.BackToMap) }
-            )
+            AppDialog(onDismiss = { onScreenEvent(MapScreenViewModel.Event.BackToMap) }) {
+                MessageFloatingCard(
+                    onMessageSent = { onScreenEvent(MapScreenViewModel.Event.BackToMap) },
+                    onClose = { onScreenEvent(MapScreenViewModel.Event.BackToMap) }
+                )
+            }
         }
 
         if (screenViewState.showPermissionNotification) {
@@ -98,8 +94,7 @@ private fun MapScreenContent(
                 withStyle(
                     style = SpanStyle(
                         color = errorColor,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Medium
                     )
                 ) {
                     append(warningMessage)

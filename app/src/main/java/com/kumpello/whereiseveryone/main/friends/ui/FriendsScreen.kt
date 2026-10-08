@@ -14,29 +14,33 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.widget.Toast
-import timber.log.Timber
-import com.kumpello.whereiseveryone.common.extension.isAddFriendDeepLink
-import androidx.activity.compose.BackHandler
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Surface
@@ -52,6 +56,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -63,7 +68,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
 import com.kumpello.whereiseveryone.R
+import com.kumpello.whereiseveryone.common.extension.isAddFriendDeepLink
 import com.kumpello.whereiseveryone.common.presentation.AsyncState
+import com.kumpello.whereiseveryone.common.ui.entity.ScreenHeader
+import com.kumpello.whereiseveryone.common.ui.theme.AppSize
+import com.kumpello.whereiseveryone.common.ui.theme.AppSpacing
 import com.kumpello.whereiseveryone.common.ui.theme.Shapes
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.common.entity.AccuracyLevel
@@ -75,13 +84,15 @@ import com.kumpello.whereiseveryone.main.common.entity.Location
 import com.kumpello.whereiseveryone.main.common.ui.FriendDetailsCard
 import com.kumpello.whereiseveryone.main.friends.nfc.NdefHceService
 import com.kumpello.whereiseveryone.main.friends.nfc.NfcSharingSession
-import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
 import com.kumpello.whereiseveryone.main.friends.presentation.AddFriendViewModel
+import com.kumpello.whereiseveryone.main.friends.presentation.FriendsViewModel
+import com.kumpello.whereiseveryone.main.friends.presentation.ShareProfileViewModel
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.koin.compose.viewmodel.koinViewModel
 import org.koin.compose.koinInject
-import kotlin.time.Duration.Companion.seconds
+import org.koin.compose.viewmodel.koinViewModel
+import timber.log.Timber
 
 const val TAG = "FRIENDS_SCREEN"
 
@@ -183,7 +194,8 @@ fun FriendsScreen(
         onAddFriendEvent = addFriendViewModel::trigger,
         onFriendsEvent = friendsViewModel::trigger,
         onFriendAdded = { friendsViewModel.trigger(FriendsViewModel.Event.CheckFriends) },
-        onOpenNfcReading = { friendsViewModel.trigger(FriendsViewModel.Event.OpenNfcReadingDialog) }
+        onOpenNfcReading = { friendsViewModel.trigger(FriendsViewModel.Event.OpenNfcReadingDialog) },
+        onBack = { navController.popBackStack() }
     )
 }
 
@@ -195,6 +207,7 @@ private fun FriendsScreen(
     onOpenNfcReading: () -> Unit,
     pendingLinkedFriend: String? = null,
     onAddFriendEvent: (AddFriendViewModel.Event) -> Unit = {},
+    onBack: () -> Unit = {},
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         pendingLinkedFriend?.let { username ->
@@ -243,6 +256,7 @@ private fun FriendsScreen(
         AnimatedVisibility(
             modifier = Modifier
                 .align(Alignment.TopCenter)
+                .safeDrawingPadding()
                 .zIndex(100f),
             visible = actionState is AsyncState.Loading,
             enter = slideInVertically(initialOffsetY = { -it }),
@@ -262,94 +276,92 @@ private fun FriendsScreen(
                 shape = Shapes.medium,
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
-                Text(
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .align(Alignment.CenterHorizontally),
-                    text = message,
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                Row(
+                    modifier = Modifier.padding(AppSpacing.md),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(AppSpacing.sm)
+                ) {
+                    CircularProgressIndicator(modifier = Modifier.size(AppSize.icon), strokeWidth = 2.dp)
+                    Text(text = message, style = MaterialTheme.typography.bodyMedium)
+                }
             }
         }
 
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
-        ) {
-            Column(
-                modifier = Modifier
-                    .safeDrawingPadding()
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                verticalArrangement = Arrangement.Top,
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
-                    elevation = CardDefaults.cardElevation(
-                        defaultElevation = 8.dp,
-                    ),
-                    colors = CardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        disabledContainerColor = MaterialTheme.colorScheme.onErrorContainer,
-                        disabledContentColor = MaterialTheme.colorScheme.onError
-                    ),
-                    shape = Shapes.large,
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            BoxWithConstraints(modifier = Modifier.fillMaxSize().safeDrawingPadding(), contentAlignment = Alignment.TopCenter) {
+                val actionsMaxHeight = maxHeight * 0.45f
+                Column(
+                    modifier = Modifier.widthIn(max = AppSize.contentMaxWidth).fillMaxSize().padding(horizontal = AppSpacing.md),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    val topPagerState = rememberPagerState(initialPage = 0) { 2 }
-                    val coroutineScope = rememberCoroutineScope()
-                    val topTabItems = listOf(
-                        stringResource(R.string.add_friend),
-                        stringResource(R.string.share_profile)
+                    ScreenHeader(
+                        title = stringResource(R.string.friends),
+                        onBack = onBack,
+                        modifier = Modifier.padding(vertical = AppSpacing.xs)
                     )
-                    Column(modifier = Modifier.fillMaxSize()) {
-                        PrimaryTabRow(
-                            selectedTabIndex = topPagerState.currentPage,
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        ) {
-                            topTabItems.forEachIndexed { index, title ->
-                                Tab(
-                                    selected = topPagerState.currentPage == index,
-                                    onClick = {
-                                        coroutineScope.launch {
-                                            topPagerState.animateScrollToPage(index)
-                                        }
-                                    },
-                                    text = {
-                                        Text(
-                                            text = title,
-                                            style = MaterialTheme.typography.labelLarge
-                                        )
-                                    }
-                                )
-                            }
-                        }
-                        HorizontalPager(
-                            state = topPagerState,
-                            modifier = Modifier.weight(1f)
-                        ) { page ->
-                            if (page == 0) {
-                                AddFriendContent(
-                                    onFriendAdded = onFriendAdded,
-                                    onOpenNfcReading = onOpenNfcReading
-                                )
-                            } else {
-                                ShareProfileContent(
-                                    onShowQr = { onFriendsEvent(FriendsViewModel.Event.OpenShareDialog) },
-                                    onTriggerNfc = { onFriendsEvent(FriendsViewModel.Event.OpenNfcSharingDialog) }
-                                )
-                            }
-                        }
-                    }
+                    FriendsActions(
+                        modifier = Modifier.heightIn(max = actionsMaxHeight).verticalScroll(rememberScrollState()),
+                        onFriendAdded = onFriendAdded,
+                        onOpenNfcReading = onOpenNfcReading,
+                        onFriendsEvent = onFriendsEvent
+                    )
+                    FriendsListContent(
+                        viewState = friendsViewState,
+                        onEvent = onFriendsEvent,
+                        modifier = Modifier.weight(1f)
+                    )
                 }
+            }
+        }
+    }
+}
 
-                FriendsListContent(
-                    onEvent = onFriendsEvent,
-                    viewState = friendsViewState
+@Composable
+private fun FriendsActions(
+    modifier: Modifier = Modifier,
+    onFriendAdded: () -> Unit,
+    onOpenNfcReading: () -> Unit,
+    onFriendsEvent: (FriendsViewModel.Event) -> Unit
+) {
+    val pagerState = rememberPagerState { 2 }
+    val scope = rememberCoroutineScope()
+    val titles = listOf(stringResource(R.string.add_friend), stringResource(R.string.share_profile))
+    Card(
+        modifier = modifier.fillMaxWidth().padding(bottom = AppSpacing.md),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        )
+    ) {
+        PrimaryTabRow(
+            selectedTabIndex = pagerState.currentPage,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            contentColor = MaterialTheme.colorScheme.primary
+        ) {
+            titles.forEachIndexed { index, title ->
+                Tab(
+                    selected = pagerState.currentPage == index,
+                    onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
+                    text = { Text(title, style = MaterialTheme.typography.labelLarge) }
                 )
+            }
+        }
+        HorizontalPager(state = pagerState, modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) { page ->
+            if (page == 0) {
+                if (LocalInspectionMode.current) {
+                    AddFriendContent(AddFriendViewModel.ViewState(addFriendNick = "", actionState = AsyncState.Idle), onEvent = {}, onOpenNfcReading = onOpenNfcReading)
+                } else {
+                    AddFriendContent(onFriendAdded = onFriendAdded, onOpenNfcReading = onOpenNfcReading)
+                }
+            } else {
+                val onShowQr = { onFriendsEvent(FriendsViewModel.Event.OpenShareDialog) }
+                val onTriggerNfc = { onFriendsEvent(FriendsViewModel.Event.OpenNfcSharingDialog) }
+                if (LocalInspectionMode.current) {
+                    ShareProfileContent(ShareProfileViewModel.ViewState(username = "Alex"), onEvent = {}, onShowQr = onShowQr, onTriggerNfc = onTriggerNfc)
+                } else {
+                    ShareProfileContent(onShowQr = onShowQr, onTriggerNfc = onTriggerNfc)
+                }
             }
         }
     }

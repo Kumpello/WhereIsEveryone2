@@ -1,7 +1,5 @@
 package com.kumpello.whereiseveryone.main.map.ui
 
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -25,7 +23,7 @@ fun FloatingActionButton(
         onClick = { onClick() },
         shape = CircleShape,
         containerColor = MaterialTheme.colorScheme.secondaryContainer,
-        contentColor = MaterialTheme.colorScheme.secondary
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
     ) {
         icon()
     }
@@ -38,10 +36,9 @@ fun FloatingActionButtonPreview() {
         FloatingActionButton(onClick = { }) {
             Icon(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(4.dp),
+                    .size(24.dp),
                 imageVector = Icons.Default.Settings,
-                contentDescription = ""
+                contentDescription = androidx.compose.ui.res.stringResource(com.kumpello.whereiseveryone.R.string.settings_cd)
             )
         }
     }
@@ -54,10 +51,9 @@ fun FloatingActionButtonPreviewDark() {
         FloatingActionButton(onClick = { }) {
             Icon(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(4.dp),
+                    .size(24.dp),
                 imageVector = Icons.Default.Settings,
-                contentDescription = ""
+                contentDescription = androidx.compose.ui.res.stringResource(com.kumpello.whereiseveryone.R.string.settings_cd)
             )
         }
     }

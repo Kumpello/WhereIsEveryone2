@@ -1,8 +1,7 @@
 package com.kumpello.whereiseveryone.authentication.common.ui
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
@@ -18,42 +17,39 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.unit.dp
 import com.kumpello.whereiseveryone.R
-import com.kumpello.whereiseveryone.common.ui.theme.Shapes
 
 object TextField {
-
     @Composable
     fun Regular(
         label: String,
         value: String,
         onValueChange: (String) -> Unit,
-        labelColor: Color = MaterialTheme.colorScheme.primary,
+        labelColor: Color = Color.Unspecified,
         colors: TextFieldColors = OutlinedTextFieldDefaults.colors(),
         trailingIcon: @Composable (() -> Unit)? = null,
-        enabled: Boolean = true
+        enabled: Boolean = true,
+        singleLine: Boolean = true,
+        keyboardOptions: KeyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+        keyboardActions: KeyboardActions = KeyboardActions.Default
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelMedium,
-                color = labelColor,
-                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
-            )
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                value = value,
-                enabled = enabled,
-                onValueChange = onValueChange,
-                shape = Shapes.large,
-                colors = colors,
-                trailingIcon = trailingIcon
-            )
-        }
+        OutlinedTextField(
+            modifier = Modifier.fillMaxWidth(),
+            value = value,
+            enabled = enabled,
+            onValueChange = onValueChange,
+            label = { Text(label, color = labelColor) },
+            singleLine = singleLine,
+            keyboardOptions = keyboardOptions,
+            keyboardActions = keyboardActions,
+            shape = MaterialTheme.shapes.medium,
+            colors = colors,
+            trailingIcon = trailingIcon
+        )
     }
 
     @Composable
@@ -63,45 +59,30 @@ object TextField {
         onValueChange: (String) -> Unit,
         passwordVisible: Boolean,
         onTogglePasswordVisibility: () -> Unit,
-        enabled: Boolean = true
+        enabled: Boolean = true,
+        keyboardActions: KeyboardActions = KeyboardActions.Default
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
-            )
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                value = value,
-                enabled = enabled,
-                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                onValueChange = onValueChange,
-                shape = Shapes.large,
-                trailingIcon = {
-                    val image = if (passwordVisible)
-                        Icons.Filled.Visibility
-                    else Icons.Filled.VisibilityOff
-
-                    val description = if (passwordVisible) {
-                        stringResource(R.string.hide_password_cd)
-                    } else {
-                        stringResource(R.string.show_password_cd)
-                    }
-
-                    IconButton(onClick = onTogglePasswordVisibility, enabled = enabled) {
-                        Icon(imageVector = image, contentDescription = description)
-                    }
-                },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                )
-            )
-        }
+        OutlinedTextField(
+            modifier = Modifier.fillMaxWidth(),
+            value = value,
+            enabled = enabled,
+            label = { Text(label) },
+            singleLine = true,
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+            keyboardActions = keyboardActions,
+            onValueChange = onValueChange,
+            shape = MaterialTheme.shapes.medium,
+            trailingIcon = {
+                IconButton(onClick = onTogglePasswordVisibility, enabled = enabled) {
+                    Icon(
+                        imageVector = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                        contentDescription = stringResource(
+                            if (passwordVisible) R.string.hide_password_cd else R.string.show_password_cd
+                        )
+                    )
+                }
+            }
+        )
     }
 }

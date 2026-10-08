@@ -3,46 +3,38 @@ package com.kumpello.whereiseveryone.authentication.login.ui
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.authentication.AuthenticationActivity
 import com.kumpello.whereiseveryone.authentication.common.AuthenticationRoute
-import com.kumpello.whereiseveryone.authentication.common.ui.TextField
+import com.kumpello.whereiseveryone.authentication.common.ui.AuthLayout
 import com.kumpello.whereiseveryone.authentication.common.ui.RememberPasswordToggle
+import com.kumpello.whereiseveryone.authentication.common.ui.TextField
 import com.kumpello.whereiseveryone.authentication.login.presentation.LoginViewModel
 import com.kumpello.whereiseveryone.common.entity.ScreenState
 import com.kumpello.whereiseveryone.common.presentation.AsyncState
 import com.kumpello.whereiseveryone.common.ui.entity.Button
-import com.kumpello.whereiseveryone.common.ui.entity.Logo
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.MainActivity
 
@@ -93,85 +85,54 @@ fun LoginScreen(
     viewState: LoginViewModel.ViewState,
     trigger: (LoginViewModel.Event) -> Unit,
 ) {
-    Column(
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .safeDrawingPadding()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 4.dp)
+    val focusManager = LocalFocusManager.current
+    val enabled = viewState.credentialsReady && !viewState.loginState.isLoading
+    AuthLayout(
+        title = stringResource(R.string.login_title),
+        subtitle = stringResource(R.string.login_subtitle)
     ) {
-        Logo.Image(
-            modifier = Modifier.padding(bottom = 32.dp)
+        TextField.Regular(
+            label = stringResource(R.string.username_label),
+            value = viewState.username,
+            enabled = enabled,
+            keyboardOptions = KeyboardOptions(autoCorrectEnabled = false, imeAction = ImeAction.Next),
+            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
+            onValueChange = { trigger(LoginViewModel.Event.SetUsername(it)) }
         )
-        Column(
-            modifier = Modifier
-                .padding(20.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
+        TextField.Password(
+            label = stringResource(R.string.password_label),
+            value = viewState.password,
+            enabled = enabled,
+            onValueChange = { trigger(LoginViewModel.Event.SetPassword(it)) },
+            passwordVisible = viewState.passwordVisible,
+            onTogglePasswordVisibility = { trigger(LoginViewModel.Event.TogglePasswordVisibility) },
+            keyboardActions = KeyboardActions(onDone = {
+                focusManager.clearFocus()
+                if (enabled) trigger(LoginViewModel.Event.OnLoginClick)
+            })
+        )
+        RememberPasswordToggle(
+            checked = viewState.rememberPassword,
+            enabled = enabled,
+            onToggle = { trigger(LoginViewModel.Event.ToggleRememberPassword) }
+        )
+        Button.Primary(
+            text = stringResource(R.string.login_title),
+            enabled = enabled,
+            loading = viewState.loginState.isLoading
         ) {
-            Text(
-                text = stringResource(R.string.login_title),
-                style = MaterialTheme.typography.headlineLarge
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            TextField.Regular(
-                label = stringResource(R.string.username_label),
-                value = viewState.username,
-                enabled = viewState.credentialsReady && !viewState.loginState.isLoading,
-                onValueChange = { value ->
-                    trigger(LoginViewModel.Event.SetUsername(value))
-                }
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            TextField.Password(
-                label = stringResource(R.string.password_label),
-                value = viewState.password,
-                enabled = viewState.credentialsReady && !viewState.loginState.isLoading,
-                onValueChange = { value ->
-                    trigger(LoginViewModel.Event.SetPassword(value))
-                },
-                passwordVisible = viewState.passwordVisible,
-                onTogglePasswordVisibility = {
-                    trigger(LoginViewModel.Event.TogglePasswordVisibility)
-                }
-            )
-
-            RememberPasswordToggle(
-                checked = viewState.rememberPassword,
-                enabled = viewState.credentialsReady && !viewState.loginState.isLoading,
-                onToggle = { trigger(LoginViewModel.Event.ToggleRememberPassword) }
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Button.Animated(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 40.dp),
-                enabled = viewState.credentialsReady && !viewState.loginState.isLoading,
-                text = stringResource(R.string.login_title),
-                textSize = 26,
-                height = 50,
-            ) { trigger(LoginViewModel.Event.OnLoginClick) }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Button.Animated(
-                modifier = Modifier
-                    .padding(horizontal = 40.dp),
-                text = stringResource(R.string.signup_here),
-                enabled = viewState.credentialsReady && !viewState.loginState.isLoading,
-            ) { trigger(LoginViewModel.Event.NavigateSignUp) }
+            focusManager.clearFocus()
+            trigger(LoginViewModel.Event.OnLoginClick)
+        }
+        Button.Secondary(text = stringResource(R.string.signup_here), enabled = enabled) {
+            trigger(LoginViewModel.Event.NavigateSignUp)
         }
     }
 }
 
-@Preview(showBackground = true)
+@Preview(name = "Light", showBackground = true, widthDp = 360, heightDp = 800)
+@Preview(name = "Large text", showBackground = true, widthDp = 320, heightDp = 640, fontScale = 2f)
+@Preview(name = "Landscape", showBackground = true, widthDp = 740, heightDp = 360)
 @Composable
 fun LoginPreview() {
     WhereIsEveryoneTheme(false) {

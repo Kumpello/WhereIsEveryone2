@@ -6,19 +6,16 @@ import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Contactless
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -26,9 +23,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.mlkit.vision.barcode.common.Barcode
@@ -38,6 +36,8 @@ import com.kumpello.whereiseveryone.R
 import com.kumpello.whereiseveryone.authentication.common.ui.TextField
 import com.kumpello.whereiseveryone.common.presentation.AsyncState
 import com.kumpello.whereiseveryone.common.ui.entity.Button
+import com.kumpello.whereiseveryone.common.ui.theme.AppSize
+import com.kumpello.whereiseveryone.common.ui.theme.AppSpacing
 import com.kumpello.whereiseveryone.main.friends.presentation.AddFriendViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -101,62 +101,46 @@ fun AddFriendContent(
     onEvent: (AddFriendViewModel.Event) -> Unit,
     onOpenNfcReading: () -> Unit
 ) {
+    val focusManager = LocalFocusManager.current
+    val enabled = !viewState.actionState.isLoading
     Column(
-        modifier = Modifier
-            .padding(16.dp)
-            .fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxWidth().padding(AppSpacing.md),
+        verticalArrangement = Arrangement.spacedBy(AppSpacing.sm)
     ) {
         TextField.Regular(
             label = stringResource(R.string.your_friends_nick),
             value = viewState.addFriendNick,
-            labelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                unfocusedIndicatorColor = MaterialTheme.colorScheme.outline
-            ),
-            onValueChange = { nick ->
-                onEvent(AddFriendViewModel.Event.SetAddFriendNick(nick))
-            }
+            enabled = enabled,
+            keyboardOptions = KeyboardOptions(autoCorrectEnabled = false, imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = {
+                focusManager.clearFocus()
+                if (enabled) onEvent(AddFriendViewModel.Event.AddFriend)
+            }),
+            onValueChange = { onEvent(AddFriendViewModel.Event.SetAddFriendNick(it)) }
         )
-        Spacer(modifier = Modifier.height(8.dp))
         Row(
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+            horizontalArrangement = Arrangement.spacedBy(AppSpacing.xs)
         ) {
-            Button.Animated(
+            Button.Primary(
+                modifier = Modifier.weight(1f),
                 text = stringResource(R.string.add_friend),
-                width = 150,
-                enabled = !viewState.actionState.isLoading
+                enabled = enabled,
+                loading = viewState.actionState.isLoading
             ) {
+                focusManager.clearFocus()
                 onEvent(AddFriendViewModel.Event.AddFriend)
             }
-            Spacer(modifier = Modifier.width(8.dp))
-            IconButton(
+            FilledTonalIconButton(
+                modifier = Modifier.size(AppSize.button),
                 onClick = { onEvent(AddFriendViewModel.Event.ScanQrCode) },
-                enabled = !viewState.actionState.isLoading
+                enabled = enabled
             ) {
-                Icon(
-                    imageVector = Icons.Default.QrCodeScanner,
-                    contentDescription = stringResource(R.string.scan_qr_code_cd),
-                    modifier = Modifier.size(32.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
+                Icon(Icons.Default.QrCodeScanner, contentDescription = stringResource(R.string.scan_qr_code_cd), modifier = Modifier.size(AppSize.icon))
             }
-            Spacer(modifier = Modifier.width(8.dp))
-            IconButton(
-                onClick = onOpenNfcReading,
-                enabled = !viewState.actionState.isLoading
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Contactless,
-                    contentDescription = stringResource(R.string.read_nfc_cd),
-                    modifier = Modifier.size(32.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
+            FilledTonalIconButton(modifier = Modifier.size(AppSize.button), onClick = onOpenNfcReading, enabled = enabled) {
+                Icon(Icons.Default.Contactless, contentDescription = stringResource(R.string.read_nfc_cd), modifier = Modifier.size(AppSize.icon))
             }
         }
     }

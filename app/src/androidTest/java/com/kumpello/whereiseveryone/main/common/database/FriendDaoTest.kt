@@ -38,7 +38,7 @@ class FriendDaoTest {
                 username = "user1",
                 status = "status1",
                 state = "accepted",
-                location = UserInfoEntity(1.0, 2.0, 0f, 3.0, 4f, 1672531200000L),
+                location = UserInfoEntity(1.0, 2.0, 0f, 3.0, 4f, speed = 0f, lastUpdate = 1672531200000L),
                 friendSince = 1672531200000L
             )
         )
@@ -56,7 +56,7 @@ class FriendDaoTest {
                 username = "user1",
                 status = "status1",
                 state = "accepted",
-                location = UserInfoEntity(1.0, 2.0, 0f, 3.0, 4f, 1672531200000L),
+                location = UserInfoEntity(1.0, 2.0, 0f, 3.0, 4f, speed = 0f, lastUpdate = 1672531200000L),
                 friendSince = 1672531200000L
             )
         )

@@ -5,6 +5,7 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.util.LruCache
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import androidx.core.graphics.createBitmap
 
 private val avatarCache = LruCache<String, Bitmap>(50)
@@ -23,7 +24,9 @@ fun createAvatarBitmap(
     canvas.drawCircle(sizePx / 2f, sizePx / 2f, sizePx / 2f, circlePaint)
     if (!name.isNullOrBlank()) {
         val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = android.graphics.Color.WHITE
+            color = if (ColorUtils.calculateLuminance(backgroundColor) > 0.179) {
+                android.graphics.Color.BLACK
+            } else android.graphics.Color.WHITE
             textAlign = Paint.Align.CENTER
             textSize = sizePx * 0.42f
             val textWidth = measureText(name.uppercase())

@@ -5,14 +5,18 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,12 +27,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.kumpello.whereiseveryone.R
-import kotlinx.coroutines.launch
+import com.kumpello.whereiseveryone.common.ui.theme.AppSize
+import com.kumpello.whereiseveryone.common.ui.theme.AppSpacing
 import kotlin.math.roundToInt
+import kotlinx.coroutines.launch
 
 @Composable
 fun NavigationCompass(
@@ -42,7 +49,7 @@ fun NavigationCompass(
     val scope = rememberCoroutineScope()
 
     Card(
-        modifier = modifier
+        modifier = modifier.widthIn(max = AppSize.formMaxWidth).fillMaxWidth()
             .zIndex(1001f)
             .offset { IntOffset(offsetX.value.roundToInt(), 0) }
             .pointerInput(Unit) {
@@ -68,27 +75,30 @@ fun NavigationCompass(
                     }
                 )
             },
-        shape = com.kumpello.whereiseveryone.common.ui.theme.Shapes.large,
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f)
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            contentColor = MaterialTheme.colorScheme.onSurface
         )
     ) {
         Row(
-            modifier = Modifier.padding(8.dp),
+            modifier = Modifier.padding(AppSpacing.sm),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(AppSpacing.sm)
         ) {
             Icon(
                 imageVector = Icons.Default.KeyboardArrowUp,
                 contentDescription = stringResource(R.string.direction_to_format, friendName),
                 modifier = Modifier
-                    .size(48.dp)
+                    .size(32.dp)
                     .rotate(bearing),
                 tint = MaterialTheme.colorScheme.primary
             )
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = friendName,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -97,6 +107,9 @@ fun NavigationCompass(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+            IconButton(onClick = onCancel, modifier = Modifier.size(AppSize.touchTarget)) {
+                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cancel_navigation), modifier = Modifier.size(AppSize.icon))
             }
         }
     }

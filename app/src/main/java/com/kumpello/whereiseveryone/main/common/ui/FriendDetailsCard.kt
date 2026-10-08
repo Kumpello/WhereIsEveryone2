@@ -1,30 +1,29 @@
 package com.kumpello.whereiseveryone.main.common.ui
 
-import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.kumpello.whereiseveryone.R
+import com.kumpello.whereiseveryone.common.ui.entity.AppDialog
 import com.kumpello.whereiseveryone.common.ui.entity.Button
-import com.kumpello.whereiseveryone.common.ui.theme.Shapes
+import com.kumpello.whereiseveryone.common.ui.theme.AppSize
+import com.kumpello.whereiseveryone.common.ui.theme.AppSpacing
 import com.kumpello.whereiseveryone.common.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.main.common.entity.AccuracyLevel
 import com.kumpello.whereiseveryone.main.common.entity.AltDifference
@@ -41,16 +40,8 @@ fun FriendDetailsCard(
     onNavigate: (Friend) -> Unit,
     onSharingToggle: (Friend) -> Unit
 ) {
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        FriendDetailsContent(
-            friend = friend,
-            onDismiss = onDismiss,
-            onNavigate = onNavigate,
-            onSharingToggle = onSharingToggle
-        )
+    AppDialog(onDismiss = onDismiss) {
+        FriendDetailsContent(friend, onDismiss, onNavigate, onSharingToggle)
     }
 }
 
@@ -61,39 +52,23 @@ private fun FriendDetailsContent(
     onNavigate: (Friend) -> Unit,
     onSharingToggle: (Friend) -> Unit
 ) {
-    Card(
-        modifier = Modifier
-            .padding(16.dp),
-        shape = Shapes.large,
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = friend.username,
-                modifier = Modifier.basicMarquee(),
-                style = MaterialTheme.typography.headlineMedium,
-                maxLines = 1,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = friend.status,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            friend.formattedDistance?.let {
-                Text(
-                    text = stringResource(R.string.distance_format, it),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-
+    val locale = LocalConfiguration.current.locales[0]
+    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(AppSpacing.sm)) {
+        Text(
+            friend.username,
+            style = MaterialTheme.typography.headlineSmall,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.semantics { heading() }
+        )
+        if (friend.status.isNotBlank()) {
+            Text(friend.status, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        friend.formattedDistance?.let {
+            Text(stringResource(R.string.distance_format, it), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+        }
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.xs)) {
             friend.location?.let { loc ->
                 DetailItem(label = stringResource(R.string.latitude_label), value = loc.lat.toString())
                 DetailItem(label = stringResource(R.string.longitude_label), value = loc.lon.toString())
@@ -109,7 +84,7 @@ private fun FriendDetailsContent(
                 loc.rawAccuracy?.let {
                     DetailItem(
                         label = stringResource(R.string.accuracy_label),
-                        value = "${loc.accuracy.displayName} (${String.format("%.2f", it)}m)"
+                        value = "${loc.accuracy.displayName} (${String.format(locale, "%.2f", it)}m)"
                     )
                 }
                 LocationUtils.formatSpeed(loc.speed)?.let {
@@ -124,38 +99,13 @@ private fun FriendDetailsContent(
             friend.friendSince?.let {
                 DetailItem(label = stringResource(R.string.friend_since_label), value = it)
             }
-
-            Spacer(modifier = Modifier.size(16.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Button.Animated(
-                    text = if (friend.isPaused) stringResource(R.string.resume_sharing) else stringResource(R.string.stop_sharing),
-                    width = 268
-                ) {
-                    onSharingToggle(friend)
-                }
-            }
-            Spacer(modifier = Modifier.size(8.dp))
-            Row(
-                horizontalArrangement = Arrangement.SpaceAround,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Button.Animated(
-                    text = stringResource(R.string.close),
-                    width = 130
-                ) {
-                    onDismiss()
-                }
-                Spacer(modifier = Modifier.size(8.dp))
-                Button.Animated(
-                    text = stringResource(R.string.navigate_action),
-                    width = 130
-                ) {
-                    onNavigate(friend)
-                }
-            }
+        }
+        Button.Secondary(text = stringResource(if (friend.isPaused) R.string.resume_sharing else R.string.stop_sharing)) {
+            onSharingToggle(friend)
+        }
+        Button.Primary(text = stringResource(R.string.navigate_action)) { onNavigate(friend) }
+        TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth().heightIn(min = AppSize.touchTarget)) {
+            Text(stringResource(R.string.close))
         }
     }
 }
@@ -163,20 +113,16 @@ private fun FriendDetailsContent(
 @Composable
 fun DetailItem(label: String, value: String) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+        modifier = Modifier.fillMaxWidth().padding(vertical = AppSpacing.xxs),
+        horizontalArrangement = Arrangement.spacedBy(AppSpacing.md)
     ) {
         Text(
-            text = "$label:",
+            label,
+            modifier = Modifier.weight(0.45f),
             style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.SemiBold
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium
-        )
+        Text(value, modifier = Modifier.weight(0.55f), style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.End)
     }
 }
 

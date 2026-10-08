@@ -10,7 +10,7 @@ WhereIsEveryone is a real-time location sharing Android application that allows 
     - **NFC Sharing**: Share your profile by tapping devices.
     - **QR/URI Support**: Add friends via deep links or scanning.
 - **Authentication**: Secure login and sign-up flows with encrypted data storage.
-- **Remember password**: An optional bookmark toggle on login and sign-up saves the
+- **Remember password**: An optional checkbox on login and sign-up saves the
   username and password after successful authentication. Login restores the saved
   pair; sign-up starts with empty fields. Credentials use the existing encrypted
   DataStore, survive logout, and are removed immediately when the toggle is turned off.
@@ -83,6 +83,11 @@ com.kumpello.whereiseveryone/
     ├── navigation/             # Type-safe navigation definitions
     └── extension/              # Kotlin extension functions
 ```
+
+## UI design system
+
+The UI foundations, reusable components, accessibility rules, and design audit are
+documented in [the design system](docs/DESIGN_SYSTEM.md).
 
 ## Coroutine dispatchers
 

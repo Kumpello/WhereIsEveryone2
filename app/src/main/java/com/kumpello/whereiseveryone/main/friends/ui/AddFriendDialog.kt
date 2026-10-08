@@ -1,15 +1,12 @@
 package com.kumpello.whereiseveryone.main.friends.ui
 
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import com.kumpello.whereiseveryone.R
-import com.kumpello.whereiseveryone.common.ui.theme.Shapes
 import com.kumpello.whereiseveryone.main.friends.presentation.AddFriendViewModel
 
 @Composable
@@ -29,9 +26,9 @@ fun AddFriendDialog(
                 Text(text = stringResource(R.string.dismiss))
             }
         },
-        title = { Text(text = stringResource(R.string.confirmation_title)) },
+        title = { Text(text = stringResource(R.string.add_friend)) },
         text = { Text(text = stringResource(R.string.add_linked_friend_confirmation, username)) },
-        modifier = Modifier.padding(32.dp),
-        shape = Shapes.small
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shape = MaterialTheme.shapes.extraLarge
     )
 }

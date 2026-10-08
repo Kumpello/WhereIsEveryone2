@@ -46,7 +46,7 @@
     <string name="add_friend">Add Friend</string>
     <string name="add_linked_friend_confirmation">Send a friend request to %1$s? If they accept, they can see your location while location sharing is enabled.</string>
     <string name="share_profile">Share</string>
-    <string name="your_friends_nick">Your friends nick</string>
+    <string name="your_friends_nick">Friend’s username</string>
     <string name="friend_added">Friend added!</string>
     <string name="friend_accepted">Friend accepted!</string>
     <string name="friend_deleted_successfully">Friend deleted successfully</string>
@@ -61,6 +61,9 @@
     <string name="delete_cd">Delete</string>
     <string name="accept_cd">Accept</string>
     <string name="reject_cd">Reject</string>
+    <string name="delete_friend_cd">Remove %1$s from friends</string>
+    <string name="accept_friend_cd">Accept request from %1$s</string>
+    <string name="reject_friend_cd">Cancel request with %1$s</string>
     <string name="profile_shared_successfully">Profile shared successfully!</string>
     <string name="ready_to_share">Ready to share!</string>
     <string name="could_not_start_sharing">Could not start sharing priority</string>
@@ -86,7 +89,7 @@
     <string name="error_resuming_sharing">Error occurred during resuming sharing</string>
 
     <!-- Authentication & Validation -->
-    <string name="login_title">Login</string>
+    <string name="login_title">Log in</string>
     <string name="signup_title">Sign up</string>
     <string name="username_label">Username</string>
     <string name="password_label">Password</string>
@@ -146,7 +149,7 @@
     <string name="proximity_distance_label">Proximity Notification Distance</string>
     <string name="distance_m_format">%d m</string>
     <string name="about_title">About</string>
-    <string name="about_description">WhereIsEveryone is an app that allows you to share your location with your friends in real time. Built with Jetpack Compose and Mapbox.</string>
+    <string name="about_description">Share your location in real time and stay connected with your friends.</string>
     <string name="settings_licenses">Open Source Licenses</string>
     <string name="version_format">Version: %s</string>
     <string name="settings_logout">Logout</string>
@@ -158,7 +161,7 @@
 
     <!-- Find Me / Forced Foreground -->
     <string name="find_me_cd">Find me</string>
-    <string name="find_me_dialog_title">Force Foreground Mode</string>
+    <string name="find_me_dialog_title">Precise location mode</string>
     <string name="find_me_warning">Warning: This will significantly increase power consumption as the app will maintain high-precision location updates even in the background.</string>
     <string name="find_me_duration_30">30 Minutes</string>
     <string name="find_me_duration_60">60 Minutes</string>
@@ -171,4 +174,30 @@
     <string name="time_left_indefinite">Time left: Indefinite</string>
     <string name="disable">Disable</string>
     <string name="location_sharing">Location sharing</string>
+    <string name="back_to_map">Back to map</string>
+    <string name="login_subtitle">Keep up with your friends, wherever they are.</string>
+    <string name="signup_subtitle">Create an account to stay connected with your friends.</string>
+    <string name="password_requirements">Password requirements</string>
+    <string name="requirement_met">Met</string>
+    <string name="requirement_not_met">Not yet met</string>
+    <string name="friends_incoming_tab">Incoming</string>
+    <string name="friends_outgoing_tab">Outgoing</string>
+    <string name="friends_empty_title">Your friends will appear here</string>
+    <string name="friends_empty_message">Add a friend by username, or share your profile to connect.</string>
+    <string name="incoming_empty_title">No incoming requests</string>
+    <string name="incoming_empty_message">New friend requests will appear here.</string>
+    <string name="outgoing_empty_title">No outgoing requests</string>
+    <string name="outgoing_empty_message">Requests you send will appear here until they are accepted.</string>
+    <string name="sharing_paused">Sharing paused</string>
+    <string name="show_friend_details">Show friend details</string>
+    <string name="cancel_navigation">Stop navigation</string>
+    <string name="proximity_distance_description">Get notified when a friend enters or leaves this distance.</string>
+    <string name="location_service_label">Location updates</string>
+    <string name="location_service_description">Keep your location up to date in the background.</string>
+    <string name="sharing_description">Allow friends to see your location.</string>
+    <string name="account_section_title">Account and data</string>
+    <string name="no_status_message">No status message yet</string>
+    <string name="find_me_explanation">Keep precise location updates active, even when the app is in the background.</string>
+    <string name="permissions_title">Share your location</string>
+    <string name="remove_friend_title">Remove friend</string>
 </resources>
