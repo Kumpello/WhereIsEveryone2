@@ -13,9 +13,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -25,12 +27,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kumpello.whereiseveryone.core.ui.theme.USER_PUCK_COLOR
 import com.kumpello.whereiseveryone.feature.main.ui.model.Friend
-import com.mapbox.geojson.Feature
-import com.mapbox.geojson.Point
+import com.mapbox.geojson.FeatureCollection
 import com.mapbox.maps.ImageHolder
 import com.mapbox.maps.MapboxDelicateApi
 import com.mapbox.maps.MapboxExperimental
 import com.mapbox.maps.MapboxLocationComponentException
+import com.mapbox.maps.coroutine.styleLoadedEvents
 import com.mapbox.maps.extension.compose.MapEffect
 import com.mapbox.maps.extension.compose.MapboxMap
 import com.mapbox.maps.extension.compose.animation.viewport.rememberMapViewportState
@@ -43,24 +45,34 @@ import com.mapbox.maps.extension.compose.style.layers.generated.IconPitchAlignme
 import com.mapbox.maps.extension.compose.style.layers.generated.IconRotationAlignmentValue
 import com.mapbox.maps.extension.compose.style.layers.generated.SymbolLayer
 import com.mapbox.maps.extension.compose.style.rememberStyleImage
-import com.mapbox.maps.extension.compose.style.sources.GeoJSONData
 import com.mapbox.maps.extension.compose.style.sources.generated.GeoJsonSourceState
-import com.mapbox.maps.extension.compose.style.sources.generated.rememberGeoJsonSourceState
 import com.mapbox.maps.extension.compose.style.standard.MapboxStandardStyle
 import com.mapbox.maps.extension.style.expressions.generated.Expression
+import com.mapbox.maps.extension.style.sources.addGeoJSONSourceFeatures
+import com.mapbox.maps.extension.style.sources.getSourceAs
+import com.mapbox.maps.extension.style.sources.generated.GeoJsonSource
+import com.mapbox.maps.extension.style.sources.removeGeoJSONSourceFeatures
+import com.mapbox.maps.extension.style.sources.updateGeoJSONSourceFeatures
 import com.mapbox.maps.plugin.LocationPuck2D
 import com.mapbox.maps.plugin.PuckBearing
 import com.mapbox.maps.plugin.gestures.generated.GesturesSettings
 import com.mapbox.maps.plugin.locationcomponent.location
 import com.mapbox.maps.plugin.viewport.data.DefaultViewportTransitionOptions
 import com.mapbox.maps.plugin.viewport.data.FollowPuckViewportStateOptions
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import kotlin.math.roundToInt
-import kotlin.time.Duration.Companion.milliseconds
+
+private const val FRIENDS_RING_LAYER_ID = "friends-ring-layer"
+private const val AVATAR_UPLOAD_BATCH_SIZE = 32
 
 @OptIn(MapboxExperimental::class)
 @Composable
@@ -70,6 +82,7 @@ fun Map(
     actions: Flow<MapViewModel.Action>,
     friendsPositions: List<Friend>,
     event: (MapViewModel.Event) -> Unit,
+    trackCameraBearing: Boolean = true,
 ) {
     if (LocalInspectionMode.current) {
         Box(
@@ -93,19 +106,21 @@ fun Map(
         )
     }
     val mapState = rememberMapState {
-        gesturesSettings = GesturesSettings {
+        gesturesState.gesturesSettings = GesturesSettings {
             rotateEnabled = true
             pinchToZoomEnabled = true
             pitchEnabled = true
         }
     }
 
-    LaunchedEffect(mapViewportState) {
+    val currentEvent by rememberUpdatedState(event)
+    LaunchedEffect(mapViewportState, trackCameraBearing) {
+        if (!trackCameraBearing) return@LaunchedEffect
         snapshotFlow { mapViewportState.cameraState?.bearing ?: 0.0 }
             .map { it.roundToInt() }
             .distinctUntilChanged()
             .collect { bearing ->
-                event(MapViewModel.Event.OnCameraUpdate(bearing.toDouble()))
+                currentEvent(MapViewModel.Event.OnCameraUpdate(bearing.toDouble()))
             }
     }
 
@@ -196,52 +211,40 @@ fun Map(
         }
     ) {
         val context = LocalContext.current
-        val puckAvatarBitmap = remember { createAvatarBitmap(null, USER_PUCK_COLOR, sizePx = 120) }
-        val puckBearingBitmap = remember {
-            createTintedBitmap(context, R.drawable.ic_map_friend_ring_sdf, USER_PUCK_COLOR, sizePx = 270) //TODO: Implement size as accuracy? To consider
+        val puckImages by produceState<Pair<android.graphics.Bitmap, android.graphics.Bitmap>?>(null, context) {
+            value = withContext(Dispatchers.Default) {
+                createAvatarBitmap(null, USER_PUCK_COLOR, sizePx = 120) to
+                    createTintedBitmap(context, R.drawable.ic_map_friend_ring_sdf, USER_PUCK_COLOR, sizePx = 270)
+            }
         }
 
-        MapEffect(puckAvatarBitmap, puckBearingBitmap, friendsPositions.isNotEmpty()) { mapView ->
-            val style = mapView.mapboxMap.style
-            val ringLayerId = "friends-ring-layer"
-
-            // The ring layer is added declaratively by FriendsSymbolLayer (in the style's topSlot).
-            // There's no ordering guarantee it already exists when this effect runs, so wait briefly.
-            var hasRingLayer = false
-            if (friendsPositions.isNotEmpty()) {
-                var attempts = 0
-                while (!hasRingLayer && attempts < 30) { // ~480ms max
-                    hasRingLayer = style?.styleLayerExists(ringLayerId) == true
-                    if (!hasRingLayer) delay(16.milliseconds)
-                    attempts++
-                }
-            }
-
-            try {
-                mapView.location.updateSettings {
-                    enabled = true
-                    locationPuck = LocationPuck2D(
-                        topImage = ImageHolder.from(puckAvatarBitmap),
-                        bearingImage = ImageHolder.from(puckBearingBitmap),
-                        shadowImage = null,
-                    )
-                    puckBearingEnabled = true
-                    puckBearing = PuckBearing.HEADING
-                    if (hasRingLayer) {
-                        layerBelow = ringLayerId
-                    } else {
-                        layerBelow = null
-                        slot = "top"
+        MapEffect(puckImages) { mapView ->
+            val (puckAvatarBitmap, puckBearingBitmap) = puckImages ?: return@MapEffect
+            val map = mapView.mapboxMap
+            map.styleLoadedEvents.map { Unit }
+                .onStart { if (map.style != null) emit(Unit) }
+                .collect {
+                    try {
+                        mapView.location.updateSettings {
+                            enabled = true
+                            locationPuck = LocationPuck2D(
+                                topImage = ImageHolder.from(puckAvatarBitmap),
+                                bearingImage = ImageHolder.from(puckBearingBitmap),
+                                shadowImage = null,
+                            )
+                            puckBearingEnabled = true
+                            puckBearing = PuckBearing.HEADING
+                            slot = "top"
+                            layerBelow = FRIENDS_RING_LAYER_ID.takeIf(map::styleLayerExists)
+                        }
+                    } catch (e: MapboxLocationComponentException) {
+                        Timber.tag("MAP_UI").w(e, "Couldn't bind puck below friend markers")
+                        mapView.location.updateSettings {
+                            layerBelow = null
+                            slot = "top"
+                        }
                     }
                 }
-            } catch (e: MapboxLocationComponentException) {
-                // Belt-and-suspenders: if the layer still wasn't there, don't crash — fall back to top slot.
-                Timber.tag("MAP_UI").w(e, "Couldn't bind puck below $ringLayerId, falling back to top slot")
-                mapView.location.updateSettings {
-                    layerBelow = null
-                    slot = "top"
-                }
-            }
         }
     }
 }
@@ -262,25 +265,7 @@ fun FriendsSymbolLayer(
 
     val displayedFriends = remember { mutableStateMapOf<String, AnimatedFriendData>() }
 
-    MapEffect(friends) { mapView ->
-        val style = mapView.mapboxMap.style ?: return@MapEffect
-        friends.forEach { friend ->
-            val imageId = "avatar-${friend.username}"
-            if (style.getStyleImage(imageId) == null) {
-                val bitmap = createAvatarBitmap(
-                    name = friend.username,
-                    backgroundColor = colorForUsername(friend.username),
-                    sizePx = 150
-                )
-                style.addImage(imageId, bitmap)
-            }
-        }
-    }
-
-    // NOTE: this loop only reads `friends` (the data param) and writes to `displayedFriends`
-    // (never reads it). It must NOT live in the same recomposition scope as anything that
-    // reads `displayedFriends`, or every animation frame will re-trigger it and restart
-    // every friend's tween. See UpdateFriendsGeoJsonSource below.
+    // Animation writes are observed by a coroutine, so frames do not recompose these layers.
     friends.forEach { friend ->
         val location = friend.location ?: return@forEach
         val target = AnimatedFriendData(
@@ -301,11 +286,9 @@ fun FriendsSymbolLayer(
         }
     }
 
-    val sourceState = rememberGeoJsonSourceState()
-
-    // Isolated in its own composable so *only this scope* recomposes when displayedFriends
-    // changes on every animation frame — it can no longer cascade back into the forEach above.
-    UpdateFriendsGeoJsonSource(displayedFriends = displayedFriends, sourceState = sourceState)
+    // The source data is owned by UpdateFriendsGeoJsonSource's partial-update collector.
+    // Avoid saving transient animated GeoJSON in the Activity's saved state.
+    val sourceState = remember { GeoJsonSourceState() }
 
     val friendRing = rememberStyleImage(
         imageId = "friend-ring",
@@ -318,9 +301,57 @@ fun FriendsSymbolLayer(
         sdf = true
     )
 
+    val avatarUsernames = remember(friends) {
+        friends.filter { it.location != null }.mapTo(mutableSetOf()) { it.username }
+    }
+    val currentAvatarUsernames by rememberUpdatedState(avatarUsernames)
+    MapEffect(friendRing, friendRingNotchless) { mapView ->
+        val map = mapView.mapboxMap
+        map.styleLoadedEvents.map { Unit }
+            .onStart { if (map.style != null) emit(Unit) }
+            .collectLatest {
+                // Expression image IDs do not register StyleImages automatically.
+                listOf(friendRing, friendRingNotchless).forEach { image ->
+                    map.addStyleImage(
+                        imageId = image.imageId,
+                        scale = image.scale ?: map.pixelRatio,
+                        image = image.image,
+                        sdf = image.sdf,
+                        stretchX = image.stretchX,
+                        stretchY = image.stretchY,
+                        content = image.content,
+                    ).onError { Timber.tag("MAP_UI").w("Unable to add marker ring: %s", it) }
+                }
+                val uploaded = mutableSetOf<String>()
+                snapshotFlow { currentAvatarUsernames }.collect { usernames ->
+                    if (map.style == null) return@collect
+                    (uploaded - usernames).forEach { username ->
+                        map.removeStyleImage("avatar-$username")
+                        uploaded.remove(username)
+                    }
+                    val missing = usernames - uploaded
+                    // Keep the existing bounded bitmap cache; do not retain a second bitmap
+                    // for every marker. Batches also release Main between groups of uploads.
+                    missing.chunked(AVATAR_UPLOAD_BATCH_SIZE).forEach { batch ->
+                        val images = withContext(Dispatchers.Default) {
+                            batch.associateWith { username ->
+                                createAvatarBitmap(username, colorForUsername(username), sizePx = 150)
+                            }
+                        }
+                        val style = map.style ?: return@collect
+                        images.forEach { (username, bitmap) ->
+                            style.addImage("avatar-$username", bitmap)
+                                .onError { Timber.tag("MAP_UI").w("Unable to add friend avatar: %s", it) }
+                                .onValue { uploaded += username }
+                        }
+                    }
+                }
+            }
+    }
+
     SymbolLayer(
         sourceState = sourceState,
-        layerId = "friends-ring-layer",
+        layerId = FRIENDS_RING_LAYER_ID,
     ) {
         iconImage = ImageValue(
             Expression.switchCase(
@@ -362,30 +393,44 @@ fun FriendsSymbolLayer(
             true
         }
     }
+
+    UpdateFriendsGeoJsonSource(displayedFriends = displayedFriends, sourceState = sourceState)
 }
 
 /**
- * Deliberately its own composable. `displayedFriends` is written to on every animation frame
- * (via AnimatedFriendEffect's onUpdate), so reading it here — and ONLY here — means those
- * writes invalidate just this small scope instead of the whole FriendsSymbolLayer body
- * (which would otherwise re-run the friend/target-building loop every frame).
+ * Observe animation snapshots without recomposing the layers. Build only changed features on
+ * a worker, then submit immutable batches to Mapbox; resetting all data each frame would also
+ * discard queued partial updates. A new style gets a fresh collection before incremental updates.
  */
 @OptIn(MapboxExperimental::class)
 @Composable
 private fun UpdateFriendsGeoJsonSource(
-    displayedFriends: Map<String, AnimatedFriendData>,
+    displayedFriends: SnapshotStateMap<String, AnimatedFriendData>,
     sourceState: GeoJsonSourceState,
 ) {
-    val features = displayedFriends.map { (id, data) ->
-        Feature.fromGeometry(Point.fromLngLat(data.lon, data.lat)).apply {
-            addStringProperty("id", id)
-            addStringProperty("avatarId", "avatar-$id")
-            addNumberProperty("bearing", data.bearing)
-            addNumberProperty("opacity", data.opacity)
-            addNumberProperty("haloWidth", data.haloWidth)
-            addNumberProperty("speed", data.speed)
-            addStringProperty("color", String.format("#%06X", 0xFFFFFF and colorForUsername(id)))
-        }
+    MapEffect(sourceState) { mapView ->
+        val map = mapView.mapboxMap
+        map.styleLoadedEvents.map { Unit }
+            .onStart { if (map.style != null) emit(Unit) }
+            .collectLatest {
+                val source = map.getSourceAs<GeoJsonSource>(sourceState.sourceId)
+                    ?: return@collectLatest
+                val features = FriendFeatureUpdates()
+                var initialized = false
+                snapshotFlow { displayedFriends.toMap() }
+                    .conflate()
+                    .map(features::update)
+                    .flowOn(Dispatchers.Default)
+                    .collect { changes ->
+                        if (!initialized) {
+                            source.featureCollection(FeatureCollection.fromFeatures(changes.added))
+                            initialized = true
+                        } else {
+                            if (changes.removed.isNotEmpty()) source.removeGeoJSONSourceFeatures(changes.removed)
+                            if (changes.added.isNotEmpty()) source.addGeoJSONSourceFeatures(changes.added)
+                            if (changes.updated.isNotEmpty()) source.updateGeoJSONSourceFeatures(changes.updated)
+                        }
+                    }
+            }
     }
-    sourceState.data = GeoJSONData(features)
 }

@@ -72,7 +72,7 @@ and compatibility decisions.
 
 ## Android Studio run configurations
 
-Connect one authorized ADB device, select one of the six profiles below, and click
+Connect one authorized ADB device, select one of the profiles below, and click
 **Run**. Each profile builds, installs, and launches that exact variant, regardless
 of the variant selected in Android Studio.
 
@@ -81,6 +81,9 @@ of the variant selected in Android Studio.
 | Development | **Development Debug (ADB)** | **Development Release (ADB)** |
 | Production | **Production Debug (ADB)** | **Production Release (ADB)** |
 | Production Premium | **Production Premium Debug (ADB)** | **Production Premium Release (ADB)** |
+
+**Production Release Vulkan (ADB)** builds and runs the production release with
+`-PmapboxVulkan=true`. It requires an ARM64 device running Android 12 or newer.
 
 These Gradle profiles select the device through ADB; the IDE's device selector shows
 **not applicable**. If multiple devices are connected, set
@@ -94,6 +97,9 @@ Variant**, and select your phone in the IDE. Debug variants support **Debug**.
 
 The UI foundations, reusable components, accessibility rules, and design audit are
 documented in [the design system](docs/DESIGN_SYSTEM.md).
+
+Map rendering optimizations, optional Vulkan builds, and device profiling are
+documented in [the map performance guide](docs/MAP_PERFORMANCE.md).
 
 ## Coroutine dispatchers
 

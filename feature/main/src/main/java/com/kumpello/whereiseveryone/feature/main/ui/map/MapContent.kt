@@ -44,7 +44,8 @@ fun MapContent(
             state = state.mapSettings,
             actions = viewModel.action,
             friendsPositions = state.friends,
-            event = viewModel::trigger
+            event = viewModel::trigger,
+            trackCameraBearing = state.navigatingFriend != null,
         )
 
         if (state.selectedFriend != null) {

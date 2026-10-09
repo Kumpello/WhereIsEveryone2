@@ -23,6 +23,11 @@ plugins {
     alias(libs.plugins.google.oss.licenses)
 }
 
+val useMapboxVulkan = providers.gradleProperty("mapboxVulkan")
+    .map { it.toBooleanStrict() }
+    .orElse(false)
+    .get()
+
 configurations.all {
     resolutionStrategy {
         force("androidx.concurrent:concurrent-futures:1.3.0")
@@ -50,10 +55,14 @@ android {
 
     defaultConfig {
         applicationId = "com.kumpello.whereiseveryone"
-        minSdk = 28
+        minSdk = if (useMapboxVulkan) 31 else 28
         targetSdk = 37
         versionCode = 1
         versionName = "0.8"
+
+        if (useMapboxVulkan) {
+            ndk.abiFilters += "arm64-v8a"
+        }
 
         val mapboxToken: String = project.findProperty("MAPBOX_TOKEN") as? String ?: ""
         resValue("string", "mapbox_access_token", mapboxToken)

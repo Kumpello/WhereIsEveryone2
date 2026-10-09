@@ -87,6 +87,9 @@ fun AnimatedFriendEffect(
         val startLon = lon
         val startBearing = bearing
         val bearingTarget = shortestBearingTarget(startBearing, target.bearing)
+        if (startLat == target.lat && startLon == target.lon && startBearing == bearingTarget) {
+            return@LaunchedEffect
+        }
 
         animateProgress { p ->
             lat = lerp(startLat, target.lat, p)
@@ -103,6 +106,7 @@ fun AnimatedFriendEffect(
     LaunchedEffect(target.haloWidth, target.speed) {
         val startHalo = haloWidth
         val startSpeed = speed
+        if (startHalo == target.haloWidth && startSpeed == target.speed) return@LaunchedEffect
         animateProgress { p ->
             haloWidth = lerp(startHalo, target.haloWidth, p)
             speed = lerp(startSpeed, target.speed, p)
@@ -114,6 +118,7 @@ fun AnimatedFriendEffect(
     // disturb position/bearing/size.
     LaunchedEffect(target.opacity) {
         val start = opacity
+        if (start == target.opacity) return@LaunchedEffect
         animateProgress { p ->
             opacity = lerp(start, target.opacity, p)
             onUpdate(currentValue())
