@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -24,7 +23,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.kumpello.whereiseveryone.core.ui.theme.USER_PUCK_COLOR
 import com.kumpello.whereiseveryone.feature.main.ui.model.Friend
 import com.mapbox.geojson.FeatureCollection
@@ -156,21 +154,10 @@ fun Map(
         mapViewportState = mapViewportState,
         mapState = mapState,
         scaleBar = {
-            ScaleBar(
-                modifier = Modifier
-                    .safeDrawingPadding(),
-                ratio = 0.3F,
-                height = 4.dp,
-                textSize = 16.sp
-            )
+            MapScaleBar()
         },
         compass = {
-            Compass(
-                modifier = Modifier
-                    .safeDrawingPadding()
-                    .size(58.dp),
-                alignment = Alignment.BottomStart
-            )
+            MapCompass()
         },
         logo = {
             Logo(

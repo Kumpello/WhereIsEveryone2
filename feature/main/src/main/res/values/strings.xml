@@ -18,6 +18,7 @@
     <string name="zoom_out_cd">Zoom out</string>
     <string name="zoom_in_cd">Zoom in</string>
     <string name="center_cd">Center</string>
+    <string name="map_compass_cd">Reset map to north</string>
     <string name="direction_to_format">Direction to %s</string>
     <string name="message_cd">Message</string>
     <string name="friends_cd">Friends</string>
