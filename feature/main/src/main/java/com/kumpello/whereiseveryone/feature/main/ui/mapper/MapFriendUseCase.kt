@@ -31,7 +31,8 @@ class MapFriendUseCase {
                     rawAccuracy = loc.accuracy,
                     speed = loc.speed,
                     lastUpdateTime = LocationUtils.formatLastUpdate(loc.lastUpdate),
-                    lastUpdateAge = LocationUtils.convertLastUpdate(loc.lastUpdate)
+                    lastUpdateAge = LocationUtils.convertLastUpdate(loc.lastUpdate),
+                    isCarMode = loc.isCarMode,
                 )
             },
             distance = dist,

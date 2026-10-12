@@ -4,9 +4,10 @@ import com.kumpello.whereiseveryone.feature.main.location.LocationService
 import com.kumpello.whereiseveryone.feature.main.location.LocationServiceProxy
 import com.kumpello.whereiseveryone.feature.main.location.LocationUpload
 import com.kumpello.whereiseveryone.feature.main.location.sendLocationWithRetry
-import com.kumpello.whereiseveryone.core.R as CoreR
-
-
+import com.kumpello.whereiseveryone.feature.main.location.chargingStatus
+import com.kumpello.whereiseveryone.feature.main.location.resolveLocationUpdateType
+import com.kumpello.whereiseveryone.feature.main.location.shouldAcquireLocations
+import com.kumpello.whereiseveryone.feature.main.location.uploadIntervalMillis
 import com.kumpello.whereiseveryone.feature.main.R
 import android.Manifest
 import android.app.Notification
@@ -79,9 +80,7 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
     )
     private val state = MutableStateFlow(State())
 
-    private val forcedForegroundStatus = MutableStateFlow(LocationService.ForcedForegroundStatus())
-
-    private var desiredUpdateType: LocationService.UpdateType = LocationService.UpdateType.Foreground
+    private var activeRequest: LocationRequest? = null
 
     private val binder: IBinder = LocationBinder()
 
@@ -93,6 +92,7 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
     private val scope = CoroutineScope(Dispatchers.Main.immediate + job)
     private var locationUpdatesJob: Job? = null
     private var locationSenderJob: Job? = null
+    private var forcedForegroundTimeoutJob: Job? = null
     private val sharingMutex = Mutex()
     private var isServiceStarted = false
     private var previousNearbyFriends = emptySet<String>()
@@ -107,6 +107,22 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
         locationServiceProxy.registerDelegate(this)
 
         scope.launch {
+            chargingStatus().collect { charging ->
+                state.update { it.copy(isCharging = charging) }
+                evaluateLocationState()
+            }
+        }
+        scope.launch {
+            preferencesManager.observe(PreferencesKey.CarMode)
+                .map { it == true }
+                .distinctUntilChanged()
+                .collect { enabled ->
+                    state.update { it.copy(isCarMode = enabled) }
+                    evaluateLocationState()
+                }
+        }
+
+        scope.launch {
             preferencesManager.observe(PreferencesKey.LocationSharingEnabled)
                 .map { it != false }
                 .distinctUntilChanged()
@@ -116,20 +132,13 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
                 }
                 .collect { enabled ->
                     state.update { it.copy(isSharingEnabled = enabled) }
-                    if (enabled) startLocationUpdates(state.value.updateType) else stopUpdates()
-                    updateNotification()
+                    evaluateLocationState()
                 }
         }
 
         scope.launch {
             getLastLocation()?.let {
-                locationServiceProxy.updateLocation(it)
-            }
-        }
-
-        scope.launch {
-            forcedForegroundStatus.collect { status ->
-                locationServiceProxy.updateForcedForegroundStatus(status)
+                if (latestLocation == null) locationServiceProxy.updateLocation(it)
             }
         }
 
@@ -138,6 +147,105 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
                 updateProximityNotification(nearbyFriends)
             }
         }
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Timber.tag(TAG).d("LocationForegroundService onStartCommand: action = %s", intent?.action)
+
+        when (intent?.action) {
+            ACTION_KILL_SERVICE -> {
+                Timber.tag(TAG).d("Received stop/kill action")
+                locationServiceProxy.stopLocationService()
+                return START_NOT_STICKY
+            }
+            ACTION_TOGGLE_SHARING -> {
+                startServiceInternal(startUpdates = false)
+                toggleSharing()
+                return START_STICKY
+            }
+        }
+
+        startServiceInternal()
+        return START_STICKY
+    }
+
+    override fun onDestroy() {
+        Timber.tag(TAG).d("LocationForegroundService stopping")
+        isServiceStarted = false
+        locationServiceProxy.unregisterDelegate()
+        stopUpdates()
+        locationSendChannel.cancel()
+        scope.cancel()
+        super.onDestroy()
+    }
+
+    override fun onBind(intent: Intent): IBinder {
+        return binder
+    }
+
+    override fun setAppForeground(isForeground: Boolean) {
+        state.update { it.copy(isAppForeground = isForeground) }
+        evaluateLocationState()
+    }
+
+    override fun setForcedForeground(durationSeconds: Long?) {
+        forcedForegroundTimeoutJob?.cancel()
+        state.update { it.copy(forcedForegroundStatus = LocationService.ForcedForegroundStatus(
+            isEnabled = true,
+            endTime = durationSeconds?.let { System.currentTimeMillis() + it.seconds.inWholeMilliseconds }
+        )) }
+        evaluateLocationState()
+
+        durationSeconds?.let { seconds ->
+            forcedForegroundTimeoutJob = scope.launch {
+                delay(seconds.seconds)
+                if (state.value.forcedForegroundStatus.isEnabled) {
+                    disableForcedForeground()
+                }
+            }
+        }
+    }
+
+    override fun disableForcedForeground() {
+        forcedForegroundTimeoutJob?.cancel()
+        forcedForegroundTimeoutJob = null
+        state.update { it.copy(forcedForegroundStatus = LocationService.ForcedForegroundStatus()) }
+        evaluateLocationState()
+    }
+
+    override fun stopService() {
+        Timber.tag(TAG).d("stopService called")
+        isServiceStarted = false
+        stopUpdates()
+        locationSendChannel.cancel()
+        scope.cancel()
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
+    }
+
+    override fun toggleSharing() {
+        scope.launch {
+            try {
+                sharingMutex.withLock {
+                    val enabled = preferencesManager.get(PreferencesKey.LocationSharingEnabled) != false
+                    preferencesManager.save(PreferencesKey.LocationSharingEnabled, !enabled)
+                }
+            } catch (exception: CancellationException) {
+                throw exception
+            } catch (exception: Exception) {
+                Timber.tag(TAG).e(exception, "Unable to save location sharing preference")
+            }
+        }
+    }
+
+    override fun changeForegroundUpdateInterval(interval: Long) {
+        state.update { it.copy(foregroundSettings = it.foregroundSettings.copy(interval = interval)) }
+        evaluateLocationState()
+    }
+
+    override fun changeBackgroundUpdateInterval(interval: Long) {
+        state.update { it.copy(backgroundSettings = it.backgroundSettings.copy(interval = interval)) }
+        evaluateLocationState()
     }
 
     private fun updateProximityNotification(nearbyFriends: List<String>) {
@@ -204,42 +312,13 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
         }
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Timber.tag(TAG).d("LocationForegroundService onStartCommand: action = %s", intent?.action)
-
-        when (intent?.action) {
-            ACTION_KILL_SERVICE -> {
-                Timber.tag(TAG).d("Received stop/kill action")
-                locationServiceProxy.stopLocationService()
-                return START_NOT_STICKY
-            }
-            ACTION_TOGGLE_SHARING -> {
-                startServiceInternal(startUpdates = false)
-                toggleSharing()
-                return START_STICKY
-            }
-        }
-
-        startServiceInternal()
-        return START_STICKY
-    }
-
-    override fun onDestroy() {
-        Timber.tag(TAG).d("LocationForegroundService stopping")
-        saveLatestLocationToDatabase()
-        isServiceStarted = false
-        locationServiceProxy.unregisterDelegate()
-        stopUpdates()
-        locationSendChannel.cancel()
-        scope.cancel()
-        super.onDestroy()
-    }
-
     private fun startLocationSender() {
         locationSenderJob = scope.launch {
             while (isActive) {
                 sendLocation(locationSendChannel.receive())
-                delay(5_000.milliseconds)
+                // Keep GPS acquisition independent of network throughput. Conflation retains
+                // the newest fix while a single upload is in flight, including on fast GNSS devices.
+                delay(state.value.updateType.uploadIntervalMillis().milliseconds)
             }
         }
     }
@@ -263,7 +342,7 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
 
         isServiceStarted = true
         if (startUpdates) {
-            startLocationUpdates(updateType = state.value.updateType)
+            evaluateLocationState()
         }
     }
 
@@ -364,33 +443,6 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
                 coarseLocationPermission == PackageManager.PERMISSION_GRANTED
     }
 
-    private fun saveLatestLocationToDatabase() {
-        latestLocation?.let { location ->
-            kotlinx.coroutines.runBlocking(Dispatchers.IO) {
-                userLocationRepository.saveLocation(
-                    LocationData(
-                        lat = location.latitude,
-                        lon = location.longitude,
-                        bearing = location.bearing,
-                        alt = location.altitude,
-                        accuracy = location.accuracy,
-                        speed = location.speed,
-                        lastUpdate = System.currentTimeMillis()
-                    )
-                )
-            }
-        }
-    }
-
-    inner class LocationBinder : Binder() {
-        val service: LocationForegroundService
-            get() = this@LocationForegroundService
-    }
-
-    override fun onBind(intent: Intent): IBinder {
-        return binder
-    }
-
     private fun createNotificationChannel(notificationManager: NotificationManager) {
         val serviceChannel = NotificationChannel(
             channelID,
@@ -400,79 +452,46 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
         notificationManager.createNotificationChannel(serviceChannel)
     }
 
-    override fun changeUpdateType(updateType: LocationService.UpdateType) {
-        desiredUpdateType = updateType
-        if (forcedForegroundStatus.value.isEnabled) {
-            Timber.tag(TAG).d("Change ignored due to forced foreground mode, but saved as desired: %s", updateType)
-            return
-        }
-        applyUpdateType(updateType)
-    }
-
-    private fun applyUpdateType(updateType: LocationService.UpdateType) {
-        if (state.value.updateType == updateType) return
-        state.update { it.copy(updateType = updateType) }
-        stopUpdates()
-        startLocationUpdates(updateType)
-    }
-
-    override fun setForcedForeground(durationSeconds: Long?) {
-        forcedForegroundStatus.value = LocationService.ForcedForegroundStatus(
-            isEnabled = true,
-            endTime = durationSeconds?.let { System.currentTimeMillis() + it.seconds.inWholeMilliseconds }
+    /** Every input changes the same state; only a changed request restarts GPS acquisition. */
+    private fun evaluateLocationState() {
+        val snapshot = state.value
+        val mode = resolveLocationUpdateType(
+            appForeground = snapshot.isAppForeground,
+            forcedForeground = snapshot.forcedForegroundStatus.isEnabled,
+            isCharging = snapshot.isCharging,
+            isCarMode = snapshot.isCarMode,
         )
-        applyUpdateType(LocationService.UpdateType.Foreground)
-
-        durationSeconds?.let { seconds ->
-            scope.launch {
-                delay(seconds.seconds)
-                if (forcedForegroundStatus.value.isEnabled) {
-                    disableForcedForeground()
-                }
+        state.update { it.copy(updateType = mode) }
+        locationServiceProxy.updateStatus(LocationService.Status(
+            updateType = mode,
+            isAppForeground = snapshot.isAppForeground,
+            isCarMode = snapshot.isCarMode,
+            isCharging = snapshot.isCharging,
+            isSharingEnabled = snapshot.isSharingEnabled,
+        ))
+        locationServiceProxy.updateForcedForegroundStatus(snapshot.forcedForegroundStatus)
+        val request = if (isServiceStarted && scope.isActive && shouldAcquireLocations(snapshot.isSharingEnabled, snapshot.isAppForeground)) {
+            when (mode) {
+                LocationService.UpdateType.Charging -> getChargingRequest()
+                LocationService.UpdateType.CarMode -> getCarModeRequest()
+                LocationService.UpdateType.Foreground -> getForegroundRequest()
+                LocationService.UpdateType.Background -> getBackgroundRequest()
             }
+        } else null
+        if (request != activeRequest || (request != null && locationUpdatesJob?.isActive != true)) {
+            stopUpdates()
+            if (request != null) startLocationUpdates(request)
         }
-    }
-
-    override fun disableForcedForeground() {
-        forcedForegroundStatus.value = LocationService.ForcedForegroundStatus(isEnabled = false, endTime = null)
-        applyUpdateType(desiredUpdateType)
-    }
-
-    override fun stopService() {
-        Timber.tag(TAG).d("stopService called")
-        isServiceStarted = false
-        stopUpdates()
-        locationSendChannel.cancel()
-        scope.cancel()
-        stopForeground(STOP_FOREGROUND_REMOVE)
-        stopSelf()
-    }
-
-    override fun toggleSharing() {
-        scope.launch {
-            try {
-                sharingMutex.withLock {
-                    val enabled = preferencesManager.get(PreferencesKey.LocationSharingEnabled) != false
-                    preferencesManager.save(PreferencesKey.LocationSharingEnabled, !enabled)
-                }
-            } catch (exception: CancellationException) {
-                throw exception
-            } catch (exception: Exception) {
-                Timber.tag(TAG).e(exception, "Unable to save location sharing preference")
-            }
-        }
-    }
-
-    private fun startLocationUpdates(updateType: LocationService.UpdateType) {
-        if (!isServiceStarted || !scope.isActive || !state.value.isSharingEnabled || locationUpdatesJob?.isActive == true) return
-
-        val request = when (updateType) {
-            LocationService.UpdateType.Background -> getBackgroundRequest()
-            LocationService.UpdateType.Foreground -> getForegroundRequest()
-        }
-        state.update { it.copy(isLocationUpdatesStarted = true, updateType = updateType) }
+        if (snapshot.isSharingEnabled && locationUpdatesJob?.isActive == true) {
+            if (locationSenderJob?.isActive != true) startLocationSender()
+        } else stopLocationSender()
         updateNotification()
-        startLocationSender()
+    }
+
+    private fun startLocationUpdates(request: LocationRequest) {
+        activeRequest = request
+        state.update { it.copy(isLocationUpdatesStarted = true) }
+        updateNotification()
         locationUpdatesJob = scope.launch(Dispatchers.Main) {
             try {
                 fusedLocationClient.locationUpdates(request, Looper.getMainLooper())
@@ -480,10 +499,13 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
                         Timber.tag(TAG).e(exception, "Unable to receive location updates")
                     }
                     .collect { location ->
+                        if (location.time <= (latestLocation?.time ?: 0L)) return@collect
                         Timber.tag(TAG).d("Emitting location update")
                         latestLocation = location
                         locationServiceProxy.updateLocation(location)
-                        locationSendChannel.send(LocationUpload(location))
+                        if (state.value.isSharingEnabled) {
+                            locationSendChannel.send(LocationUpload(location, isCarMode = state.value.isCarMode))
+                        }
                     }
             } finally {
                 // A cancelled collection must not reset a replacement collection's state.
@@ -496,17 +518,34 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
     }
 
     private fun stopUpdates() {
+        activeRequest = null
         val updates = locationUpdatesJob
         locationUpdatesJob = null
         updates?.cancel()
+        stopLocationSender()
+        state.update { it.copy(isLocationUpdatesStarted = false) }
+    }
+
+    private fun stopLocationSender() {
         locationSenderJob?.cancel()
         locationSenderJob = null
         locationSendChannel.tryReceive()
-        state.update { it.copy(isLocationUpdatesStarted = false) }
     }
 
     private suspend fun sendLocation(initialUpload: LocationUpload) {
         try {
+            val fix = initialUpload.location
+            // Persist paced fixes with suspend Room calls instead of blocking service teardown.
+            userLocationRepository.saveLocation(LocationData(
+                lat = fix.latitude,
+                lon = fix.longitude,
+                bearing = fix.bearing.takeIf { fix.hasBearing() },
+                alt = fix.altitude.takeIf { fix.hasAltitude() },
+                accuracy = fix.accuracy.takeIf { fix.hasAccuracy() },
+                speed = fix.speed.takeIf { fix.hasSpeed() },
+                lastUpdate = initialUpload.lastUpdate,
+                isCarMode = initialUpload.isCarMode,
+            ))
             val response = sendLocationWithRetry(
                 initialUpload = initialUpload,
                 takeLatestUpload = { locationSendChannel.tryReceive().getOrNull() }
@@ -515,11 +554,12 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
                 sendLocationUseCase.execute(
                     longitude = location.longitude,
                     latitude = location.latitude,
-                    bearing = location.bearing,
+                    bearing = location.bearing.takeIf { location.hasBearing() },
                     altitude = location.altitude,
                     accuracy = location.accuracy,
-                    speed = location.speed,
-                    lastUpdate = upload.lastUpdate
+                    speed = location.speed.takeIf { location.hasSpeed() },
+                    lastUpdate = upload.lastUpdate,
+                    isCarMode = upload.isCarMode,
                 )
             }
             if (response is CodeResponse.SuccessNoContent) {
@@ -534,6 +574,23 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
             Timber.tag(TAG).w(error, "Unable to send location update")
         }
     }
+
+    private fun getChargingRequest() = LocationRequest.Builder(0L)
+        .setGranularity(GRANULARITY_FINE)
+        .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
+        .setMinUpdateIntervalMillis(0L)
+        .setMaxUpdateDelayMillis(0L)
+        .setMaxUpdateAgeMillis(0L)
+        .setWaitForAccurateLocation(false)
+        .build()
+
+    private fun getCarModeRequest() = LocationRequest.Builder(1_000L)
+        .setGranularity(GRANULARITY_FINE)
+        .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
+        .setMinUpdateIntervalMillis(1_000L)
+        .setMaxUpdateDelayMillis(0L)
+        .setMaxUpdateAgeMillis(0L)
+        .build()
 
     private fun getForegroundRequest() = LocationRequest.Builder(state.value.foregroundSettings.interval)
         .setGranularity(GRANULARITY_FINE)
@@ -553,33 +610,30 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
         .setMaxUpdateDelayMillis(state.value.backgroundSettings.maxDelay)
         .build()
 
-    override fun changeForegroundUpdateInterval(interval: Long) {
-        state.update { it.copy(foregroundSettings = it.foregroundSettings.copy(interval = interval)) }
-    }
-
-    override fun changeBackgroundUpdateInterval(interval: Long) {
-        state.update { it.copy(backgroundSettings = it.backgroundSettings.copy(interval = interval)) }
-    }
-
     private suspend fun getLastLocation(): Location? {
         return userLocationRepository.getLastLocation()?.let { entity ->
             Location("fused").apply {
                 latitude = entity.lat
                 longitude = entity.lon
-                bearing = entity.bearing ?: 0f
-                altitude = entity.alt ?: 0.0
-                accuracy = entity.accuracy ?: 0f
-                speed = entity.speed ?: 0f
+                entity.bearing?.let { bearing = it }
+                entity.alt?.let { altitude = it }
+                entity.accuracy?.let { accuracy = it }
+                entity.speed?.let { speed = it }
                 time = entity.lastUpdate
             }
         }
+    }
+
+    inner class LocationBinder : Binder() {
+        val service: LocationForegroundService
+            get() = this@LocationForegroundService
     }
 
     data class State(
         val foregroundSettings: LocationRequestSettings = LocationRequestSettings(
             interval = 5_000L,
             minInterval = 1_000L,
-            maxDelay = 30_000L,
+            maxDelay = 0L,
             maxAge = 5_000L,
         ),
         val backgroundSettings: LocationRequestSettings = LocationRequestSettings(
@@ -590,6 +644,10 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
         ),
         val isLocationUpdatesStarted: Boolean = false,
         val isSharingEnabled: Boolean = false,
+        val isCharging: Boolean = false,
+        val isCarMode: Boolean = false,
+        val isAppForeground: Boolean = true,
+        val forcedForegroundStatus: LocationService.ForcedForegroundStatus = LocationService.ForcedForegroundStatus(),
         val updateType: LocationService.UpdateType = LocationService.UpdateType.Foreground
     ) {
         data class LocationRequestSettings(
@@ -605,6 +663,7 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
         const val ACTION_TOGGLE_SHARING = "TOGGLE_SHARING"
         const val ACTION_KILL_SERVICE = "KILL_LOCATION_SERVICE"
     }
+
 }
 
 internal fun FusedLocationProviderClient.locationUpdates(

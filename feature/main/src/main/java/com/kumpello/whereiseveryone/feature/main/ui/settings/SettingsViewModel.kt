@@ -41,6 +41,11 @@ class SettingsViewModel(
 
     init {
         viewModelScope.launch {
+            preferencesManager.observe(PreferencesKey.CarMode).distinctUntilChanged().collect { enabled ->
+                trigger(OnCarModeUpdate(enabled == true))
+            }
+        }
+        viewModelScope.launch {
             combine(
                 locationService.observeIsServiceRunning(),
                 preferencesManager.observe(PreferencesKey.LocationSharingEnabled)
@@ -70,6 +75,18 @@ class SettingsViewModel(
 
     override fun reduce(state: State, event: Event): ReducerResult<State, Event, Action> {
         return when (event) {
+            is OnCarModeUpdate -> state.copy(isCarMode = event.enabled).toResult()
+            ToggleCarMode -> state.toResult(locationWork {
+                try {
+                    val enabled = preferencesManager.get(PreferencesKey.CarMode) == true
+                    preferencesManager.save(PreferencesKey.CarMode, !enabled)
+                    NoOp
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Toast(R.string.car_mode_save_error)
+                }
+            })
             is OnLocationServiceStateUpdate -> {
                 Timber.tag(TAG).d("Location service state updated: %s", event.isRunning)
                 state.copy(
@@ -175,7 +192,8 @@ class SettingsViewModel(
             },
             deleteLocationDataId = R.string.settings_delete_location_data,
             logoutTextId = R.string.settings_logout,
-            proximityDistance = proximityDistance
+            proximityDistance = proximityDistance,
+            isCarMode = isCarMode,
         )
     }
 
@@ -186,6 +204,8 @@ class SettingsViewModel(
     }
 
     sealed class Event {
+        data class OnCarModeUpdate(val enabled: Boolean) : Event()
+        data object ToggleCarMode : Event()
         data class OnLocationServiceStateUpdate(val isRunning: Boolean, val isSharingEnabled: Boolean) : Event()
         data class OnProximityDistanceUpdate(val distance: Int) : Event()
         data class ChangeProximityDistance(val distance: Int) : Event()
@@ -202,7 +222,8 @@ class SettingsViewModel(
     data class State(
         val locationServiceState: Boolean = false,
         val isSharingEnabled: Boolean = true,
-        val proximityDistance: Int = 50
+        val proximityDistance: Int = 50,
+        val isCarMode: Boolean = false,
     )
 
     @Immutable
@@ -213,7 +234,8 @@ class SettingsViewModel(
         @param:StringRes val sharingSwitchTextId: Int,
         @param:StringRes val deleteLocationDataId: Int,
         @param:StringRes val logoutTextId: Int,
-        val proximityDistance: Int
+        val proximityDistance: Int,
+        val isCarMode: Boolean = false,
     )
 
     companion object {

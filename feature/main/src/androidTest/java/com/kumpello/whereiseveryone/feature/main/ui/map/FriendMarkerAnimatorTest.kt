@@ -72,4 +72,31 @@ class FriendMarkerAnimatorTest {
         composeRule.mainClock.advanceTimeBy(600)
         composeRule.runOnIdle { assertEquals(0.3, displayed.opacity, 0.000001) }
     }
+
+    @Test
+    fun missingCoursePreservesOrientationWithoutSchedulingRotationFrames() {
+        val target = mutableStateOf(initial)
+        var displayed = initial
+        var updates = 0
+        composeRule.mainClock.autoAdvance = false
+        composeRule.setContent {
+            AnimatedFriendEffect("driver", target.value, onUpdate = { displayed = it; updates++ }, onRemoved = {})
+        }
+        composeRule.runOnIdle { target.value = initial.copy(bearing = 0.0, hasBearing = false) }
+        composeRule.mainClock.advanceTimeBy(32)
+        val updatesAfterChange = updates
+        composeRule.mainClock.advanceTimeBy(1200)
+        composeRule.runOnIdle {
+            assertEquals(false, displayed.hasBearing)
+            assertEquals(initial.bearing, displayed.bearing, 0.0)
+            assertEquals(updatesAfterChange, updates)
+        }
+
+        composeRule.runOnIdle { target.value = initial.copy(bearing = 0.0, hasBearing = true) }
+        composeRule.mainClock.advanceTimeBy(1300)
+        composeRule.runOnIdle {
+            assertTrue(displayed.hasBearing)
+            assertEquals(0.0, displayed.bearing, 0.0)
+        }
+    }
 }

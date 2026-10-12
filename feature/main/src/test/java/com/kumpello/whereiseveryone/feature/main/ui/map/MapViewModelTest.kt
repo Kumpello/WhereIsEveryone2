@@ -25,12 +25,14 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.runCurrent
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -57,20 +59,43 @@ class MapViewModelTest {
     private val stopSharingUseCase: StopSharingUseCase = mockk()
     private val resumeSharingUseCase: ResumeSharingUseCase = mockk()
     private val getPausedFriendsUseCase: GetPausedFriendsUseCase = mockk()
+    private val preferencesManager = mockk<com.kumpello.whereiseveryone.data.repository.preferences.PreferencesManager> {
+        every { observe(com.kumpello.whereiseveryone.data.repository.preferences.PreferencesKey.CarMode) } returns emptyFlow()
+    }
+    private val roadNavigationRepository = mockk<com.kumpello.whereiseveryone.data.repository.RoadNavigationRepository>()
 
     private lateinit var viewModel: MapViewModel
 
-    private fun setupViewModel(defaultDispatcher: CoroutineDispatcher = mainDispatcherRule.testDispatcher) {
-        viewModel = MapViewModel(
-            locationService,
-            friendsManager,
-            mapLocationUseCase,
-            mapFriendUseCase,
-            stopSharingUseCase,
-            resumeSharingUseCase,
-            getPausedFriendsUseCase,
-            defaultDispatcher = defaultDispatcher,
-        )
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `successive service fixes and location loss reach the map without waiting`() = runTest {
+        val locations = MutableStateFlow<AndroidLocation?>(null)
+        every { locationService.observeLocation() } returns locations
+        every { mapLocationUseCase.execute(any()) } answers { MapLocationUseCase().execute(firstArg()) }
+        setupViewModel()
+        val store = ViewModelStore().apply { put("map", viewModel) }
+        try {
+            viewModel.state.test {
+                assertNull(awaitItem().user)
+                locations.value = gpsFix(52.1, 1_800_000_000_000L)
+                runCurrent()
+                assertEquals(52.1, viewModel.state.value.user!!.lat, 0.0)
+
+                locations.value = gpsFix(52.2, 1_800_000_000_100L)
+                runCurrent()
+                assertEquals(52.2, viewModel.state.value.user!!.lat, 0.0)
+                assertEquals(90f, viewModel.state.value.user!!.bearing)
+                assertEquals(18f, viewModel.state.value.user!!.speed)
+
+                locations.value = null
+                runCurrent()
+                assertNull(viewModel.state.value.user)
+                assertEquals(0L, testScheduler.currentTime)
+                cancelAndIgnoreRemainingEvents()
+            }
+        } finally {
+            store.clear()
+        }
     }
 
     @Test
@@ -205,5 +230,30 @@ class MapViewModelTest {
             // Relative bearing = (0 - 90 + 360) % 360 = 270
             assertEquals(270.0f, updated.bearingToFriend!!, 0.001f)
         }
+    }
+
+    private fun setupViewModel(defaultDispatcher: CoroutineDispatcher = mainDispatcherRule.testDispatcher) {
+        viewModel = MapViewModel(
+            locationService,
+            friendsManager,
+            mapLocationUseCase,
+            mapFriendUseCase,
+            stopSharingUseCase,
+            resumeSharingUseCase,
+            getPausedFriendsUseCase,
+            preferencesManager,
+            roadNavigationRepository,
+            defaultDispatcher = defaultDispatcher,
+        )
+    }
+
+    private fun gpsFix(lat: Double, timestamp: Long) = mockk<AndroidLocation>(relaxed = true) {
+        every { latitude } returns lat
+        every { longitude } returns 21.0
+        every { time } returns timestamp
+        every { hasBearing() } returns true
+        every { bearing } returns 90f
+        every { hasSpeed() } returns true
+        every { speed } returns 18f
     }
 }

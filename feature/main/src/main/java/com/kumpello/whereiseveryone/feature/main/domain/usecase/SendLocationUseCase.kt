@@ -9,11 +9,12 @@ class SendLocationUseCase(
     suspend fun execute(
         longitude: Double,
         latitude: Double,
-        bearing: Float,
+        bearing: Float?,
         altitude: Double,
         accuracy: Float,
-        speed: Float,
-        lastUpdate: Long
+        speed: Float?,
+        lastUpdate: Long,
+        isCarMode: Boolean = false,
     ): CodeResponse {
         return locationRepository.sendPosition(
             longitude = longitude,
@@ -22,7 +23,8 @@ class SendLocationUseCase(
             altitude = altitude,
             accuracy = accuracy,
             speed = speed,
-            lastUpdate = lastUpdate
+            lastUpdate = lastUpdate,
+            isCarMode = isCarMode,
         )
     }
 }

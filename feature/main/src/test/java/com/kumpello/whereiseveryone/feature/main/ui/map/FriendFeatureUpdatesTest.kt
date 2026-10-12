@@ -104,4 +104,24 @@ class FriendFeatureUpdatesTest {
         assertEquals("alice", updates.update(mapOf("alice" to position)).added.single().id())
         assertEquals(2, colorComputations)
     }
+
+    @Test
+    fun `missing GPS course updates only its friend and north remains a valid direction`() {
+        val updates = FriendFeatureUpdates { 0 }
+        val north = position.copy(bearing = 0.0)
+        val first = updates.update(mapOf("driver" to north, "other" to position))
+        val original = first.added.single { it.id() == "driver" }
+        assertTrue(original.getBooleanProperty("hasBearing"))
+        assertEquals(0.0, original.getNumberProperty("bearing").toDouble(), 0.0)
+
+        val unknown = updates.update(mapOf("driver" to north.copy(hasBearing = false), "other" to position))
+        val changed = unknown.updated.single()
+        assertEquals("driver", changed.id())
+        assertEquals(false, changed.getBooleanProperty("hasBearing"))
+        assertTrue(original.getBooleanProperty("hasBearing"))
+        assertTrue(unknown.added.isEmpty())
+        assertTrue(unknown.removed.isEmpty())
+        val restored = updates.update(mapOf("driver" to north, "other" to position))
+        assertTrue(restored.updated.single().getBooleanProperty("hasBearing"))
+    }
 }

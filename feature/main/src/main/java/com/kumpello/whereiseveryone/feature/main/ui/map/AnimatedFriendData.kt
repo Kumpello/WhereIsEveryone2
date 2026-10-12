@@ -6,5 +6,6 @@ data class AnimatedFriendData(
     val bearing: Double,
     val opacity: Double,
     val haloWidth: Double,
-    val speed: Double
+    val speed: Double,
+    val hasBearing: Boolean = true,
 )

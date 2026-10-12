@@ -22,7 +22,8 @@ fun FriendData.toLocalData() = FriendLocalData(
             alt = loc.altitude,
             accuracy = loc.accuracy,
             speed = loc.speed,
-            lastUpdate = loc.last_update
+            lastUpdate = loc.last_update,
+            isCarMode = loc.isCarMode,
         )
     },
     friendSince = friend_since

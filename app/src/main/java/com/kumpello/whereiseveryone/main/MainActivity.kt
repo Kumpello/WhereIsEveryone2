@@ -193,21 +193,16 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
-        locationService.changeUpdateType(LocationService.UpdateType.Foreground)
-        lifecycleScope.launch {
-            val isEnabled = preferencesManager.get(PreferencesKey.LocationSharingEnabled) ?: true
-
-            if (!mapScreenViewModel.state.value.permissions.containsValue(false)
-                && isEnabled
-            ) {
-                locationService.startLocationService()
-            }
+        locationService.setAppForeground(true)
+        if (!mapScreenViewModel.state.value.permissions.containsValue(false)) {
+            // The service also supplies local map fixes when sharing is paused.
+            locationService.startLocationService()
         }
     }
 
     override fun onStop() {
         super.onStop()
-        locationService.changeUpdateType(LocationService.UpdateType.Background)
+        locationService.setAppForeground(false)
     }
 
     override fun onDestroy() {

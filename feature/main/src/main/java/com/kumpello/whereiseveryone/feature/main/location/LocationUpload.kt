@@ -11,11 +11,6 @@ import java.net.ProtocolException
 import javax.net.ssl.SSLException
 import kotlin.time.Duration.Companion.milliseconds
 
-internal data class LocationUpload(
-    val location: Location,
-    val lastUpdate: Long = location.time
-)
-
 internal suspend fun sendLocationWithRetry(
     initialUpload: LocationUpload,
     takeLatestUpload: () -> LocationUpload?,
@@ -47,3 +42,9 @@ internal suspend fun sendLocationWithRetry(
 
     error("Location upload retry limit exhausted")
 }
+
+internal data class LocationUpload(
+    val location: Location,
+    val lastUpdate: Long = location.time,
+    val isCarMode: Boolean = false,
+)

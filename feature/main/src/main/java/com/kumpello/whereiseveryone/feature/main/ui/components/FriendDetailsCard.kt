@@ -64,6 +64,9 @@ private fun FriendDetailsContent(
         if (friend.status.isNotBlank()) {
             Text(friend.status, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+        if (friend.location?.isCarMode == true) {
+            Text(stringResource(R.string.car_mode), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+        }
         friend.formattedDistance?.let {
             Text(stringResource(R.string.distance_format, it), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
         }

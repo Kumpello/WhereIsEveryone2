@@ -7,5 +7,6 @@ data class LocationData(
     val alt: Double?,
     val accuracy: Float?,
     val speed: Float?,
-    val lastUpdate: Long
+    val lastUpdate: Long,
+    val isCarMode: Boolean = false,
 )

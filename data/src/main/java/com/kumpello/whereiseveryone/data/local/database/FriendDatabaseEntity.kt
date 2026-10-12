@@ -22,7 +22,8 @@ internal data class UserInfoEntity(
     val altitude: Double?,
     val accuracy: Float?,
     val speed: Float?,
-    val lastUpdate: Long
+    val lastUpdate: Long,
+    val isCarMode: Boolean = false,
 )
 
 internal fun FriendData.toDatabaseEntity() = FriendDatabaseEntity(
@@ -37,7 +38,8 @@ internal fun FriendData.toDatabaseEntity() = FriendDatabaseEntity(
             altitude = it.altitude,
             accuracy = it.accuracy,
             speed = it.speed,
-            lastUpdate = it.last_update
+            lastUpdate = it.last_update,
+            isCarMode = it.isCarMode,
         )
     },
     friendSince = friend_since
@@ -55,7 +57,8 @@ internal fun FriendDatabaseEntity.toDomain() = FriendData(
             altitude = it.altitude,
             accuracy = it.accuracy,
             speed = it.speed,
-            last_update = it.lastUpdate
+            last_update = it.lastUpdate,
+            isCarMode = it.isCarMode,
         )
     },
     friend_since = friendSince

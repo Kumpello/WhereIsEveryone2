@@ -69,7 +69,7 @@ class PreferencesManager internal constructor(
     @Suppress("UNCHECKED_CAST")
     private fun <T> mapValue(key: PreferencesKey<T>, value: String?): T? {
         return when (key) {
-            is PreferencesKey.LocationSharingEnabled -> value?.toBoolean() as T?
+            is PreferencesKey.LocationSharingEnabled, is PreferencesKey.CarMode -> value?.toBoolean() as T?
             is PreferencesKey.ProximityDistance -> value?.toIntOrNull() as T?
             else -> value as T?
         }

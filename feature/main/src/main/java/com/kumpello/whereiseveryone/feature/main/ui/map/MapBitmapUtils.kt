@@ -7,6 +7,7 @@ import android.util.LruCache
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import androidx.core.graphics.createBitmap
+import com.kumpello.whereiseveryone.feature.main.R
 
 private val avatarCache = LruCache<String, Bitmap>(50)
 
@@ -15,31 +16,35 @@ fun createAvatarBitmap(
     backgroundColor: Int,
     sizePx: Int = 130
 ): Bitmap {
-    val key = "${name.orEmpty()}_${backgroundColor}_$sizePx"
-    avatarCache.get(key)?.let { return it }
-
-    val bitmap = createBitmap(sizePx, sizePx)
-    val canvas = Canvas(bitmap)
-    val circlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = backgroundColor }
-    canvas.drawCircle(sizePx / 2f, sizePx / 2f, sizePx / 2f, circlePaint)
-    if (!name.isNullOrBlank()) {
-        val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = if (ColorUtils.calculateLuminance(backgroundColor) > 0.179) {
-                android.graphics.Color.BLACK
-            } else android.graphics.Color.WHITE
-            textAlign = Paint.Align.CENTER
-            textSize = sizePx * 0.42f
-            val textWidth = measureText(name.uppercase())
-            val maxWidth = sizePx * 0.8f
-            if (textWidth > maxWidth) {
-                textSize *= maxWidth / textWidth
+    val key = "avatar_${name.orEmpty()}_${backgroundColor}_$sizePx"
+    return createCachedMarkerBitmap(key, backgroundColor, sizePx) { canvas ->
+        if (!name.isNullOrBlank()) {
+            val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = markerForegroundColor(backgroundColor)
+                textAlign = Paint.Align.CENTER
+                textSize = sizePx * 0.42f
+                val textWidth = measureText(name.uppercase())
+                val maxWidth = sizePx * 0.8f
+                if (textWidth > maxWidth) {
+                    textSize *= maxWidth / textWidth
+                }
             }
+            val textY = sizePx / 2f - (textPaint.descent() + textPaint.ascent()) / 2f
+            canvas.drawText(name.uppercase(), sizePx / 2f, textY, textPaint)
         }
-        val textY = sizePx / 2f - (textPaint.descent() + textPaint.ascent()) / 2f
-        canvas.drawText(name.uppercase(), sizePx / 2f, textY, textPaint)
     }
-    avatarCache.put(key, bitmap)
-    return bitmap
+}
+
+internal fun createCarAvatarBitmap(
+    context: android.content.Context,
+    backgroundColor: Int,
+    sizePx: Int = 130,
+): Bitmap = createCachedMarkerBitmap("car_${backgroundColor}_$sizePx", backgroundColor, sizePx) { canvas ->
+    val drawable = ContextCompat.getDrawable(context, R.drawable.ic_map_car)!!.mutate()
+    val inset = (sizePx * 0.15f).toInt()
+    drawable.setBounds(inset, inset, sizePx - inset, sizePx - inset)
+    drawable.setTint(markerForegroundColor(backgroundColor))
+    drawable.draw(canvas)
 }
 
 fun createTintedBitmap(
@@ -60,4 +65,27 @@ fun createTintedBitmap(
 fun colorForUsername(username: String): Int {
     val hue = (username.hashCode() and 0x7FFFFFFF % 360).toFloat()
     return android.graphics.Color.HSVToColor(floatArrayOf(hue, 0.5f, 0.7f))
+}
+
+private fun markerForegroundColor(backgroundColor: Int): Int =
+    if (ColorUtils.calculateLuminance(backgroundColor) > 0.179) {
+        android.graphics.Color.BLACK
+    } else {
+        android.graphics.Color.WHITE
+    }
+
+private fun createCachedMarkerBitmap(
+    key: String,
+    backgroundColor: Int,
+    sizePx: Int,
+    drawCenter: (Canvas) -> Unit,
+): Bitmap {
+    avatarCache.get(key)?.let { return it }
+    val bitmap = createBitmap(sizePx, sizePx)
+    val canvas = Canvas(bitmap)
+    val circlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = backgroundColor }
+    canvas.drawCircle(sizePx / 2f, sizePx / 2f, sizePx / 2f, circlePaint)
+    drawCenter(canvas)
+    avatarCache.put(key, bitmap)
+    return bitmap
 }

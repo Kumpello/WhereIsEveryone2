@@ -17,7 +17,8 @@ class MapLocationUseCase {
             lastUpdateAge = LocationUtils.convertLastUpdate(data.lastUpdate),
             rawAlt = data.alt,
             rawAccuracy = data.accuracy,
-            speed = data.speed
+            speed = data.speed,
+            isCarMode = data.isCarMode,
         )
     }
 }

@@ -12,5 +12,6 @@ internal data class UserLocationEntity(
     val altitude: Double?,
     val accuracy: Float?,
     val speed: Float?,
-    val lastUpdate: Long
+    val lastUpdate: Long,
+    val isCarMode: Boolean = false,
 )

@@ -3,11 +3,68 @@ package com.kumpello.whereiseveryone.data.network.model
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import com.kumpello.whereiseveryone.data.local.database.toDatabaseEntity
+import com.kumpello.whereiseveryone.data.local.database.toDomain
+import com.kumpello.whereiseveryone.data.model.toLocalData
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class FriendDataTest {
+    @Test
+    fun `speed upload omits unavailable measurement but includes measured zero`() {
+        val adapter = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
+            .adapter(LocationRequest::class.java)
+        val unknown = LocationRequest(21.0, 52.0, null, null, 5f, null, 1800000000000L, true)
+        val unknownJson = adapter.toJson(unknown)
+        assertFalse(unknownJson.contains("\"speed\":"))
+        assertNull(adapter.fromJson(unknownJson)?.speed)
+
+        val stoppedJson = adapter.toJson(unknown.copy(speed = 0f))
+        assertTrue(stoppedJson.contains("\"speed\":"))
+        assertEquals(0f, adapter.fromJson(stoppedJson)?.speed)
+    }
+
+    @Test
+    fun `friends preserve GPS course including north and missing measurements through wire and cache`() {
+        val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
+        val friendAdapter = moshi.adapter(FriendData::class.java)
+        val requestAdapter = moshi.adapter(LocationRequest::class.java)
+        for (carMode in listOf(false, true)) {
+            for (course in listOf(null, 0f, 90f, 359.5f)) {
+                val request = LocationRequest(21.0, 52.0, course, null, 5f, 15f, 1800000000000L, carMode)
+                assertEquals(course, requestAdapter.fromJson(requestAdapter.toJson(request))?.bearing)
+                val encodedCourse = course?.toString() ?: "null"
+                val friend = requireNotNull(friendAdapter.fromJson("""
+                    {"username":"driver","state":"accepted","status":"","friend_since":null,
+                     "location":{"latitude":52,"longitude":21,"bearing":$encodedCourse,
+                     "speed":15,"accuracy":5,"last_update":1800000000000,"car_mode":$carMode}}
+                """.trimIndent()))
+                val cached = friend.toDatabaseEntity().toDomain().toLocalData().location
+                assertEquals(course, cached?.bearing)
+                assertEquals(carMode, cached?.isCarMode)
+            }
+        }
+    }
+
+    @Test
+    fun `car mode boolean survives wire models and friend cache`() {
+        val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
+        val requestAdapter = moshi.adapter(LocationRequest::class.java)
+        for (enabled in listOf(false, true)) {
+            val request = LocationRequest(21.0, 52.0, null, null, null, 0f, 1800000000000L, enabled)
+            val json = requestAdapter.toJson(request)
+            org.junit.Assert.assertTrue(json.contains("\"car_mode\":$enabled"))
+            assertEquals(request, requestAdapter.fromJson(json))
+        }
+        val friend = FriendData("driver", "", "accepted",
+            UserInfo(52.0, 21.0, null, null, 5f, 0f, 1800000000000L, true), null)
+        val cached = friend.toDatabaseEntity().toDomain()
+        assertEquals(friend, cached)
+        assertEquals(true, cached.toLocalData().location?.isCarMode)
+    }
     private val adapter = Moshi.Builder()
         .addLast(KotlinJsonAdapterFactory())
         .build()

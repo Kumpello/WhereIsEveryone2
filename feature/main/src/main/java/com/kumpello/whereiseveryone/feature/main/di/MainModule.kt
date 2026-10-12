@@ -41,7 +41,9 @@ val mainModule = module {
             mapFriendUseCase = get(),
             stopSharingUseCase = get(),
             resumeSharingUseCase = get(),
-            getPausedFriendsUseCase = get()
+            getPausedFriendsUseCase = get(),
+            preferencesManager = get(),
+            roadNavigationRepository = get(),
         )
     }
     viewModel {
@@ -84,7 +86,15 @@ val mainModule = module {
 
     single { NfcSharingSession() }
 
-    single { LocationServiceProxy() }
+    single {
+        LocationServiceProxy(androidContext()).also { service ->
+            // Keep the SDK's course/compass handling, but source every fix from our service.
+            com.mapbox.common.location.LocationServiceFactory.getOrCreate()
+                .setUserDefinedDeviceLocationProviderFactory {
+                    com.mapbox.bindgen.ExpectedFactory.createValue(service)
+                }
+        }
+    }
     single<LocationService> { get<LocationServiceProxy>() }
     single<FusedLocationProviderClient> {
         LocationServices.getFusedLocationProviderClient(androidContext())

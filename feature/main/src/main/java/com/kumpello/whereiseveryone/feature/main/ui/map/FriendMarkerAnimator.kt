@@ -8,6 +8,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 
 // --- Friend marker animation -------------------------------------------------------------
@@ -28,29 +29,6 @@ import androidx.compose.runtime.setValue
 
 private const val FRIEND_ANIMATION_DURATION_MS = 1000
 
-private fun shortestBearingTarget(current: Double, target: Double): Double {
-    var delta = (target - current) % 360.0
-    if (delta > 180.0) delta -= 360.0
-    if (delta < -180.0) delta += 360.0
-    return current + delta
-}
-
-private fun normalizeBearing(bearing: Double): Double = ((bearing % 360.0) + 360.0) % 360.0
-
-private fun lerp(from: Double, to: Double, progress: Double): Double = from + (to - from) * progress
-
-/** Runs an eased 0f->1f tween and reports Double progress each frame — the only animation primitive this file needs. */
-private suspend fun animateProgress(
-    durationMs: Int = FRIEND_ANIMATION_DURATION_MS,
-    onFrame: (progress: Double) -> Unit,
-) {
-    animate(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = tween(durationMillis = durationMs),
-    ) { value, _ -> onFrame(value.toDouble()) }
-}
-
 @Composable
 fun AnimatedFriendEffect(
     id: String,
@@ -65,6 +43,7 @@ fun AnimatedFriendEffect(
     var haloWidth by remember { mutableDoubleStateOf(target.haloWidth) }
     var speed by remember { mutableDoubleStateOf(target.speed) }
     var opacity by remember { mutableDoubleStateOf(target.opacity) }
+    val hasBearing by rememberUpdatedState(target.hasBearing)
 
     fun currentValue() = AnimatedFriendData(
         lat = lat,
@@ -73,20 +52,21 @@ fun AnimatedFriendEffect(
         opacity = opacity,
         haloWidth = haloWidth,
         speed = speed,
+        hasBearing = hasBearing,
     )
 
     // Show the un-animated starting value immediately so the marker appears right away.
-    LaunchedEffect(Unit) {
+    LaunchedEffect(target.hasBearing) {
         onUpdate(currentValue())
     }
 
     // Position + bearing move together (same reported update, same duration), restarting
-    // only when either actually changes.
-    LaunchedEffect(target.lat, target.lon, target.bearing) {
+    // only when either actually changes. Missing course preserves the last orientation.
+    LaunchedEffect(target.lat, target.lon, target.bearing, target.hasBearing) {
         val startLat = lat
         val startLon = lon
         val startBearing = bearing
-        val bearingTarget = shortestBearingTarget(startBearing, target.bearing)
+        val bearingTarget = if (target.hasBearing) shortestBearingTarget(startBearing, target.bearing) else startBearing
         if (startLat == target.lat && startLon == target.lon && startBearing == bearingTarget) {
             return@LaunchedEffect
         }
@@ -128,4 +108,27 @@ fun AnimatedFriendEffect(
     DisposableEffect(id) {
         onDispose { onRemoved() }
     }
+}
+
+private fun shortestBearingTarget(current: Double, target: Double): Double {
+    var delta = (target - current) % 360.0
+    if (delta > 180.0) delta -= 360.0
+    if (delta < -180.0) delta += 360.0
+    return current + delta
+}
+
+private fun normalizeBearing(bearing: Double): Double = ((bearing % 360.0) + 360.0) % 360.0
+
+private fun lerp(from: Double, to: Double, progress: Double): Double = from + (to - from) * progress
+
+/** Runs an eased 0f->1f tween and reports Double progress each frame — the only animation primitive this file needs. */
+private suspend fun animateProgress(
+    durationMs: Int = FRIEND_ANIMATION_DURATION_MS,
+    onFrame: (progress: Double) -> Unit,
+) {
+    animate(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = tween(durationMillis = durationMs),
+    ) { value, _ -> onFrame(value.toDouble()) }
 }

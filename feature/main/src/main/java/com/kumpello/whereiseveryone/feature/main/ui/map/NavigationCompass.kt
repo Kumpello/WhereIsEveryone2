@@ -44,6 +44,7 @@ fun NavigationCompass(
     friendName: String,
     distance: String?,
     onCancel: () -> Unit,
+    carTrackingInfo: CarTrackingInfo? = null,
 ) {
     val offsetX = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
@@ -107,6 +108,7 @@ fun NavigationCompass(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                carTrackingInfo?.let { CarTrackingDetails(it) }
             }
             IconButton(onClick = onCancel, modifier = Modifier.size(AppSize.touchTarget)) {
                 Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cancel_navigation), modifier = Modifier.size(AppSize.icon))

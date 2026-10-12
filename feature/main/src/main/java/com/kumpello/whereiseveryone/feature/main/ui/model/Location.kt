@@ -14,4 +14,5 @@ data class Location(
     val speed: Float?,
     val lastUpdateTime: String,
     val lastUpdateAge: LastUpdateAge,
+    val isCarMode: Boolean = false,
 )

@@ -13,11 +13,12 @@ internal class LocationRepositoryImpl(
     override suspend fun sendPosition(
         longitude: Double,
         latitude: Double,
-        bearing: Float,
+        bearing: Float?,
         altitude: Double,
         accuracy: Float,
-        speed: Float,
-        lastUpdate: Long
+        speed: Float?,
+        lastUpdate: Long,
+        isCarMode: Boolean,
     ): CodeResponse {
         val response = locationApi.sendLocation(
             LocationRequest(
@@ -27,7 +28,8 @@ internal class LocationRepositoryImpl(
                 altitude = altitude,
                 accuracy = accuracy,
                 speed = speed,
-                last_update = lastUpdate
+                last_update = lastUpdate,
+                isCarMode = isCarMode,
             )
         )
         return when {

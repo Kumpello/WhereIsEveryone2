@@ -19,6 +19,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -40,6 +41,7 @@ class SettingsViewModelTest {
     private val preferencesManager: PreferencesManager = mockk(relaxed = true) {
         every { observe(PreferencesKey.ProximityDistance) } returns emptyFlow()
         every { observe(PreferencesKey.LocationSharingEnabled) } returns sharingEnabled
+        every { observe(PreferencesKey.CarMode) } returns emptyFlow()
     }
     private val logoutUseCase: LogoutUseCase = mockk(relaxed = true)
 
@@ -52,6 +54,23 @@ class SettingsViewModelTest {
             preferencesManager,
             logoutUseCase
         )
+    }
+
+    @Test
+    fun `car mode switch persists both enabling and disabling`() = runTest {
+        val carMode = MutableStateFlow<Boolean?>(false)
+        every { preferencesManager.observe(PreferencesKey.CarMode) } returns carMode
+        coEvery { preferencesManager.get(PreferencesKey.CarMode) } answers { carMode.value }
+        coEvery { preferencesManager.save(PreferencesKey.CarMode, any()) } answers { carMode.value = secondArg() }
+        setupViewModel()
+        viewModel.trigger(SettingsViewModel.Event.ToggleCarMode)
+        assertTrue(viewModel.state.first { it.isCarMode }.isCarMode)
+        viewModel.trigger(SettingsViewModel.Event.ToggleCarMode)
+        assertFalse(viewModel.state.first { !it.isCarMode }.isCarMode)
+        coVerifyOrder {
+            preferencesManager.save(PreferencesKey.CarMode, true)
+            preferencesManager.save(PreferencesKey.CarMode, false)
+        }
     }
 
     @Test

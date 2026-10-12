@@ -26,6 +26,7 @@ internal class FriendFeatureUpdates(
                     addStringProperty("id", id)
                     addStringProperty("avatarId", "avatar-$id")
                     addNumberProperty("bearing", data.bearing)
+                    addBooleanProperty("hasBearing", data.hasBearing)
                     addNumberProperty("opacity", data.opacity)
                     addNumberProperty("haloWidth", data.haloWidth)
                     addNumberProperty("speed", data.speed)

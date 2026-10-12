@@ -13,7 +13,8 @@ class UserLocationRepository internal constructor(private val dao: UserLocationD
             alt = it.altitude,
             accuracy = it.accuracy,
             speed = it.speed,
-            lastUpdate = it.lastUpdate
+            lastUpdate = it.lastUpdate,
+            isCarMode = it.isCarMode,
         )
     }
 
@@ -26,7 +27,8 @@ class UserLocationRepository internal constructor(private val dao: UserLocationD
                 altitude = location.alt,
                 accuracy = location.accuracy,
                 speed = location.speed,
-                lastUpdate = location.lastUpdate
+                lastUpdate = location.lastUpdate,
+                isCarMode = location.isCarMode,
             )
         )
     }

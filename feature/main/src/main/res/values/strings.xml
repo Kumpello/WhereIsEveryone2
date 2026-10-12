@@ -154,4 +154,27 @@
     <string name="find_me_explanation">Keep precise location updates active, even when the app is in the background.</string>
     <string name="permissions_title">Share your location</string>
     <string name="remove_friend_title">Remove friend</string>
+    <string name="car_mode">Car mode</string>
+    <string name="car_mode_description">Follow roads, look ahead while driving, and see your speed.</string>
+    <string name="car_mode_save_error">Could not save car mode. Please try again.</string>
+    <string name="car_suggestion_title">Switch to car mode?</string>
+    <string name="car_suggestion_description">Your speed is above 30 km/h. Enable car mode to follow roads and see driving information.</string>
+    <string name="enable_car_mode">Enable car mode</string>
+    <string name="not_now">Not now</string>
+    <string name="kilometers_per_hour">km/h</string>
+    <string name="driver_speed_format">Driver: %1$s km/h</string>
+    <string name="speed_difference_format">You − driver: %1$s km/h</string>
+    <string name="car_tracking_stale">Location data is out of date</string>
+    <string name="road_estimate_unavailable">Road estimate unavailable</string>
+    <string name="drive_to_latest_location_format">Drive to latest location: %1$s</string>
+    <string name="interception_time_format">Estimated intercept: %1$s</string>
+    <string name="arrival_later_time_format">Arrival at projected point: %1$s</string>
+    <string name="arrival_late_by_format">%1$s after driver passes</string>
+    <string name="interception_assumption">Assuming current road and speeds</string>
+    <string name="interception_unavailable">Interception estimate unavailable</string>
+    <string name="interception_not_moving">Cannot reach the driver at your current speed</string>
+    <string name="interception_together">At the same location</string>
+    <string name="eta_seconds_format">%1$d s</string>
+    <string name="eta_minutes_format">%1$d min</string>
+    <string name="eta_hours_minutes_format">%1$d h %2$d min</string>
 </resources>

@@ -27,6 +27,10 @@ import org.koin.dsl.bind
 import org.koin.dsl.module
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
+import com.kumpello.whereiseveryone.data.network.api.MapboxRoadsApi
+import com.kumpello.whereiseveryone.data.repository.RoadNavigationRepository
+import org.koin.android.ext.koin.androidContext
+import java.util.concurrent.TimeUnit
 
 fun networkModule(baseUrl: String) = module {
     single {
@@ -67,4 +71,20 @@ fun networkModule(baseUrl: String) = module {
     single { FriendRepositoryImpl(get()) } bind FriendRepository::class
     single { SharingRepositoryImpl(get()) } bind SharingRepository::class
     single { StatusRepositoryImpl(get()) } bind StatusRepository::class
+
+    // Mapbox gets a separate client; application authentication must stay on our server.
+    single<MapboxRoadsApi> {
+        Retrofit.Builder()
+            .baseUrl("https://api.mapbox.com/")
+            .client(OkHttpClient.Builder().callTimeout(8, TimeUnit.SECONDS).build())
+            .addConverterFactory(MoshiConverterFactory.create(get()))
+            .build()
+            .create(MapboxRoadsApi::class.java)
+    }
+    single {
+        val context = androidContext()
+        @Suppress("DiscouragedApi")
+        val tokenId = context.resources.getIdentifier("mapbox_access_token", "string", context.packageName)
+        RoadNavigationRepository(get()) { if (tokenId == 0) "" else context.getString(tokenId) }
+    }
 }

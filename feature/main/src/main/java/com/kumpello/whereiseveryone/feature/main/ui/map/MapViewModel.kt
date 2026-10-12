@@ -26,6 +26,19 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.flow.distinctUntilChanged
+import com.kumpello.whereiseveryone.data.repository.RoadNavigationRepository
+import com.kumpello.whereiseveryone.data.repository.RoadMatch
+import com.kumpello.whereiseveryone.data.repository.RoadTravelEstimate
+import com.kumpello.whereiseveryone.data.repository.RoadInterceptionEstimate
+import com.kumpello.whereiseveryone.data.repository.preferences.PreferencesManager
+import com.kumpello.whereiseveryone.data.repository.preferences.PreferencesKey
 import timber.log.Timber
 
 class MapViewModel(
@@ -36,11 +49,15 @@ class MapViewModel(
     private val stopSharingUseCase: StopSharingUseCase,
     private val resumeSharingUseCase: ResumeSharingUseCase,
     private val getPausedFriendsUseCase: GetPausedFriendsUseCase,
-    private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
+    private val preferencesManager: PreferencesManager,
+    private val roadNavigationRepository: RoadNavigationRepository,
+    private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    private val currentTimeMillis: () -> Long = System::currentTimeMillis,
 ) : BaseViewModel<MapViewModel.State, MapViewModel.ViewState, MapViewModel.Event, MapViewModel.Action>(
     State(),
     viewStateDispatcher = defaultDispatcher
 ) {
+    private var roadUpdatesJob: Job? = null
 
     init {
         viewModelScope.launch {
@@ -49,13 +66,18 @@ class MapViewModel(
                     LocationData(
                         lat = it.latitude,
                         lon = it.longitude,
-                        bearing = it.bearing,
-                        alt = it.altitude,
-                        accuracy = it.accuracy,
-                        speed = it.speed,
-                        lastUpdate = System.currentTimeMillis(),
+                        bearing = it.bearing.takeIf { _ -> it.hasBearing() },
+                        alt = it.altitude.takeIf { _ -> it.hasAltitude() },
+                        accuracy = it.accuracy.takeIf { _ -> it.hasAccuracy() },
+                        speed = it.speed.takeIf { _ -> it.hasSpeed() },
+                        lastUpdate = it.time,
                     )
                 }))
+            }
+        }
+        viewModelScope.launch {
+            preferencesManager.observe(PreferencesKey.CarMode).distinctUntilChanged().collect {
+                trigger(Event.OnCarModeChanged(it == true))
             }
         }
         viewModelScope.launch {
@@ -82,27 +104,63 @@ class MapViewModel(
         }
     }
 
-    private suspend fun checkPaused(): Event {
-        return try {
-            when (val response = getPausedFriendsUseCase.execute()) {
-                is SharingResponse.PausedFriends -> Event.OnPausedFriendsLoaded(response.usernames)
-                is SharingResponse.ErrorData -> {
-                    Timber.tag(TAG).d("Paused friends request rejected")
-                    Event.NoOp
-                }
-            }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Timber.tag(TAG).w(e, "Unable to load paused friends")
-            Event.NoOp
-        }
-    }
-
     override fun reduce(state: State, event: Event): ReducerResult<State, Event, Action> {
         return when (event) {
-            is Event.OnLocationUpdate -> state.copy(user = event.location).toResult()
-            is Event.OnFriendsLoaded -> state.copy(friends = event.friends).toResult()
+            is Event.OnLocationUpdate -> state.copy(
+                user = event.location?.copy(isCarMode = state.isCarMode),
+                showCarSuggestion = state.showCarSuggestion ||
+                    (state.isMapVisible && state.carModeLoaded && !state.isCarMode &&
+                        currentTimeMillis() >= state.suggestCarAfter && shouldSuggestCarMode(event.location, currentTimeMillis())),
+            ).toResult()
+            is Event.OnFriendsLoaded -> {
+                val target = state.navigatingFriend?.username
+                val wasDriver = state.friends.find { it.username == target }?.location?.isCarMode == true
+                val isDriver = event.friends.find { it.username == target }?.location?.isCarMode == true
+                val updated = state.copy(
+                    friends = event.friends,
+                    navigatingFriend = state.navigatingFriend?.takeIf { event.friends.any { friend -> friend.username == it.username && friend.location != null } },
+                    selectedFriend = state.selectedFriend?.takeIf { event.friends.any { friend -> friend.username == it.username } },
+                )
+                if (wasDriver != isDriver || updated.navigatingFriend != state.navigatingFriend) {
+                    updated.copy(friendRoad = null, travelEstimate = null, interceptionPrediction = null).restartRoadWork()
+                }
+                else updated.toResult()
+            }
+            is Event.OnCarModeChanged -> state.copy(
+                isCarMode = event.enabled,
+                carModeLoaded = true,
+                user = state.user?.copy(isCarMode = event.enabled),
+                showCarSuggestion = if (event.enabled) false else state.showCarSuggestion,
+                suggestCarAfter = if (!event.enabled && state.isCarMode) currentTimeMillis() + 3_600_000L else state.suggestCarAfter,
+                userRoad = if (event.enabled) state.userRoad else null,
+                travelEstimate = null,
+                interceptionPrediction = null,
+            ).restartRoadWork()
+            Event.AcceptCarSuggestion -> if (!state.showCarSuggestion) state.toResult() else state.copy(showCarSuggestion = false, suggestCarAfter = currentTimeMillis() + 3_600_000L)
+                .toResult(SideEffect.AsyncWork {
+                    try {
+                        preferencesManager.save(PreferencesKey.CarMode, true)
+                        Event.NoOp
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Event.OnError(R.string.car_mode_save_error)
+                    }
+                })
+            Event.DismissCarSuggestion -> state.copy(showCarSuggestion = false, suggestCarAfter = currentTimeMillis() + 3_600_000L).toResult()
+            is Event.OnMapVisibilityChanged -> state.copy(isMapVisible = event.visible, travelEstimate = null, interceptionPrediction = null).restartRoadWork()
+            is Event.CheckCarFreshness -> if (state.isMapVisible) state.copy(freshnessCheckTime = event.time).toResult() else state.toResult()
+            is Event.OnRoadUpdate -> {
+                // A cancelled request cannot update a different navigation target or disabled mode.
+                if (!state.isMapVisible || state.navigatingFriend?.username != event.target || state.roadVersion != event.version) state.toResult()
+                else state.copy(
+                    userRoad = if (state.isCarMode) event.userMatch ?: state.userRoad else null,
+                    friendRoad = event.friendMatch ?: state.friendRoad,
+                    travelEstimate = event.estimate ?: state.travelEstimate,
+                    travelEstimateTime = if (event.estimate != null) event.estimatedAt else state.travelEstimateTime,
+                    interceptionPrediction = event.interception ?: state.interceptionPrediction,
+                ).toResult()
+            }
 
             is Event.OnPausedFriendsLoaded -> state.copy(pausedFriends = event.pausedFriends).toResult()
 
@@ -183,10 +241,13 @@ class MapViewModel(
             Event.DismissFriendDetails -> state.copy(selectedFriend = null).toResult()
             is Event.NavigateToFriend -> state.copy(
                 navigatingFriend = event.friend,
-                selectedFriend = null
-            ).toResult()
+                selectedFriend = null,
+                friendRoad = null,
+                travelEstimate = null,
+                interceptionPrediction = null,
+            ).restartRoadWork()
 
-            Event.CancelNavigation -> state.copy(navigatingFriend = null).toResult()
+            Event.CancelNavigation -> state.copy(navigatingFriend = null, friendRoad = null, travelEstimate = null, interceptionPrediction = null).restartRoadWork()
             is Event.OnCameraUpdate -> state.copy(
                 mapSettings = state.mapSettings.copy(bearing = event.bearing)
             ).toResult()
@@ -194,14 +255,21 @@ class MapViewModel(
     }
 
     override fun State.toViewState(): ViewState {
-        val mappedUser = user?.let { mapLocationUseCase.execute(it) }
+        val now = currentTimeMillis()
+        val displayUser = user?.let { roadDisplayLocation(it, userRoad, now) }
+        val mappedUser = displayUser?.let { mapLocationUseCase.execute(it) }
         val mappedFriends = friends.map { friend ->
-            mapFriendUseCase.execute(friend, user).copy(
+            val displayFriend = if (friend.username == navigatingFriend?.username) {
+                friend.copy(location = friend.location?.let { roadDisplayLocation(it, friendRoad, now) })
+            } else friend
+            mapFriendUseCase.execute(displayFriend, user).copy(
                 isPaused = pausedFriends.contains(friend.username)
             )
         }
-        val bearing = if (mappedUser != null && navigatingFriend != null) {
-            navigatingFriend.location?.let { loc ->
+        val currentFriend = mappedFriends.find { it.username == navigatingFriend?.username } ?: navigatingFriend
+        val currentSelected = mappedFriends.find { it.username == selectedFriend?.username } ?: selectedFriend
+        val bearing = if (mappedUser != null && currentFriend != null) {
+            currentFriend.location?.let { loc ->
                 val geographicBearing = LocationUtils.calculateBearing(
                     mappedUser.lat,
                     mappedUser.lon,
@@ -212,14 +280,130 @@ class MapViewModel(
             }
         } else null
 
+        val rawFriend = friends.find { it.username == currentFriend?.username }?.location
+        val tracking = if (rawFriend?.isCarMode == true) {
+            val fresh = rawFriend.isFresh(now) && user?.isFresh(now, 10_000L) == true
+            val ownSpeed = user?.speedKmh()?.takeIf { fresh }
+            val peerSpeed = rawFriend.speedKmh()?.takeIf { fresh }
+            val estimate = travelEstimate?.takeIf { fresh && now - travelEstimateTime in 0..30_000L }
+            CarTrackingInfo(
+                friendSpeedKmh = peerSpeed,
+                speedDifferenceKmh = if (ownSpeed != null && peerSpeed != null) ownSpeed - peerSpeed else null,
+                travelSeconds = estimate?.durationSeconds?.takeUnless { isCarMode },
+                routeDistanceMeters = estimate?.distanceMeters?.takeUnless { isCarMode },
+                isLocationStale = !fresh,
+                isPredictive = isCarMode,
+                interceptionEstimate = if (isCarMode && fresh) interceptionPrediction?.currentEstimate(user, rawFriend, now) else null,
+            )
+        } else null
+
         return ViewState(
             mapSettings = mapSettings,
             user = mappedUser,
             friends = mappedFriends,
-            selectedFriend = selectedFriend,
-            navigatingFriend = navigatingFriend,
-            bearingToFriend = bearing
+            selectedFriend = currentSelected,
+            navigatingFriend = currentFriend,
+            bearingToFriend = bearing,
+            isCarMode = isCarMode,
+            showCarSuggestion = showCarSuggestion,
+            speedKmh = user?.speedKmh()?.takeIf { user.isFresh(now, 10_000L) },
+            carTrackingInfo = tracking,
+            mapDisplayLocation = displayUser?.takeIf { isMapVisible && isCarMode && it.isFresh(now, 10_000L) },
         )
+    }
+
+    private suspend fun checkPaused(): Event {
+        return try {
+            when (val response = getPausedFriendsUseCase.execute()) {
+                is SharingResponse.PausedFriends -> Event.OnPausedFriendsLoaded(response.usernames)
+                is SharingResponse.ErrorData -> {
+                    Timber.tag(TAG).d("Paused friends request rejected")
+                    Event.NoOp
+                }
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.tag(TAG).w(e, "Unable to load paused friends")
+            Event.NoOp
+        }
+    }
+
+    private fun roadWork() = SideEffect.AsyncWork<Event> {
+        restartRoadUpdates()
+        Event.NoOp
+    }
+
+    private fun State.restartRoadWork() = copy(roadVersion = roadVersion + 1).toResult(roadWork())
+
+    private fun restartRoadUpdates() {
+        roadUpdatesJob?.cancel()
+        val currentDriver = currentState.friends.find { it.username == currentState.navigatingFriend?.username }?.location?.isCarMode == true
+        if (!currentState.isMapVisible || (!currentState.isCarMode && !currentDriver)) return
+        roadUpdatesJob = viewModelScope.launch {
+            val userTrace = ArrayDeque<LocationData>()
+            val friendTrace = ArrayDeque<LocationData>()
+            var previousTarget: String? = null
+            var lastRouteTime = 0L
+            var lastUserMatchTime = 0L
+            var lastFriendMatchTime = 0L
+            var previousFreshness: Triple<Boolean, Boolean, Boolean>? = null
+            while (isActive) {
+                val snapshot = currentState
+                val now = currentTimeMillis()
+                val user = snapshot.user?.takeIf { it.isFresh(now, 10_000L) }
+                val target = snapshot.navigatingFriend?.username
+                val friend = snapshot.friends.find { it.username == target }?.location
+                val freshness = Triple(snapshot.user?.isFresh(now, 10_000L) == true,
+                    snapshot.user?.isFresh(now) == true, friend?.isFresh(now) == true)
+                if (freshness != previousFreshness) {
+                    previousFreshness = freshness
+                    trigger(Event.CheckCarFreshness(now))
+                }
+                if (target != previousTarget) {
+                    friendTrace.clear()
+                    previousTarget = target
+                    lastFriendMatchTime = 0L
+                    lastRouteTime = 0L
+                }
+                fun ArrayDeque<LocationData>.addFix(fix: LocationData?) {
+                    if (fix != null && fix.lastUpdate > (lastOrNull()?.lastUpdate ?: 0L)) {
+                        addLast(fix)
+                        while (size > 12) removeFirst()
+                    }
+                }
+                userTrace.addFix(user)
+                friendTrace.addFix(friend?.takeIf { it.isFresh(now) })
+                val matchUser = snapshot.isCarMode && user != null && user.lastUpdate != lastUserMatchTime
+                val matchFriend = friend?.isCarMode == true && friend.isFresh(now) && friend.lastUpdate != lastFriendMatchTime
+                val route = friend?.isCarMode == true && friend.isFresh(now) && user != null && now - lastRouteTime >= 15_000L
+                if (route) lastRouteTime = now
+                if (matchUser) lastUserMatchTime = user.lastUpdate
+                if (matchFriend) lastFriendMatchTime = friend.lastUpdate
+                if (matchUser || matchFriend || route) {
+                    try {
+                        coroutineScope {
+                            val userMatch = async { if (matchUser) roadNavigationRepository.matchRoad(userTrace.toList()) else null }
+                            val friendMatch = async { if (matchFriend) roadNavigationRepository.matchRoad(friendTrace.toList()) else null }
+                            val estimate = async { if (route && !snapshot.isCarMode) roadNavigationRepository.travelEstimate(user, friend) else null }
+                            val interception = async {
+                                if (route && snapshot.isCarMode) {
+                                    val result = withTimeoutOrNull(8_000L) { roadNavigationRepository.interceptionEstimate(user, friend, now) }
+                                        ?: RoadInterceptionEstimate.Unavailable
+                                    CarInterceptionPrediction(result, user, friend, now)
+                                } else null
+                            }
+                            trigger(Event.OnRoadUpdate(target, userMatch.await(), friendMatch.await(), estimate.await(), now, snapshot.roadVersion, interception.await()))
+                        }
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Timber.tag(TAG).w("Road data unavailable")
+                    }
+                }
+                delay(2_000L)
+            }
+        }
     }
 
     sealed class Action {
@@ -246,6 +430,20 @@ class MapViewModel(
         data class NavigateToFriend(val friend: Friend) : Event()
         data object CancelNavigation : Event()
         data class OnCameraUpdate(val bearing: Double) : Event()
+        data class OnCarModeChanged(val enabled: Boolean) : Event()
+        data object AcceptCarSuggestion : Event()
+        data object DismissCarSuggestion : Event()
+        data class OnMapVisibilityChanged(val visible: Boolean) : Event()
+        data class CheckCarFreshness(val time: Long) : Event()
+        data class OnRoadUpdate(
+            val target: String?,
+            val userMatch: RoadMatch?,
+            val friendMatch: RoadMatch?,
+            val estimate: RoadTravelEstimate?,
+            val estimatedAt: Long,
+            val version: Long = 0L,
+            val interception: CarInterceptionPrediction? = null,
+        ) : Event()
     }
 
     data class State(
@@ -254,7 +452,20 @@ class MapViewModel(
         val mapSettings: MapSettings = MapSettings(),
         val friends: List<FriendLocalData> = emptyList(),
         val pausedFriends: List<String> = emptyList(),
-        val user: LocationData? = null
+        val user: LocationData? = null,
+        val isCarMode: Boolean = false,
+        val carModeLoaded: Boolean = false,
+        val showCarSuggestion: Boolean = false,
+        val suggestCarAfter: Long = 0L,
+        val isMapVisible: Boolean = false,
+        val userRoad: RoadMatch? = null,
+        val friendRoad: RoadMatch? = null,
+        val travelEstimate: RoadTravelEstimate? = null,
+        val travelEstimateTime: Long = 0L,
+        val interceptionPrediction: CarInterceptionPrediction? = null,
+        val roadVersion: Long = 0L,
+        // Re-evaluate stale readings only when a freshness boundary changes, without a UI frame timer.
+        val freshnessCheckTime: Long = 0L,
     )
 
     @Immutable
@@ -265,9 +476,15 @@ class MapViewModel(
         val mapSettings: MapSettings,
         val user: Location?,
         val friends: List<Friend>,
+        val isCarMode: Boolean = false,
+        val showCarSuggestion: Boolean = false,
+        val speedKmh: Double? = null,
+        val carTrackingInfo: CarTrackingInfo? = null,
+        val mapDisplayLocation: LocationData? = null,
     )
 
     companion object {
         private const val TAG = "MAP_VM"
     }
+
 }

@@ -5,7 +5,7 @@ import androidx.room.RoomDatabase
 
 @Database( //TODO: Migration!
     entities = [FriendDatabaseEntity::class, UserLocationEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 internal abstract class AppDatabase : RoomDatabase() {

@@ -1,5 +1,6 @@
 package com.kumpello.whereiseveryone.feature.main.ui.map
 
+import android.graphics.Bitmap
 import com.kumpello.whereiseveryone.feature.main.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -21,12 +22,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.kumpello.whereiseveryone.core.ui.theme.USER_PUCK_COLOR
 import com.kumpello.whereiseveryone.feature.main.ui.model.Friend
 import com.mapbox.geojson.FeatureCollection
 import com.mapbox.maps.ImageHolder
+import com.mapbox.maps.EdgeInsets
 import com.mapbox.maps.MapboxDelicateApi
 import com.mapbox.maps.MapboxExperimental
 import com.mapbox.maps.MapboxLocationComponentException
@@ -45,6 +48,7 @@ import com.mapbox.maps.extension.compose.style.layers.generated.SymbolLayer
 import com.mapbox.maps.extension.compose.style.rememberStyleImage
 import com.mapbox.maps.extension.compose.style.sources.generated.GeoJsonSourceState
 import com.mapbox.maps.extension.compose.style.standard.MapboxStandardStyle
+import com.mapbox.maps.extension.compose.style.standard.rememberStandardStyleState
 import com.mapbox.maps.extension.style.expressions.generated.Expression
 import com.mapbox.maps.extension.style.sources.addGeoJSONSourceFeatures
 import com.mapbox.maps.extension.style.sources.getSourceAs
@@ -55,8 +59,10 @@ import com.mapbox.maps.plugin.LocationPuck2D
 import com.mapbox.maps.plugin.PuckBearing
 import com.mapbox.maps.plugin.gestures.generated.GesturesSettings
 import com.mapbox.maps.plugin.locationcomponent.location
+import com.mapbox.maps.plugin.locationcomponent.DefaultLocationProvider
 import com.mapbox.maps.plugin.viewport.data.DefaultViewportTransitionOptions
 import com.mapbox.maps.plugin.viewport.data.FollowPuckViewportStateOptions
+import com.mapbox.maps.plugin.viewport.DEFAULT_FOLLOW_PUCK_VIEWPORT_STATE_PITCH
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
@@ -81,6 +87,7 @@ fun Map(
     friendsPositions: List<Friend>,
     event: (MapViewModel.Event) -> Unit,
     trackCameraBearing: Boolean = true,
+    isCarMode: Boolean = false,
 ) {
     if (LocalInspectionMode.current) {
         Box(
@@ -97,10 +104,10 @@ fun Map(
         return
     }
 
+    val roadAheadPadding = LocalWindowInfo.current.containerSize.height * 0.35
     val mapViewportState = rememberMapViewportState {
         transitionToFollowPuckState(
-            followPuckViewportStateOptions = FollowPuckViewportStateOptions.Builder()
-                .zoom(state.zoom).build()
+            followPuckViewportStateOptions = followPuckOptions(state.zoom, isCarMode, roadAheadPadding)
         )
     }
     val mapState = rememberMapState {
@@ -112,6 +119,23 @@ fun Map(
     }
 
     val currentEvent by rememberUpdatedState(event)
+    val currentCarMode by rememberUpdatedState(isCarMode)
+    val currentRoadAheadPadding by rememberUpdatedState(roadAheadPadding)
+    LaunchedEffect(isCarMode, roadAheadPadding) {
+        mapViewportState.transitionToFollowPuckState(
+            followPuckViewportStateOptions = followPuckOptions(state.zoom, isCarMode, roadAheadPadding),
+            defaultTransitionOptions = DefaultViewportTransitionOptions.Builder().maxDurationMs(500L).build(),
+        )
+    }
+    val standardStyle = rememberStandardStyleState {
+        configurationsState.apply {
+            showRoadLabels = BooleanValue(true)
+            showPointOfInterestLabels = BooleanValue(!isCarMode)
+            showTransitLabels = BooleanValue(!isCarMode)
+            showPedestrianRoads = BooleanValue(!isCarMode)
+            show3dObjects = BooleanValue(!isCarMode)
+        }
+    }
     LaunchedEffect(mapViewportState, trackCameraBearing) {
         if (!trackCameraBearing) return@LaunchedEffect
         snapshotFlow { mapViewportState.cameraState?.bearing ?: 0.0 }
@@ -127,8 +151,7 @@ fun Map(
             when (action) {
                 is MapViewModel.Action.CenterMap -> {
                     mapViewportState.transitionToFollowPuckState(
-                        followPuckViewportStateOptions = FollowPuckViewportStateOptions.Builder()
-                            .zoom(action.zoom).build(),
+                        followPuckViewportStateOptions = followPuckOptions(action.zoom, currentCarMode, currentRoadAheadPadding),
                         defaultTransitionOptions = DefaultViewportTransitionOptions.Builder()
                             .maxDurationMs(500L).build()
                     )
@@ -137,8 +160,7 @@ fun Map(
                 is MapViewModel.Action.Zoom -> {
                     Timber.tag("MAP_UI").d("Zooming to: %s", action.zoom)
                     mapViewportState.transitionToFollowPuckState(
-                        followPuckViewportStateOptions = FollowPuckViewportStateOptions.Builder()
-                            .zoom(action.zoom).build(),
+                        followPuckViewportStateOptions = followPuckOptions(action.zoom, currentCarMode, currentRoadAheadPadding),
                         defaultTransitionOptions = DefaultViewportTransitionOptions.Builder()
                             .maxDurationMs(50L).build()
                     )
@@ -181,6 +203,7 @@ fun Map(
         },
         style = {
             MapboxStandardStyle(
+                standardStyleState = standardStyle,
                 topSlot = {
                     FriendsSymbolLayer(
                         friends = friendsPositions,
@@ -198,15 +221,18 @@ fun Map(
         }
     ) {
         val context = LocalContext.current
-        val puckImages by produceState<Pair<android.graphics.Bitmap, android.graphics.Bitmap>?>(null, context) {
+        val puckImages by produceState<PuckImages?>(null, context) {
             value = withContext(Dispatchers.Default) {
-                createAvatarBitmap(null, USER_PUCK_COLOR, sizePx = 120) to
-                    createTintedBitmap(context, R.drawable.ic_map_friend_ring_sdf, USER_PUCK_COLOR, sizePx = 270)
+                PuckImages(
+                    avatar = createAvatarBitmap(null, USER_PUCK_COLOR, sizePx = 120),
+                    carAvatar = createCarAvatarBitmap(context, USER_PUCK_COLOR, sizePx = 120),
+                    bearing = createTintedBitmap(context, R.drawable.ic_map_friend_ring_sdf, USER_PUCK_COLOR, sizePx = 270),
+                )
             }
         }
 
-        MapEffect(puckImages) { mapView ->
-            val (puckAvatarBitmap, puckBearingBitmap) = puckImages ?: return@MapEffect
+        MapEffect(puckImages, isCarMode) { mapView ->
+            val images = puckImages ?: return@MapEffect
             val map = mapView.mapboxMap
             map.styleLoadedEvents.map { Unit }
                 .onStart { if (map.style != null) emit(Unit) }
@@ -215,12 +241,12 @@ fun Map(
                         mapView.location.updateSettings {
                             enabled = true
                             locationPuck = LocationPuck2D(
-                                topImage = ImageHolder.from(puckAvatarBitmap),
-                                bearingImage = ImageHolder.from(puckBearingBitmap),
+                                topImage = ImageHolder.from(if (isCarMode) images.carAvatar else images.avatar),
+                                bearingImage = ImageHolder.from(images.bearing),
                                 shadowImage = null,
                             )
                             puckBearingEnabled = true
-                            puckBearing = PuckBearing.HEADING
+                            puckBearing = if (isCarMode) PuckBearing.COURSE else PuckBearing.HEADING
                             slot = "top"
                             layerBelow = FRIENDS_RING_LAYER_ID.takeIf(map::styleLayerExists)
                         }
@@ -231,6 +257,8 @@ fun Map(
                             slot = "top"
                         }
                     }
+                    (mapView.location.getLocationProvider() as? DefaultLocationProvider)
+                        ?.locationAnimatorOptions { duration = 500L }
                 }
         }
     }
@@ -258,10 +286,11 @@ fun FriendsSymbolLayer(
         val target = AnimatedFriendData(
             lat = location.lat,
             lon = location.lon,
-            bearing = location.bearing?.toDouble() ?: 0.0,
+            bearing = location.bearing?.takeIf { it.isFinite() }?.toDouble() ?: 0.0,
             opacity = location.lastUpdateAge.opacity,
             haloWidth = location.accuracy.haloSize,
-            speed = location.speed?.toDouble() ?: 0.0
+            speed = location.speed?.toDouble() ?: 0.0,
+            hasBearing = location.bearing?.isFinite() == true,
         )
         key(friend.username) {
             AnimatedFriendEffect(
@@ -288,10 +317,15 @@ fun FriendsSymbolLayer(
         sdf = true
     )
 
-    val avatarUsernames = remember(friends) {
-        friends.filter { it.location != null }.mapTo(mutableSetOf()) { it.username }
+    val avatarModes = remember(friends) {
+        buildMap {
+            friends.forEach { friend ->
+                friend.location?.let { location -> put(friend.username, location.isCarMode) }
+            }
+        }
     }
-    val currentAvatarUsernames by rememberUpdatedState(avatarUsernames)
+    val currentAvatarModes by rememberUpdatedState(avatarModes)
+    val context = LocalContext.current
     MapEffect(friendRing, friendRingNotchless) { mapView ->
         val map = mapView.mapboxMap
         map.styleLoadedEvents.map { Unit }
@@ -309,27 +343,32 @@ fun FriendsSymbolLayer(
                         content = image.content,
                     ).onError { Timber.tag("MAP_UI").w("Unable to add marker ring: %s", it) }
                 }
-                val uploaded = mutableSetOf<String>()
-                snapshotFlow { currentAvatarUsernames }.collect { usernames ->
+                val uploaded = mutableMapOf<String, Boolean>()
+                snapshotFlow { currentAvatarModes }.collect { modes ->
                     if (map.style == null) return@collect
-                    (uploaded - usernames).forEach { username ->
+                    (uploaded.keys - modes.keys).forEach { username ->
                         map.removeStyleImage("avatar-$username")
                         uploaded.remove(username)
                     }
-                    val missing = usernames - uploaded
-                    // Keep the existing bounded bitmap cache; do not retain a second bitmap
-                    // for every marker. Batches also release Main between groups of uploads.
-                    missing.chunked(AVATAR_UPLOAD_BATCH_SIZE).forEach { batch ->
+                    val changed = modes.keys.filter { uploaded[it] != modes.getValue(it) }
+                    // Reuse stable image IDs on mode changes without touching animated geometry.
+                    // The shared bitmap cache stays bounded; batches release Main between uploads.
+                    changed.chunked(AVATAR_UPLOAD_BATCH_SIZE).forEach { batch ->
                         val images = withContext(Dispatchers.Default) {
                             batch.associateWith { username ->
-                                createAvatarBitmap(username, colorForUsername(username), sizePx = 150)
+                                val color = colorForUsername(username)
+                                if (modes.getValue(username)) {
+                                    createCarAvatarBitmap(context, color, sizePx = 150)
+                                } else {
+                                    createAvatarBitmap(username, color, sizePx = 150)
+                                }
                             }
                         }
                         val style = map.style ?: return@collect
                         images.forEach { (username, bitmap) ->
                             style.addImage("avatar-$username", bitmap)
                                 .onError { Timber.tag("MAP_UI").w("Unable to add friend avatar: %s", it) }
-                                .onValue { uploaded += username }
+                                .onValue { uploaded[username] = modes.getValue(username) }
                         }
                     }
                 }
@@ -342,7 +381,10 @@ fun FriendsSymbolLayer(
     ) {
         iconImage = ImageValue(
             Expression.switchCase(
-                Expression.lt(Expression.get("speed"), Expression.literal(1.0)),
+                Expression.any(
+                    Expression.not(Expression.get("hasBearing")),
+                    Expression.lt(Expression.get("speed"), Expression.literal(1.0)),
+                ),
                 Expression.literal(friendRingNotchless.imageId),
                 Expression.literal(friendRing.imageId)
             )
@@ -384,6 +426,13 @@ fun FriendsSymbolLayer(
     UpdateFriendsGeoJsonSource(displayedFriends = displayedFriends, sourceState = sourceState)
 }
 
+private fun followPuckOptions(zoom: Double, driving: Boolean, roadAheadPadding: Double) =
+    FollowPuckViewportStateOptions.Builder()
+        .zoom(zoom)
+        .pitch(if (driving) 60.0 else DEFAULT_FOLLOW_PUCK_VIEWPORT_STATE_PITCH)
+        .padding(EdgeInsets(if (driving) roadAheadPadding else 0.0, 0.0, 0.0, 0.0))
+        .build()
+
 /**
  * Observe animation snapshots without recomposing the layers. Build only changed features on
  * a worker, then submit immutable batches to Mapbox; resetting all data each frame would also
@@ -421,3 +470,9 @@ private fun UpdateFriendsGeoJsonSource(
             }
     }
 }
+
+private data class PuckImages(
+    val avatar: Bitmap,
+    val carAvatar: Bitmap,
+    val bearing: Bitmap,
+)

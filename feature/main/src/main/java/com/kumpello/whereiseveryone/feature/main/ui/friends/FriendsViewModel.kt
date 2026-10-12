@@ -56,7 +56,6 @@ class FriendsViewModel(
 
     override fun onCleared() {
         nfcSharingSession.stop()
-        super.onCleared()
     }
 
     init {

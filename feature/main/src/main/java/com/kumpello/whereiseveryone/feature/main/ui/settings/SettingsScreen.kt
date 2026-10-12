@@ -134,6 +134,16 @@ private fun SettingsScreen(
             }
             item {
                 SettingsCard {
+                    SettingToggle(
+                        title = stringResource(R.string.car_mode),
+                        description = stringResource(R.string.car_mode_description),
+                        checked = viewState.isCarMode,
+                        onToggle = { trigger(SettingsViewModel.Event.ToggleCarMode) },
+                    )
+                }
+            }
+            item {
+                SettingsCard {
                     SectionTitle(proximityLabel)
                     Text(
                         text = distanceLabel,

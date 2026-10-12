@@ -30,7 +30,8 @@ class UserLocationRepositoryTest {
             alt = 125.0,
             accuracy = null,
             speed = 1.5f,
-            lastUpdate = 1_725_000_000_123L
+            lastUpdate = 1_725_000_000_123L,
+            isCarMode = true,
         )
         val entity = UserLocationEntity(
             latitude = location.lat,
@@ -39,7 +40,8 @@ class UserLocationRepositoryTest {
             altitude = location.alt,
             accuracy = location.accuracy,
             speed = location.speed,
-            lastUpdate = location.lastUpdate
+            lastUpdate = location.lastUpdate,
+            isCarMode = location.isCarMode,
         )
         repository.saveLocation(location)
         coVerify(exactly = 1) { dao.updateUserLocation(entity) }
