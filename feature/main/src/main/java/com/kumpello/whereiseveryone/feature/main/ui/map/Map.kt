@@ -33,7 +33,6 @@ import com.mapbox.maps.ImageHolder
 import com.mapbox.maps.EdgeInsets
 import com.mapbox.maps.MapboxDelicateApi
 import com.mapbox.maps.MapboxExperimental
-import com.mapbox.maps.MapboxLocationComponentException
 import com.mapbox.maps.coroutine.styleLoadedEvents
 import com.mapbox.maps.extension.compose.MapEffect
 import com.mapbox.maps.extension.compose.MapboxMap
@@ -238,29 +237,30 @@ fun Map(
             map.styleLoadedEvents.map { Unit }
                 .onStart { if (map.style != null) emit(Unit) }
                 .collect {
-                    try {
-                        mapView.location.updateSettings {
-                            enabled = true
-                            locationPuck = LocationPuck2D(
-                                topImage = ImageHolder.from(if (isCarMode) images.carAvatar else images.avatar),
-                                bearingImage = ImageHolder.from(images.bearing),
-                                shadowImage = null,
-                            )
-                            puckBearingEnabled = true
-                            puckBearing = if (isCarMode) PuckBearing.COURSE else PuckBearing.HEADING
-                            slot = "top"
-                            layerBelow = FRIENDS_RING_LAYER_ID.takeIf(map::styleLayerExists)
-                        }
-                    } catch (e: MapboxLocationComponentException) {
-                        Timber.tag("MAP_UI").w(e, "Couldn't bind puck below friend markers")
-                        mapView.location.updateSettings {
-                            layerBelow = null
-                            slot = "top"
-                        }
+                    mapView.location.updateSettings {
+                        enabled = true
+                        locationPuck = LocationPuck2D(
+                            topImage = ImageHolder.from(if (isCarMode) images.carAvatar else images.avatar),
+                            bearingImage = ImageHolder.from(images.bearing),
+                            shadowImage = null,
+                            // Keep SDK tracking and animation; draw the visible marker as symbols.
+                            opacity = 0f,
+                        )
+                        puckBearingEnabled = true
+                        puckBearing = if (isCarMode) PuckBearing.COURSE else PuckBearing.HEADING
+                        slot = null
+                        layerAbove = null
+                        layerBelow = null
                     }
                     (mapView.location.getLocationProvider() as? DefaultLocationProvider)
                         ?.locationAnimatorOptions { duration = 500L }
                 }
+        }
+        puckImages?.let { images ->
+            UserLocationMarker(
+                avatar = if (isCarMode) images.carAvatar else images.avatar,
+                bearing = images.bearing,
+            )
         }
     }
 }
