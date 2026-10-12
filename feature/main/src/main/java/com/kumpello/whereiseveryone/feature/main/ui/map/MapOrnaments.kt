@@ -7,10 +7,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -75,21 +77,23 @@ internal fun MapScaleBarScope.MapScaleBar() {
             .padding(
                 start = startPadding,
                 end = endPadding,
-                bottom = AppSpacing.lg,
+                bottom = AppSpacing.md,
             )
             .shadow(AppElevation.floating, shape)
             .background(colors.surfaceContainerHigh, shape)
             .border(1.dp, colors.outlineVariant, shape)
-            .padding(AppSpacing.xs),
+            .heightIn(min = AppSize.mapControl)
+            .padding(AppSpacing.xs)
+            .wrapContentHeight(Alignment.CenterVertically),
         contentPadding = PaddingValues(0.dp),
         alignment = Alignment.BottomStart,
         textColor = colors.onSurface,
         primaryColor = colors.primary,
         secondaryColor = colors.surfaceContainerHigh,
         borderWidth = 1.dp,
-        height = AppSpacing.xxs,
-        textBarMargin = AppSpacing.xxs,
-        textSize = MaterialTheme.typography.labelMedium.fontSize,
+        height = AppSpacing.sm,
+        textBarMargin = AppSpacing.xs,
+        textSize = MaterialTheme.typography.bodyLarge.fontSize,
         showTextBorder = false,
         ratio = (scaleWidth / windowWidth).coerceAtMost(0.3f),
         useContinuousRendering = false,

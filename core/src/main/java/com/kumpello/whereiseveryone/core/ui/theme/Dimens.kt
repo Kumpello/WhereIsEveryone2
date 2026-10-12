@@ -17,7 +17,7 @@ object AppSize {
     val avatar = 40.dp
     val touchTarget = 48.dp
     val button = 52.dp
-    val mapControl = 52.dp
+    val mapControl = touchTarget + AppSpacing.xxs * 2
     val formMaxWidth = 440.dp
     val contentMaxWidth = 640.dp
     val dialogMaxWidth = 560.dp
