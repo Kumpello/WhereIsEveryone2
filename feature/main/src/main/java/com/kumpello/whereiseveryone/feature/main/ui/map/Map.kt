@@ -24,7 +24,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
+import com.kumpello.whereiseveryone.core.ui.theme.AppSize
+import com.kumpello.whereiseveryone.core.ui.theme.AppSpacing
 import com.kumpello.whereiseveryone.core.ui.theme.USER_PUCK_COLOR
 import com.kumpello.whereiseveryone.feature.main.ui.model.Friend
 import com.mapbox.geojson.FeatureCollection
@@ -186,8 +187,8 @@ fun Map(
                 modifier = Modifier
                     .safeDrawingPadding()
                     .padding(
-                        start = 64.dp,
-                        bottom = 4.dp
+                        start = AppSpacing.sm,
+                        bottom = AppSize.mapControl + AppSpacing.lg,
                     )
             )
         },
@@ -196,8 +197,8 @@ fun Map(
                 modifier = Modifier
                     .safeDrawingPadding()
                     .padding(
-                        start = 64.dp,
-                        bottom = 4.dp
+                        start = AppSpacing.sm,
+                        bottom = AppSize.mapControl + AppSpacing.lg,
                     )
             )
         },

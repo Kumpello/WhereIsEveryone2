@@ -6,7 +6,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -19,6 +21,9 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -47,14 +52,30 @@ internal fun MapCompassScope.MapCompass() {
 internal fun MapScaleBarScope.MapScaleBar() {
     val colors = MaterialTheme.colorScheme
     val shape = MaterialTheme.shapes.medium
+    val density = LocalDensity.current
+    val layoutDirection = LocalLayoutDirection.current
+    val windowWidth = with(density) { LocalWindowInfo.current.containerSize.width.toDp() }
+    val horizontalInsets = with(density) {
+        (WindowInsets.safeDrawing.getLeft(density, layoutDirection) +
+            WindowInsets.safeDrawing.getRight(density, layoutDirection)).toDp()
+    }
+    val startPadding = AppSpacing.md + AppSize.mapControl + AppSpacing.xs
+    // Three buttons, two gaps and the ControlBar's padding on both sides.
+    val bottomControlsWidth = AppSize.touchTarget * 3 + AppSpacing.xxs * 4
+    val endPadding = AppSpacing.md + bottomControlsWidth + AppSpacing.xs
+    // Mapbox adds 10dp internally for labels, in addition to our surface padding.
+    val scaleWidth = windowWidth - horizontalInsets - startPadding - endPadding -
+        AppSpacing.xs * 2 - 10.dp
+    if (scaleWidth <= 0.dp || windowWidth <= 0.dp) return
 
     // The native scale retains its distance calculations, locale units and on-demand redraws.
     ScaleBar(
         modifier = Modifier
             .safeDrawingPadding()
             .padding(
-                start = AppSpacing.md,
-                bottom = AppSize.mapControl + AppSpacing.lg,
+                start = startPadding,
+                end = endPadding,
+                bottom = AppSpacing.lg,
             )
             .shadow(AppElevation.floating, shape)
             .background(colors.surfaceContainerHigh, shape)
@@ -70,7 +91,7 @@ internal fun MapScaleBarScope.MapScaleBar() {
         textBarMargin = AppSpacing.xxs,
         textSize = MaterialTheme.typography.labelMedium.fontSize,
         showTextBorder = false,
-        ratio = 0.3f,
+        ratio = (scaleWidth / windowWidth).coerceAtMost(0.3f),
         useContinuousRendering = false,
     )
 }
