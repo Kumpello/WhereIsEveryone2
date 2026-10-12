@@ -42,7 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.google.android.gms.oss.licenses.OssLicensesMenuActivity
+import com.google.android.gms.oss.licenses.v2.OssLicensesMenuActivity
 import com.kumpello.whereiseveryone.core.ui.components.Button
 import com.kumpello.whereiseveryone.core.ui.components.ScreenHeader
 import com.kumpello.whereiseveryone.core.ui.theme.AppSize

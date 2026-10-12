@@ -14,12 +14,7 @@
 
     <application>
         <activity
-            android:name="com.google.android.gms.oss.licenses.OssLicensesMenuActivity"
-            android:theme="@style/Theme.AppCompat.DayNight.DarkActionBar"
-            android:exported="false" />
-        <activity
-            android:name="com.google.android.gms.oss.licenses.OssLicensesActivity"
-            android:theme="@style/Theme.AppCompat.DayNight.DarkActionBar"
+            android:name="com.google.android.gms.oss.licenses.v2.OssLicensesMenuActivity"
             android:exported="false" />
         <service
             android:name="com.kumpello.whereiseveryone.main.map.presentation.LocationForegroundService"
