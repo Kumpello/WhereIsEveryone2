@@ -1,5 +1,9 @@
 package com.kumpello.whereiseveryone.core.ui.components
 
+import android.content.res.Configuration
+import androidx.compose.material3.Surface
+import androidx.compose.ui.tooling.preview.Preview
+import com.kumpello.whereiseveryone.core.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.core.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -21,7 +25,7 @@ import com.kumpello.whereiseveryone.core.ui.theme.AppSize
 import com.kumpello.whereiseveryone.core.ui.theme.AppSpacing
 
 @Composable
-fun ScreenHeader(title: String, onBack: () -> Unit, modifier: Modifier = Modifier) {
+fun ScreenHeader(modifier: Modifier = Modifier, title: String, onBack: () -> Unit) {
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -36,5 +40,16 @@ fun ScreenHeader(title: String, onBack: () -> Unit, modifier: Modifier = Modifie
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f).semantics { heading() }
         )
+    }
+}
+
+@Preview(name = "Light", showBackground = true, widthDp = 360, heightDp = 88, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(name = "Dark", showBackground = true, widthDp = 360, heightDp = 88, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun ScreenHeaderPreview() {
+    WhereIsEveryoneTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            ScreenHeader(title = "Friends", onBack = {})
+        }
     }
 }

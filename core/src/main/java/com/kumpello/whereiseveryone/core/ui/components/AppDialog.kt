@@ -1,5 +1,10 @@
 package com.kumpello.whereiseveryone.core.ui.components
 
+import android.content.res.Configuration
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Text
+import androidx.compose.ui.tooling.preview.Preview
+import com.kumpello.whereiseveryone.core.ui.theme.WhereIsEveryoneTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,8 +24,8 @@ import com.kumpello.whereiseveryone.core.ui.theme.AppSpacing
 
 @Composable
 fun AppDialog(
-    onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
+    onDismiss: () -> Unit,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
@@ -35,6 +40,21 @@ fun AppDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()).padding(AppSpacing.lg),
                 content = content
             )
+        }
+    }
+}
+
+@Preview(name = "Light", showBackground = true, widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(name = "Dark", showBackground = true, widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun AppDialogPreview() {
+    WhereIsEveryoneTheme {
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            AppDialog(onDismiss = {}) {
+                Text("Dialog title", style = MaterialTheme.typography.headlineSmall)
+                Text("A short message explaining the action.", modifier = Modifier.padding(vertical = AppSpacing.md))
+                Button.Primary(text = "Confirm", onClick = {})
+            }
         }
     }
 }

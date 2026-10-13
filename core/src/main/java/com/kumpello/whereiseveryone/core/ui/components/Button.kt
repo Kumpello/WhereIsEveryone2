@@ -1,5 +1,11 @@
 package com.kumpello.whereiseveryone.core.ui.components
 
+import android.content.res.Configuration
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Surface
+import androidx.compose.ui.tooling.preview.Preview
+import com.kumpello.whereiseveryone.core.ui.theme.WhereIsEveryoneTheme
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -34,8 +40,8 @@ import com.kumpello.whereiseveryone.core.ui.theme.AppSpacing
 object Button {
     @Composable
     fun Primary(
-        text: String,
         modifier: Modifier = Modifier,
+        text: String,
         enabled: Boolean = true,
         loading: Boolean = false,
         onClick: () -> Unit
@@ -73,8 +79,8 @@ object Button {
 
     @Composable
     fun Secondary(
-        text: String,
         modifier: Modifier = Modifier,
+        text: String,
         enabled: Boolean = true,
         destructive: Boolean = false,
         icon: ImageVector? = null,
@@ -134,5 +140,43 @@ private fun LegacyButton(modifier: Modifier, enabled: Boolean, text: String, tex
         shape = MaterialTheme.shapes.medium
     ) {
         Text(text, style = MaterialTheme.typography.labelLarge.copy(fontSize = textSize.sp), textAlign = TextAlign.Center)
+    }
+}
+
+@Preview(name = "Light", showBackground = true, widthDp = 360, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(name = "Dark", showBackground = true, widthDp = 360, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun ButtonStatesPreview() {
+    WhereIsEveryoneTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            Column(
+                modifier = Modifier.padding(AppSpacing.md),
+                verticalArrangement = Arrangement.spacedBy(AppSpacing.xs)
+            ) {
+                Button.Primary(text = "Primary action", onClick = {})
+                Button.Primary(text = "Working…", loading = true, onClick = {})
+                Button.Primary(text = "Unavailable", enabled = false, onClick = {})
+                Button.Secondary(text = "Secondary action", onClick = {})
+                Button.Secondary(text = "Remove friend", destructive = true, onClick = {})
+                Button.Secondary(text = "Unavailable", enabled = false, onClick = {})
+            }
+        }
+    }
+}
+
+@Preview(name = "Light", showBackground = true, widthDp = 360, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(name = "Dark", showBackground = true, widthDp = 360, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun LegacyButtonPreview() {
+    WhereIsEveryoneTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            Column(
+                modifier = Modifier.padding(AppSpacing.md),
+                verticalArrangement = Arrangement.spacedBy(AppSpacing.xs)
+            ) {
+                Button.Animated(text = "Default size", onClick = {})
+                Button.Animated(text = "Custom size", height = 56, width = 200, onClick = {})
+            }
+        }
     }
 }

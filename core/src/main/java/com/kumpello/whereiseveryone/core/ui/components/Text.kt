@@ -1,5 +1,14 @@
 package com.kumpello.whereiseveryone.core.ui.components
 
+import android.content.res.Configuration
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Surface
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.kumpello.whereiseveryone.core.ui.theme.AppSpacing
+import com.kumpello.whereiseveryone.core.ui.theme.WhereIsEveryoneTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,5 +46,19 @@ object Text {
                 }
             }
         )
+    }
+}
+
+@Preview(name = "Light", showBackground = true, widthDp = 260, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(name = "Dark", showBackground = true, widthDp = 260, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun AutoSizeHeightPreview() {
+    WhereIsEveryoneTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            Text.AutoSizeHeight(
+                modifier = Modifier.padding(AppSpacing.md).width(220.dp).height(64.dp),
+                text = "A longer status message that wraps to fit the available height."
+            )
+        }
     }
 }

@@ -1,5 +1,10 @@
 package com.kumpello.whereiseveryone.feature.authentication.ui.components
 
+import android.content.res.Configuration
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.Surface
+import androidx.compose.ui.tooling.preview.Preview
+import com.kumpello.whereiseveryone.core.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.feature.authentication.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -33,5 +38,20 @@ fun RememberPasswordToggle(checked: Boolean, enabled: Boolean, onToggle: () -> U
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+    }
+}
+
+@Preview(name = "Light", showBackground = true, widthDp = 360, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(name = "Dark", showBackground = true, widthDp = 360, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun RememberPasswordTogglePreview() {
+    WhereIsEveryoneTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            Column(modifier = Modifier.padding(AppSpacing.md)) {
+                RememberPasswordToggle(checked = true, enabled = true, onToggle = {})
+                RememberPasswordToggle(checked = false, enabled = true, onToggle = {})
+                RememberPasswordToggle(checked = true, enabled = false, onToggle = {})
+            }
+        }
     }
 }

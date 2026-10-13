@@ -10,6 +10,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
@@ -29,7 +30,8 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun MapScreen(
     navController: NavController,
-    screenViewModel: MapScreenViewModel = koinViewModel()
+    screenViewModel: MapScreenViewModel = koinViewModel(),
+    onNavigationIconPositioned: (MainRoute, Offset) -> Unit = { _, _ -> }
 ) {
     val context = LocalContext.current
     val screenState by screenViewModel.state.collectAsStateWithLifecycle()
@@ -57,6 +59,7 @@ fun MapScreen(
 
     MapScreenContent(
         screenViewState = screenState,
+        onNavigationIconPositioned = onNavigationIconPositioned,
         onScreenEvent = screenViewModel::trigger
     )
 }
@@ -64,6 +67,7 @@ fun MapScreen(
 @Composable
 private fun MapScreenContent(
     screenViewState: MapScreenViewModel.ViewState,
+    onNavigationIconPositioned: (MainRoute, Offset) -> Unit = { _, _ -> },
     onScreenEvent: (MapScreenViewModel.Event) -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
@@ -71,6 +75,7 @@ private fun MapScreenContent(
 
         MapTopControls(
             modifier = Modifier.align(Alignment.TopEnd),
+            onNavigationIconPositioned = onNavigationIconPositioned,
             onEvent = onScreenEvent
         )
 

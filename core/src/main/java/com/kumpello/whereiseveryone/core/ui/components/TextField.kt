@@ -1,5 +1,13 @@
 package com.kumpello.whereiseveryone.core.ui.components
 
+import android.content.res.Configuration
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Surface
+import androidx.compose.ui.tooling.preview.Preview
+import com.kumpello.whereiseveryone.core.ui.theme.AppSpacing
+import com.kumpello.whereiseveryone.core.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.core.R
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardActions
@@ -84,5 +92,36 @@ object TextField {
                 }
             }
         )
+    }
+}
+
+@Preview(name = "Light", showBackground = true, widthDp = 360, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(name = "Dark", showBackground = true, widthDp = 360, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun TextFieldPreview() {
+    WhereIsEveryoneTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            Column(
+                modifier = Modifier.padding(AppSpacing.md),
+                verticalArrangement = Arrangement.spacedBy(AppSpacing.sm)
+            ) {
+                TextField.Regular(label = "Username", value = "Anna", onValueChange = {})
+                TextField.Regular(label = "Username", value = "Anna", onValueChange = {}, enabled = false)
+                TextField.Password(
+                    label = "Password",
+                    value = "sample-password",
+                    onValueChange = {},
+                    passwordVisible = false,
+                    onTogglePasswordVisibility = {}
+                )
+                TextField.Password(
+                    label = "Password",
+                    value = "sample-password",
+                    onValueChange = {},
+                    passwordVisible = true,
+                    onTogglePasswordVisibility = {}
+                )
+            }
+        }
     }
 }

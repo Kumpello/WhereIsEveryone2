@@ -1,5 +1,12 @@
 package com.kumpello.whereiseveryone.core.ui.components
 
+import android.content.res.Configuration
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Surface
+import androidx.compose.ui.unit.dp
+import com.kumpello.whereiseveryone.core.ui.theme.AppSpacing
+import com.kumpello.whereiseveryone.core.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.core.R
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -46,5 +53,20 @@ object Logo {
 @Preview
 @Composable
 fun TextPreview() {
-    Logo.Text()
+    WhereIsEveryoneTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            Logo.Text()
+        }
+    }
+}
+
+@Preview(name = "Light", showBackground = true, widthDp = 320, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(name = "Dark", showBackground = true, widthDp = 320, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun LogoImagePreview() {
+    WhereIsEveryoneTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            Logo.Image(modifier = Modifier.padding(AppSpacing.md).width(280.dp))
+        }
+    }
 }

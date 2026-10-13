@@ -1,5 +1,14 @@
 package com.kumpello.whereiseveryone.core.ui.theme
 
+import android.content.res.Configuration
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import com.kumpello.whereiseveryone.core.ui.components.Button
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -151,4 +160,23 @@ fun WhereIsEveryoneTheme(
 
         content = content
     )
+}
+
+@Preview(name = "Light", showBackground = true, widthDp = 360, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(name = "Dark", showBackground = true, widthDp = 360, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun ThemePreview() {
+    WhereIsEveryoneTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            Column(
+                modifier = Modifier.padding(AppSpacing.lg),
+                verticalArrangement = Arrangement.spacedBy(AppSpacing.md)
+            ) {
+                Text("Where Is Everyone", style = MaterialTheme.typography.headlineMedium)
+                Text("Stay connected with your friends.", style = MaterialTheme.typography.bodyLarge)
+                Button.Primary(text = "Primary action", onClick = {})
+                Button.Secondary(text = "Secondary action", onClick = {})
+            }
+        }
+    }
 }

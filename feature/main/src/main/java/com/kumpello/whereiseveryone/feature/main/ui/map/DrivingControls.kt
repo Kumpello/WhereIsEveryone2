@@ -1,5 +1,7 @@
 package com.kumpello.whereiseveryone.feature.main.ui.map
 
+import android.content.res.Configuration
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -43,7 +45,7 @@ internal fun CarSuggestionDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
 }
 
 @Composable
-internal fun DrivingSpeedCard(speedKmh: Double?, modifier: Modifier = Modifier) {
+internal fun DrivingSpeedCard(modifier: Modifier = Modifier, speedKmh: Double?) {
     val locale = LocalConfiguration.current.locales[0]
     Surface(
         modifier = modifier,
@@ -130,5 +132,49 @@ private fun formatTravelTime(seconds: Double): String {
 @Preview(showBackground = true)
 @Composable
 private fun DrivingSpeedPreview() {
-    WhereIsEveryoneTheme { DrivingSpeedCard(72.0) }
+    WhereIsEveryoneTheme { DrivingSpeedCard(speedKmh = 72.0) }
+}
+
+@Preview(name = "Light", showBackground = true, widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(name = "Dark", showBackground = true, widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun CarSuggestionDialogPreview() {
+    WhereIsEveryoneTheme {
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            CarSuggestionDialog(onConfirm = {}, onDismiss = {})
+        }
+    }
+}
+
+@Preview(name = "Light", showBackground = true, widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(name = "Dark", showBackground = true, widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun CarTrackingDetailsPreview() {
+    WhereIsEveryoneTheme {
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            Column(
+                modifier = Modifier.padding(AppSpacing.md),
+                verticalArrangement = Arrangement.spacedBy(AppSpacing.lg)
+            ) {
+                CarTrackingDetails(
+                    info = CarTrackingInfo(
+                        friendSpeedKmh = 72.0,
+                        speedDifferenceKmh = -8.0,
+                        travelSeconds = 360.0,
+                        routeDistanceMeters = 7200.0,
+                        isLocationStale = false
+                    )
+                )
+                CarTrackingDetails(
+                    info = CarTrackingInfo(
+                        friendSpeedKmh = null,
+                        speedDifferenceKmh = null,
+                        travelSeconds = null,
+                        routeDistanceMeters = null,
+                        isLocationStale = true
+                    )
+                )
+            }
+        }
+    }
 }

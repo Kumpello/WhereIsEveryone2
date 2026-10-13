@@ -1,5 +1,9 @@
 package com.kumpello.whereiseveryone.feature.authentication.ui.components
 
+import android.content.res.Configuration
+import androidx.compose.ui.tooling.preview.Preview
+import com.kumpello.whereiseveryone.core.ui.components.Button
+import com.kumpello.whereiseveryone.core.ui.theme.WhereIsEveryoneTheme
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -53,6 +57,19 @@ internal fun AuthLayout(title: String, subtitle: String, content: @Composable Co
                     }
                     content()
                 }
+            }
+        }
+    }
+}
+
+@Preview(name = "Light", showBackground = true, widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(name = "Dark", showBackground = true, widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun AuthLayoutPreview() {
+    WhereIsEveryoneTheme {
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            AuthLayout(title = "Log in", subtitle = "Keep up with your friends, wherever they are.") {
+                Button.Primary(text = "Log in", onClick = {})
             }
         }
     }

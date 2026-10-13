@@ -12,13 +12,18 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
@@ -129,10 +134,8 @@ class MainActivity : ComponentActivity() {
                     when (action) {
                         is AddFriendViewModel.Action.NotifyFriendAdded -> {
                             navController?.let { controller ->
-                                if (controller.currentDestination?.route?.contains("Map") == false) {
-                                    controller.navigate(MainRoute.Map) {
-                                        popUpTo(MainRoute.Map) { inclusive = false }
-                                    }
+                                if (controller.currentDestination?.hasRoute<MainRoute.Map>() == false) {
+                                    controller.popBackStack(MainRoute.Map, inclusive = false)
                                 }
                             }
                         }
@@ -180,17 +183,6 @@ class MainActivity : ComponentActivity() {
         handleIntent(intent)
     }
 
-    private fun handleIntent(intent: Intent?) {
-        Timber.tag(TAG).d("Handling intent")
-        intent?.data?.let { uri ->
-            Timber.tag(TAG).d("Intent contains a URI")
-            if (uri.isAddFriendDeepLink()) {
-                Timber.tag(TAG).d("Handling add-friend link")
-                addFriendViewModel.trigger(AddFriendViewModel.Event.OnUriReceived(uri))
-            }
-        }
-    }
-
     override fun onStart() {
         super.onStart()
         locationService.setAppForeground(true)
@@ -208,6 +200,17 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
         friendsManager.cancel()
+    }
+
+    private fun handleIntent(intent: Intent?) {
+        Timber.tag(TAG).d("Handling intent")
+        intent?.data?.let { uri ->
+            Timber.tag(TAG).d("Intent contains a URI")
+            if (uri.isAddFriendDeepLink()) {
+                Timber.tag(TAG).d("Handling add-friend link")
+                addFriendViewModel.trigger(AddFriendViewModel.Event.OnUriReceived(uri))
+            }
+        }
     }
 
     private fun getPermissionsLauncher(): ActivityResultLauncher<Array<String>> {
@@ -261,6 +264,8 @@ class MainActivity : ComponentActivity() {
     private fun MainScreen() {
         val addFriendState by addFriendViewModel.state.collectAsStateWithLifecycle()
         val controller = rememberNavController()
+        val transitions by rememberUpdatedState(rememberMapNavigationTransitions())
+        val screenShape by rememberUpdatedState(rememberDisplayCornerShape())
         navController = controller
         LaunchedEffect(addFriendState.pendingLinkedFriend) {
             if (addFriendState.pendingLinkedFriend != null &&
@@ -273,27 +278,43 @@ class MainActivity : ComponentActivity() {
         }
         NavHost(
             navController = controller,
-            startDestination = MainRoute.Map
+            startDestination = MainRoute.Map,
+            modifier = Modifier.fillMaxSize().onGloballyPositioned {
+                transitions.updateBounds(it.boundsInRoot())
+            },
+            enterTransition = { transitions.enter(targetState.destination) },
+            exitTransition = { transitions.exit(initialState.destination) },
+            popEnterTransition = { transitions.enter(targetState.destination) },
+            popExitTransition = { transitions.exit(initialState.destination) },
+            predictivePopEnterTransition = { transitions.enter(targetState.destination) },
+            predictivePopExitTransition = { transitions.exit(initialState.destination) }
         ) {
             composable<MainRoute.Map> {
                 MapScreen(
                     navController = controller,
-                    screenViewModel = mapScreenViewModel
+                    screenViewModel = mapScreenViewModel,
+                    onNavigationIconPositioned = { route, center ->
+                        transitions.updateIconCenter(route, center)
+                    }
                 )
             }
             composable<MainRoute.Friends> {
-                FriendsScreen(navController = controller)
+                Box(modifier = Modifier.fillMaxSize().clip(screenShape)) {
+                    FriendsScreen(navController = controller)
+                }
             }
             composable<MainRoute.Settings> {
-                SettingsScreen(
-                    navController = controller,
-                    versionName = BuildConfig.VERSION_NAME,
-                    onLoggedOut = {
-                        startActivity(Intent(this@MainActivity, AuthenticationActivity::class.java))
-                        finish()
-                    },
-                    viewModel = settingsViewModel
-                )
+                Box(modifier = Modifier.fillMaxSize().clip(screenShape)) {
+                    SettingsScreen(
+                        navController = controller,
+                        versionName = BuildConfig.VERSION_NAME,
+                        onLoggedOut = {
+                            startActivity(Intent(this@MainActivity, AuthenticationActivity::class.java))
+                            finish()
+                        },
+                        viewModel = settingsViewModel
+                    )
+                }
             }
         }
     }

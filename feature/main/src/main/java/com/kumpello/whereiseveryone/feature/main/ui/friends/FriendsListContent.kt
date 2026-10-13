@@ -46,9 +46,9 @@ fun FriendsListContent(viewModel: FriendsViewModel = koinViewModel()) {
 
 @Composable
 fun FriendsListContent(
+    modifier: Modifier = Modifier,
     viewState: FriendsViewModel.ViewState,
-    onEvent: (FriendsViewModel.Event) -> Unit,
-    modifier: Modifier = Modifier
+    onEvent: (FriendsViewModel.Event) -> Unit
 ) {
     val categories = listOf(FriendState.ACCEPTED, FriendState.PENDING_INCOMING, FriendState.PENDING_OUTGOING)
     val titles = listOf(

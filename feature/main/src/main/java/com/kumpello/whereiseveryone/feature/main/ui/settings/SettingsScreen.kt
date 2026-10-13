@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -99,7 +100,11 @@ private fun SettingsScreen(
     val proximityLabel = stringResource(R.string.proximity_distance_label)
     val distanceLabel = stringResource(R.string.distance_m_format, viewState.proximityDistance)
 
-    Column(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
+    Column(
+        modifier = Modifier.fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .safeDrawingPadding()
+    ) {
         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             ScreenHeader(
                 title = stringResource(R.string.settings_title),

@@ -8,13 +8,18 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.kumpello.whereiseveryone.core.ui.theme.WhereIsEveryoneTheme
+import com.kumpello.whereiseveryone.feature.main.navigation.MainRoute
 
 @Composable
 fun MapTopControls(
     modifier: Modifier = Modifier,
+    onNavigationIconPositioned: (MainRoute, Offset) -> Unit = { _, _ -> },
     onEvent: (MapScreenViewModel.Event) -> Unit
 ) {
     ControlBar(modifier = modifier) {
@@ -31,11 +36,23 @@ fun MapTopControls(
         ControlButton(
             imageVector = Icons.Default.Person,
             contentDescription = stringResource(R.string.friends_cd),
+            modifier = Modifier.onGloballyPositioned {
+                onNavigationIconPositioned(
+                    MainRoute.Friends,
+                    it.positionInRoot() + Offset(it.size.width / 2f, it.size.height / 2f)
+                )
+            },
             onClick = { onEvent(MapScreenViewModel.Event.NavigateFriends) }
         )
         ControlButton(
             imageVector = Icons.Default.Settings,
             contentDescription = stringResource(R.string.settings_cd),
+            modifier = Modifier.onGloballyPositioned {
+                onNavigationIconPositioned(
+                    MainRoute.Settings,
+                    it.positionInRoot() + Offset(it.size.width / 2f, it.size.height / 2f)
+                )
+            },
             onClick = { onEvent(MapScreenViewModel.Event.NavigateSettings) }
         )
     }

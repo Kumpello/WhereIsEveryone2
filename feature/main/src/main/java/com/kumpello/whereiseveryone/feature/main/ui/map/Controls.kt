@@ -1,5 +1,11 @@
 package com.kumpello.whereiseveryone.feature.main.ui.map
 
+import android.content.res.Configuration
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.ui.tooling.preview.Preview
+import com.kumpello.whereiseveryone.core.ui.theme.WhereIsEveryoneTheme
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -14,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberTooltipState
@@ -46,14 +53,49 @@ fun ControlBar(modifier: Modifier = Modifier, content: @Composable RowScope.() -
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ControlButton(imageVector: ImageVector, contentDescription: String, onClick: () -> Unit) {
+fun ControlButton(
+    modifier: Modifier = Modifier,
+    imageVector: ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit
+) {
     TooltipBox(
-        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
+        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
         tooltip = { PlainTooltip { Text(contentDescription) } },
         state = rememberTooltipState()
     ) {
-        IconButton(onClick = onClick, modifier = Modifier.size(AppSize.touchTarget)) {
+        IconButton(onClick = onClick, modifier = modifier.size(AppSize.touchTarget)) {
             Icon(imageVector, contentDescription = contentDescription, modifier = Modifier.size(AppSize.icon))
+        }
+    }
+}
+
+@Preview(name = "Light", showBackground = true, widthDp = 360, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(name = "Dark", showBackground = true, widthDp = 360, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun ControlBarPreview() {
+    WhereIsEveryoneTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            ControlBar {
+                ControlButton(imageVector = Icons.Default.Person, contentDescription = "Friends", onClick = {})
+                ControlButton(imageVector = Icons.Default.Settings, contentDescription = "Settings", onClick = {})
+            }
+        }
+    }
+}
+
+@Preview(name = "Light", showBackground = true, widthDp = 360, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(name = "Dark", showBackground = true, widthDp = 360, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun ControlButtonPreview() {
+    WhereIsEveryoneTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            ControlButton(
+                modifier = Modifier.padding(AppSpacing.md),
+                imageVector = Icons.Default.Person,
+                contentDescription = "Friends",
+                onClick = {}
+            )
         }
     }
 }

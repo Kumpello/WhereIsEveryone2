@@ -1,5 +1,9 @@
 package com.kumpello.whereiseveryone.feature.main.ui.map
 
+import android.content.res.Configuration
+import androidx.compose.material3.Surface
+import androidx.compose.ui.tooling.preview.Preview
+import com.kumpello.whereiseveryone.core.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.feature.main.R
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -113,6 +117,47 @@ fun NavigationCompass(
             IconButton(onClick = onCancel, modifier = Modifier.size(AppSize.touchTarget)) {
                 Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cancel_navigation), modifier = Modifier.size(AppSize.icon))
             }
+        }
+    }
+}
+
+@Preview(name = "Light", showBackground = true, widthDp = 360, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(name = "Dark", showBackground = true, widthDp = 360, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun NavigationCompassPreview() {
+    WhereIsEveryoneTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            NavigationCompass(
+                modifier = Modifier.padding(AppSpacing.md),
+                bearing = 45f,
+                friendName = "Anna",
+                distance = "850 m",
+                onCancel = {}
+            )
+        }
+    }
+}
+
+@Preview(name = "Light", showBackground = true, widthDp = 360, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(name = "Dark", showBackground = true, widthDp = 360, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun NavigationCompassDrivingPreview() {
+    WhereIsEveryoneTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            NavigationCompass(
+                modifier = Modifier.padding(AppSpacing.md),
+                bearing = 135f,
+                friendName = "Anna",
+                distance = "7.2 km",
+                onCancel = {},
+                carTrackingInfo = CarTrackingInfo(
+                    friendSpeedKmh = 72.0,
+                    speedDifferenceKmh = -8.0,
+                    travelSeconds = 360.0,
+                    routeDistanceMeters = 7200.0,
+                    isLocationStale = false
+                )
+            )
         }
     }
 }

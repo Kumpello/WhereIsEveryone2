@@ -1,5 +1,12 @@
 package com.kumpello.whereiseveryone.feature.main.ui.friends
 
+import android.content.res.Configuration
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Surface
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import com.kumpello.whereiseveryone.core.ui.theme.WhereIsEveryoneTheme
+import com.kumpello.whereiseveryone.data.model.FriendState
 import com.kumpello.whereiseveryone.feature.main.R
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
@@ -33,4 +40,23 @@ fun DeleteFriendDialog(friend: Friend, trigger: (FriendsViewModel.Event) -> Unit
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = MaterialTheme.shapes.extraLarge
     )
+}
+
+@Preview(name = "Light", showBackground = true, widthDp = 360, heightDp = 480, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(name = "Dark", showBackground = true, widthDp = 360, heightDp = 480, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun DeleteFriendDialogPreview() {
+    WhereIsEveryoneTheme {
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            DeleteFriendDialog(
+                friend = Friend(
+                    username = "Anna",
+                    status = "Available",
+                    state = FriendState.ACCEPTED,
+                    location = null
+                ),
+                trigger = {}
+            )
+        }
+    }
 }

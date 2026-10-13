@@ -1,5 +1,11 @@
 package com.kumpello.whereiseveryone.feature.main.ui.map
 
+import android.content.res.Configuration
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.ui.tooling.preview.Preview
+import com.kumpello.whereiseveryone.core.ui.theme.WhereIsEveryoneTheme
+import kotlinx.coroutines.flow.emptyFlow
 import android.graphics.Bitmap
 import com.kumpello.whereiseveryone.feature.main.R
 import androidx.compose.foundation.background
@@ -477,3 +483,20 @@ private data class PuckImages(
     val carAvatar: Bitmap,
     val bearing: Bitmap,
 )
+
+@Preview(name = "Light", showBackground = true, widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(name = "Dark", showBackground = true, widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun MapPreview() {
+    WhereIsEveryoneTheme {
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            Map(
+                modifier = Modifier.fillMaxSize(),
+                state = MapSettings(),
+                actions = emptyFlow(),
+                friendsPositions = emptyList(),
+                event = {}
+            )
+        }
+    }
+}

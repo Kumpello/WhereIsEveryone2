@@ -1,5 +1,9 @@
 package com.kumpello.whereiseveryone.feature.main.ui.map
 
+import android.content.res.Configuration
+import androidx.compose.material3.Surface
+import androidx.compose.ui.tooling.preview.Preview
+import com.kumpello.whereiseveryone.core.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.feature.main.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -130,6 +134,17 @@ fun MapContent(
                 carTrackingInfo = state.carTrackingInfo,
                 onCancel = { viewModel.trigger(MapViewModel.Event.CancelNavigation) }
             )
+        }
+    }
+}
+
+@Preview(name = "Light", showBackground = true, widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(name = "Dark", showBackground = true, widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun MapContentPreview() {
+    WhereIsEveryoneTheme {
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            MapContent(modifier = Modifier.fillMaxSize())
         }
     }
 }

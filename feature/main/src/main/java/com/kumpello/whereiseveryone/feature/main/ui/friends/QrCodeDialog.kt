@@ -1,5 +1,12 @@
 package com.kumpello.whereiseveryone.feature.main.ui.friends
 
+import android.content.res.Configuration
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Surface
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+import com.kumpello.whereiseveryone.core.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.feature.main.R
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
@@ -31,8 +38,6 @@ import com.kumpello.whereiseveryone.core.ui.theme.AppSpacing
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-private data class QrImage(val loading: Boolean = true, val bitmap: Bitmap? = null)
-
 @Composable
 fun QrCodeDialog(username: String, onDismiss: () -> Unit) {
     val qrContent = createAddFriendDeepLink(username)
@@ -42,6 +47,11 @@ fun QrCodeDialog(username: String, onDismiss: () -> Unit) {
             QrCodeGenerator.generateQrCode(qrContent, 512)
         })
     }
+    QrCodeDialogContent(username = username, qr = qr, onDismiss = onDismiss)
+}
+
+@Composable
+private fun QrCodeDialogContent(username: String, qr: QrImage, onDismiss: () -> Unit) {
     AppDialog(onDismiss = onDismiss) {
         Column(
             verticalArrangement = Arrangement.spacedBy(AppSpacing.lg),
@@ -72,6 +82,48 @@ fun QrCodeDialog(username: String, onDismiss: () -> Unit) {
                 textAlign = TextAlign.Center
             )
             Button.Secondary(text = stringResource(R.string.close), onClick = onDismiss)
+        }
+    }
+}
+
+private data class QrImage(val loading: Boolean = true, val bitmap: Bitmap? = null)
+
+internal class QrCodePreviewProvider : PreviewParameterProvider<Bitmap> {
+    // Generate sample data before composition, independently of the dialog's coroutine.
+    override val values: Sequence<Bitmap> = sequenceOf(
+        requireNotNull(QrCodeGenerator.generateQrCode(createAddFriendDeepLink("Anna"), 512))
+    )
+}
+
+@Preview(name = "Light", showBackground = true, widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(name = "Dark", showBackground = true, widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun QrCodeDialogPreview(@PreviewParameter(QrCodePreviewProvider::class) bitmap: Bitmap) {
+    WhereIsEveryoneTheme {
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            QrCodeDialogContent(username = "Anna", qr = QrImage(loading = false, bitmap = bitmap), onDismiss = {})
+        }
+    }
+}
+
+@Preview(name = "Light", showBackground = true, widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(name = "Dark", showBackground = true, widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun QrCodeDialogLoadingPreview() {
+    WhereIsEveryoneTheme {
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            QrCodeDialogContent(username = "Anna", qr = QrImage(), onDismiss = {})
+        }
+    }
+}
+
+@Preview(name = "Light", showBackground = true, widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(name = "Dark", showBackground = true, widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun QrCodeDialogErrorPreview() {
+    WhereIsEveryoneTheme {
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            QrCodeDialogContent(username = "Anna", qr = QrImage(loading = false), onDismiss = {})
         }
     }
 }
