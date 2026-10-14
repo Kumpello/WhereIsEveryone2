@@ -29,6 +29,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import com.kumpello.whereiseveryone.data.network.api.MapboxRoadsApi
 import com.kumpello.whereiseveryone.data.repository.RoadNavigationRepository
+import com.kumpello.whereiseveryone.data.restore.RestoreCredentialsApi
 import org.koin.android.ext.koin.androidContext
 import java.util.concurrent.TimeUnit
 
@@ -59,6 +60,16 @@ fun networkModule(baseUrl: String) = module {
     }
 
     single { get<Retrofit>().create(AuthApi::class.java) }
+    // Restore enrollment supplies its access token explicitly. Its best-effort
+    // requests must not recurse into session refresh/logout while a key is created.
+    single<RestoreCredentialsApi> {
+        Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(OkHttpClient.Builder().addInterceptor(RequestInterceptor).callTimeout(10, TimeUnit.SECONDS).build())
+            .addConverterFactory(MoshiConverterFactory.create(get()))
+            .build()
+            .create(RestoreCredentialsApi::class.java)
+    }
     single { get<Retrofit>().create(LocationApi::class.java) }
     single { get<Retrofit>().create(FriendsApi::class.java) }
     single { get<Retrofit>().create(FriendApi::class.java) }

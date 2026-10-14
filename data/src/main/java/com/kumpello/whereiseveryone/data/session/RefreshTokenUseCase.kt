@@ -16,6 +16,7 @@ class RefreshTokenUseCase(
     private val authenticationRepository: AuthenticationRepository,
     private val preferencesManager: PreferencesManager,
     private val deviceIdProvider: DeviceIdProvider,
+    private val logoutUseCase: LogoutUseCase,
 ) {
     private val refreshMutex = Mutex()
 
@@ -49,10 +50,18 @@ class RefreshTokenUseCase(
             try {
                 val response = authenticationRepository.refreshToken(refreshToken, deviceToken)
                 return if (response is AuthResponse.AuthData) {
-                    saveUserData(response)
-                    Response.Success
-                } else {
+                    if (preferencesManager.replaceSessionTokens(refreshToken, response.token, response.refresh_token)) {
+                        Response.Success
+                    } else {
+                        Response.Error
+                    }
+                } else if (response is AuthResponse.ErrorData && response.code in listOf(401, 403, 404, 409)) {
+                    logoutUseCase.execute(expectedRefreshToken = refreshToken)
                     Response.Error
+                } else {
+                    // Service outages and rate limits must not delete a valid
+                    // session or its transferable restore key.
+                    Response.NetworkError
                 }
             } catch (e: IOException) {
                 if (attempt == maxRetries) {
@@ -68,13 +77,6 @@ class RefreshTokenUseCase(
         }
 
         return Response.NetworkError
-    }
-
-    private suspend fun saveUserData(response: AuthResponse.AuthData): Response {
-        preferencesManager.save(PreferencesKey.AuthToken, response.token)
-        preferencesManager.save(PreferencesKey.AuthRefreshToken, response.refresh_token)
-
-        return Response.Success
     }
 
     sealed class Response {

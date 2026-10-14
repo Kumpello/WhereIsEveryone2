@@ -32,6 +32,8 @@ dependencies {
     implementation(libs.androidx.datastore)
     implementation(libs.tink.android)
     implementation(libs.play.services.appset)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services)
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(platform(libs.koin.bom))
     implementation(libs.koin)

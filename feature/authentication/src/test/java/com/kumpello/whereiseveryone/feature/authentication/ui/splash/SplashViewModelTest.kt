@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import com.kumpello.whereiseveryone.data.repository.preferences.PreferencesKey
 import com.kumpello.whereiseveryone.data.repository.preferences.PreferencesManager
 import com.kumpello.whereiseveryone.data.session.RefreshTokenUseCase
+import com.kumpello.whereiseveryone.data.restore.RestoreCredentialsManager
 import com.kumpello.whereiseveryone.core.testing.MainDispatcherRule
 import io.mockk.coEvery
 import io.mockk.mockk
@@ -19,11 +20,24 @@ class SplashViewModelTest {
 
     private val preferencesManager: PreferencesManager = mockk()
     private val refreshTokenUseCase: RefreshTokenUseCase = mockk()
+    private val restoreCredentialsManager: RestoreCredentialsManager = mockk(relaxed = true)
 
     private lateinit var viewModel: SplashViewModel
 
     private fun setupViewModel() {
-        viewModel = SplashViewModel(preferencesManager, refreshTokenUseCase)
+        viewModel = SplashViewModel(preferencesManager, refreshTokenUseCase, restoreCredentialsManager)
+    }
+
+    @Test
+    fun `restored account enters Main without refreshing a nonexistent old session`() = runTest {
+        coEvery { preferencesManager.get(PreferencesKey.AuthToken) } returns null
+        coEvery { restoreCredentialsManager.restoreSession() } returns true
+        setupViewModel()
+
+        viewModel.action.test {
+            viewModel.trigger(SplashViewModel.Event.CheckUserStatus(null))
+            assertEquals(SplashViewModel.Action.NavigateMain(null), awaitItem())
+        }
     }
 
     @Test

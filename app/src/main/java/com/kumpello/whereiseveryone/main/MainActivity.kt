@@ -36,6 +36,7 @@ import com.kumpello.whereiseveryone.authentication.AuthenticationActivity
 import com.kumpello.whereiseveryone.BuildConfig
 import com.kumpello.whereiseveryone.data.repository.preferences.PreferencesKey
 import com.kumpello.whereiseveryone.data.repository.preferences.PreferencesManager
+import com.kumpello.whereiseveryone.data.restore.RestoreCredentialsManager
 import com.kumpello.whereiseveryone.core.util.isAddFriendDeepLink
 import com.kumpello.whereiseveryone.core.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.feature.main.navigation.MainRoute
@@ -63,6 +64,7 @@ class MainActivity : ComponentActivity() {
     private val settingsViewModel: SettingsViewModel by viewModel()
 
     private val preferencesManager: PreferencesManager by inject()
+    private val restoreCredentialsManager: RestoreCredentialsManager by inject()
     private val locationService: LocationService by inject()
     private val friendsManager: FriendsStateRepository by inject()
 
@@ -81,12 +83,20 @@ class MainActivity : ComponentActivity() {
             val token = preferencesManager.get(PreferencesKey.AuthToken)
             if (token.isNullOrEmpty()) {
                 Timber.tag(TAG).d("No auth token found, redirecting to AuthenticationActivity")
-                val intent = Intent(this@MainActivity, AuthenticationActivity::class.java).apply {
-                    data = this@MainActivity.intent.data
-                }
-                startActivity(intent)
-                finish()
+                navigateToAuthentication()
                 return@launch
+            }
+            restoreCredentialsManager.createIfNeeded()
+        }
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                preferencesManager.observe(PreferencesKey.AuthToken).collect { token ->
+                    if (token.isNullOrBlank() && !isFinishing) {
+                        locationService.stopLocationService()
+                        navigateToAuthentication()
+                    }
+                }
             }
         }
 
@@ -202,6 +212,12 @@ class MainActivity : ComponentActivity() {
         friendsManager.cancel()
     }
 
+    private fun navigateToAuthentication() {
+        if (isFinishing) return
+        startActivity(Intent(this, AuthenticationActivity::class.java).apply { data = intent.data })
+        finish()
+    }
+
     private fun handleIntent(intent: Intent?) {
         Timber.tag(TAG).d("Handling intent")
         intent?.data?.let { uri ->
@@ -309,8 +325,7 @@ class MainActivity : ComponentActivity() {
                         navController = controller,
                         versionName = BuildConfig.VERSION_NAME,
                         onLoggedOut = {
-                            startActivity(Intent(this@MainActivity, AuthenticationActivity::class.java))
-                            finish()
+                            navigateToAuthentication()
                         },
                         viewModel = settingsViewModel
                     )

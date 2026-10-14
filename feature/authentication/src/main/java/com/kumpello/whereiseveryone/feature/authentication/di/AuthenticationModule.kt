@@ -12,7 +12,7 @@ import org.koin.dsl.module
 
 
 val authenticationModule = module {
-    viewModel { SplashViewModel(get(), get()) }
+    viewModel { SplashViewModel(get(), get(), get()) }
     viewModel { LoginViewModel(get(), get(), get()) }
     viewModel { SignUpViewModel(get(), get(), get(), get()) }
     single { ValidateLoginInputUseCase() }

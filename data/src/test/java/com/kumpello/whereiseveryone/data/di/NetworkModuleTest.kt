@@ -3,6 +3,7 @@ package com.kumpello.whereiseveryone.data.di
 import com.kumpello.whereiseveryone.data.network.api.AuthApi
 import com.kumpello.whereiseveryone.data.repository.preferences.PreferencesManager
 import com.kumpello.whereiseveryone.data.repository.AuthenticationRepository
+import com.kumpello.whereiseveryone.data.restore.RestoreCredentialsApi
 import com.kumpello.whereiseveryone.data.network.api.FriendsApi
 import com.kumpello.whereiseveryone.data.repository.FriendsRepository
 import com.kumpello.whereiseveryone.data.repository.LocationRepository
@@ -36,6 +37,7 @@ class NetworkModuleTest {
             assertEquals(baseUrl, koin.get<Retrofit>().baseUrl().toString())
             listOf(
                 koin.get<AuthApi>(),
+                koin.get<RestoreCredentialsApi>(),
                 koin.get<FriendsApi>(),
                 koin.get<FriendApi>(),
                 koin.get<SharingApi>(),

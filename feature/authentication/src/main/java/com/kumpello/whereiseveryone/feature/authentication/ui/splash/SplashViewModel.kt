@@ -3,6 +3,7 @@ package com.kumpello.whereiseveryone.feature.authentication.ui.splash
 import com.kumpello.whereiseveryone.data.repository.preferences.PreferencesKey
 import com.kumpello.whereiseveryone.data.repository.preferences.PreferencesManager
 import com.kumpello.whereiseveryone.data.session.RefreshTokenUseCase
+import com.kumpello.whereiseveryone.data.restore.RestoreCredentialsManager
 import com.kumpello.whereiseveryone.core.presentation.BaseViewModel
 import androidx.compose.runtime.Immutable
 import kotlinx.coroutines.CancellationException
@@ -10,40 +11,11 @@ import timber.log.Timber
 
 class SplashViewModel(
     private val preferencesManager: PreferencesManager,
-    private val refreshTokenUseCase: RefreshTokenUseCase
+    private val refreshTokenUseCase: RefreshTokenUseCase,
+    private val restoreCredentialsManager: RestoreCredentialsManager
 ) : BaseViewModel<SplashViewModel.State, SplashViewModel.ViewState, SplashViewModel.Event, SplashViewModel.Action>(
     State
 ) {
-
-    private suspend fun checkUserStatus() : AuthStatus {
-        val authKey = preferencesManager.get(PreferencesKey.AuthToken)
-        if (authKey.isNullOrEmpty()) {
-            Timber.tag(TAG).d("No auth token found")
-            return AuthStatus.NoToken
-        }
-
-        return try {
-            when (refreshTokenUseCase.execute()) {
-                RefreshTokenUseCase.Response.Success -> {
-                    Timber.tag(TAG).d("Token refresh successful")
-                    AuthStatus.RefreshSuccess
-                }
-                RefreshTokenUseCase.Response.Error -> {
-                    Timber.tag(TAG).d("Token refresh failed due to invalid credentials")
-                    AuthStatus.RefreshFailed
-                }
-                RefreshTokenUseCase.Response.NetworkError -> {
-                    Timber.tag(TAG).d("Token refresh failed due to network issue")
-                    AuthStatus.NetworkError
-                }
-            }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "Unexpected error during token refresh")
-            AuthStatus.NetworkError
-        }
-    }
 
     override fun reduce(state: State, event: Event): ReducerResult<State, Event, Action> {
         return when (event) {
@@ -70,6 +42,24 @@ class SplashViewModel(
 
     override fun State.toViewState(): ViewState {
         return ViewState
+    }
+
+    private suspend fun checkUserStatus(): AuthStatus = try {
+        val authKey = preferencesManager.get(PreferencesKey.AuthToken)
+        if (authKey.isNullOrEmpty()) {
+            if (restoreCredentialsManager.restoreSession()) AuthStatus.RefreshSuccess else AuthStatus.NoToken
+        } else {
+            when (refreshTokenUseCase.execute()) {
+                RefreshTokenUseCase.Response.Success -> AuthStatus.RefreshSuccess
+                RefreshTokenUseCase.Response.Error -> AuthStatus.RefreshFailed
+                RefreshTokenUseCase.Response.NetworkError -> AuthStatus.NetworkError
+            }
+        }
+    } catch (exception: CancellationException) {
+        throw exception
+    } catch (exception: Exception) {
+        Timber.tag(TAG).e(exception, "Unexpected error during authentication check")
+        AuthStatus.NetworkError
     }
 
     sealed class Action {

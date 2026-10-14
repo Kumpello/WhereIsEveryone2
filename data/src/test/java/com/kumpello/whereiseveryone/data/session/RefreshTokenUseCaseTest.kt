@@ -20,12 +20,18 @@ class RefreshTokenUseCaseTest {
     private val authenticationRepository: AuthenticationRepository = mockk()
     private val preferencesManager: PreferencesManager = mockk(relaxed = true)
     private val deviceIdProvider: DeviceIdProvider = mockk()
+    private val logoutUseCase: LogoutUseCase = mockk(relaxed = true)
 
     private val useCase = RefreshTokenUseCase(
         authenticationRepository,
         preferencesManager,
-        deviceIdProvider
+        deviceIdProvider,
+        logoutUseCase
     )
+
+    init {
+        coEvery { preferencesManager.replaceSessionTokens(any(), any(), any()) } returns true
+    }
 
     @Test
     fun `execute returns Error when refresh token is null or empty`() = runTest {
@@ -47,8 +53,7 @@ class RefreshTokenUseCaseTest {
 
         assertEquals(RefreshTokenUseCase.Response.Success, result)
         coVerify {
-            preferencesManager.save(PreferencesKey.AuthToken, "new_access_token")
-            preferencesManager.save(PreferencesKey.AuthRefreshToken, "new_refresh_token")
+            preferencesManager.replaceSessionTokens("old_refresh_token", "new_access_token", "new_refresh_token")
         }
     }
 
@@ -61,9 +66,21 @@ class RefreshTokenUseCaseTest {
         val result = useCase.execute(maxRetries = 3, initialDelayMs = 0L)
 
         assertEquals(RefreshTokenUseCase.Response.Error, result)
+        coVerify(exactly = 1) { logoutUseCase.execute("old_refresh_token") }
         coVerify(exactly = 0) {
             preferencesManager.save(any<PreferencesKey<String>>(), any())
         }
+    }
+
+    @Test
+    fun `temporary server errors preserve session and restore key`() = runTest {
+        coEvery { preferencesManager.get(PreferencesKey.AuthRefreshToken) } returns "old_refresh_token"
+        coEvery { deviceIdProvider.getDeviceId() } returns "device_123"
+        for (status in listOf(429, 500, 503)) {
+            coEvery { authenticationRepository.refreshToken(any(), any()) } returns AuthResponse.ErrorData(status, "", "")
+            assertEquals(RefreshTokenUseCase.Response.NetworkError, useCase.execute())
+        }
+        coVerify(exactly = 0) { logoutUseCase.execute() }
     }
 
     @Test
@@ -97,8 +114,7 @@ class RefreshTokenUseCaseTest {
             authenticationRepository.refreshToken("old_refresh_token", "device_123")
         }
         coVerify {
-            preferencesManager.save(PreferencesKey.AuthToken, "new_access_token")
-            preferencesManager.save(PreferencesKey.AuthRefreshToken, "new_refresh_token")
+            preferencesManager.replaceSessionTokens("old_refresh_token", "new_access_token", "new_refresh_token")
         }
     }
 
@@ -106,8 +122,9 @@ class RefreshTokenUseCaseTest {
     fun `concurrent callers share one rotation and later calls use the new refresh token`() = runTest {
         var storedRefreshToken = "old_refresh_token"
         coEvery { preferencesManager.get(PreferencesKey.AuthRefreshToken) } coAnswers { storedRefreshToken }
-        coEvery { preferencesManager.save(PreferencesKey.AuthRefreshToken, any()) } coAnswers {
-            storedRefreshToken = secondArg()
+        coEvery { preferencesManager.replaceSessionTokens(any(), any(), any()) } coAnswers {
+            storedRefreshToken = thirdArg()
+            true
         }
         coEvery { deviceIdProvider.getDeviceId() } returns "device_123"
         val releaseResponse = CompletableDeferred<Unit>()

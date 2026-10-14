@@ -11,6 +11,9 @@ import com.kumpello.whereiseveryone.data.device.DeviceIdProvider
 import com.kumpello.whereiseveryone.data.local.preferences.EncryptedDataStoreRepository
 import com.kumpello.whereiseveryone.data.session.LogoutUseCase
 import com.kumpello.whereiseveryone.data.session.RefreshTokenUseCase
+import com.kumpello.whereiseveryone.data.restore.AndroidRestoreCredentialClient
+import com.kumpello.whereiseveryone.data.restore.RestoreCredentialClient
+import com.kumpello.whereiseveryone.data.restore.RestoreCredentialsManager
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
@@ -28,6 +31,8 @@ val commonModule = module {
     single { EncryptedDataStoreRepository(androidContext()) }
     single { PreferencesManager(get()) }
     single<DeviceIdProvider> { DeviceIdProviderImpl(androidContext()) }
-    single { RefreshTokenUseCase(get(), get(), get()) }
-    single { LogoutUseCase(get(), get()) }
+    single<RestoreCredentialClient> { AndroidRestoreCredentialClient(androidContext()) }
+    single { RestoreCredentialsManager(get(), get(), get(), get(), androidContext().packageName) }
+    single { RefreshTokenUseCase(get(), get(), get(), get()) }
+    single { LogoutUseCase(get(), get(), get()) }
 }
