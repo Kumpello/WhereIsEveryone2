@@ -108,7 +108,8 @@ jobs:
   deploy:
     name: Deploy to Google Play (internal)
     needs: [ test, lint ]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    # Temporarily disabled; remove `false &&` to re-enable Google Play deployment.
+    if: false && github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
