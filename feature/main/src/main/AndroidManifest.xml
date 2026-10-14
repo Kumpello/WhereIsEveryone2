@@ -16,10 +16,12 @@
         <activity
             android:name="com.google.android.gms.oss.licenses.v2.OssLicensesMenuActivity"
             android:exported="false" />
+        <!-- Receive onTaskRemoved so shutdown also releases the application's service binding. -->
         <service
             android:name="com.kumpello.whereiseveryone.main.map.presentation.LocationForegroundService"
             android:enabled="true"
             android:exported="false"
+            android:stopWithTask="false"
             android:foregroundServiceType="location|dataSync" />
         <service
             android:name="com.kumpello.whereiseveryone.main.friends.nfc.NdefHceService"

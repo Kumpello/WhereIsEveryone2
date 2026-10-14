@@ -169,6 +169,12 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
         return START_STICKY
     }
 
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        Timber.tag(TAG).d("App removed from Recent Apps, stopping location service")
+        locationServiceProxy.stopLocationService()
+        super.onTaskRemoved(rootIntent)
+    }
+
     override fun onDestroy() {
         Timber.tag(TAG).d("LocationForegroundService stopping")
         isServiceStarted = false
