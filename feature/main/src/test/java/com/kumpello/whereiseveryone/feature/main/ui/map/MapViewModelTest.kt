@@ -4,6 +4,8 @@ import com.kumpello.whereiseveryone.feature.main.location.LocationService
 import app.cash.turbine.test
 import androidx.lifecycle.ViewModelStore
 import com.kumpello.whereiseveryone.data.repository.FriendsStateRepository
+import com.kumpello.whereiseveryone.data.repository.preferences.PreferencesKey
+import com.kumpello.whereiseveryone.data.repository.preferences.PreferencesManager
 import com.kumpello.whereiseveryone.feature.main.ui.mapper.MapFriendUseCase
 import com.kumpello.whereiseveryone.feature.main.ui.mapper.MapLocationUseCase
 import com.kumpello.whereiseveryone.feature.main.ui.model.AccuracyLevel
@@ -12,6 +14,7 @@ import com.kumpello.whereiseveryone.feature.main.ui.model.Friend
 import com.kumpello.whereiseveryone.data.model.FriendLocalData
 import com.kumpello.whereiseveryone.data.model.FriendState
 import com.kumpello.whereiseveryone.feature.main.ui.model.LastUpdateAge
+import com.kumpello.whereiseveryone.feature.main.ui.model.MapFpsLimit
 import com.kumpello.whereiseveryone.data.model.LocationData
 import com.kumpello.whereiseveryone.feature.main.domain.usecase.GetPausedFriendsUseCase
 import com.kumpello.whereiseveryone.feature.main.domain.usecase.ResumeSharingUseCase
@@ -59,12 +62,32 @@ class MapViewModelTest {
     private val stopSharingUseCase: StopSharingUseCase = mockk()
     private val resumeSharingUseCase: ResumeSharingUseCase = mockk()
     private val getPausedFriendsUseCase: GetPausedFriendsUseCase = mockk()
-    private val preferencesManager = mockk<com.kumpello.whereiseveryone.data.repository.preferences.PreferencesManager> {
-        every { observe(com.kumpello.whereiseveryone.data.repository.preferences.PreferencesKey.CarMode) } returns emptyFlow()
+    private val preferencesManager = mockk<PreferencesManager> {
+        every { observe(PreferencesKey.CarMode) } returns emptyFlow()
+        every { observe(PreferencesKey.MapFpsLimit) } returns emptyFlow()
     }
     private val roadNavigationRepository = mockk<com.kumpello.whereiseveryone.data.repository.RoadNavigationRepository>()
 
     private lateinit var viewModel: MapViewModel
+
+    @Test
+    fun `map restores FPS limit and follows subsequent settings changes`() = runTest {
+        val fps = MutableStateFlow<Int?>(120)
+        every { preferencesManager.observe(PreferencesKey.MapFpsLimit) } returns fps
+        setupViewModel()
+        val store = ViewModelStore().apply { put("map", viewModel) }
+        try {
+            viewModel.state.test {
+                assertEquals(MapFpsLimit.FPS_120, awaitItem().mapSettings.fpsLimit)
+                fps.value = 30
+                assertEquals(MapFpsLimit.FPS_30, awaitItem().mapSettings.fpsLimit)
+                fps.value = 45
+                assertEquals(MapFpsLimit.FPS_120, awaitItem().mapSettings.fpsLimit)
+            }
+        } finally {
+            store.clear()
+        }
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test

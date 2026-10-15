@@ -11,6 +11,7 @@ import com.kumpello.whereiseveryone.data.repository.preferences.PreferencesKey
 import com.kumpello.whereiseveryone.data.repository.preferences.PreferencesManager
 import com.kumpello.whereiseveryone.data.model.CodeResponse
 import com.kumpello.whereiseveryone.data.session.LogoutUseCase
+import com.kumpello.whereiseveryone.feature.main.ui.model.MapFpsLimit
 import com.kumpello.whereiseveryone.core.presentation.BaseViewModel.SideEffect.*
 import com.kumpello.whereiseveryone.feature.main.ui.settings.SettingsViewModel.Event.*
 import kotlinx.coroutines.CancellationException
@@ -46,6 +47,11 @@ class SettingsViewModel(
             }
         }
         viewModelScope.launch {
+            preferencesManager.observe(PreferencesKey.MapFpsLimit).distinctUntilChanged().collect { fps ->
+                trigger(OnMapFpsLimitUpdate(MapFpsLimit.fromPreference(fps)))
+            }
+        }
+        viewModelScope.launch {
             combine(
                 locationService.observeIsServiceRunning(),
                 preferencesManager.observe(PreferencesKey.LocationSharingEnabled)
@@ -75,6 +81,18 @@ class SettingsViewModel(
 
     override fun reduce(state: State, event: Event): ReducerResult<State, Event, Action> {
         return when (event) {
+            is OnMapFpsLimitUpdate -> state.copy(mapFpsLimit = event.limit).toResult()
+            is ChangeMapFpsLimit -> state.toResult(AsyncWork {
+                try {
+                    preferencesManager.save(PreferencesKey.MapFpsLimit, event.limit.fps)
+                    NoOp
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Timber.tag(TAG).w(e, "Unable to save map FPS limit")
+                    Toast(R.string.map_fps_limit_save_error)
+                }
+            })
             is OnCarModeUpdate -> state.copy(isCarMode = event.enabled).toResult()
             ToggleCarMode -> state.toResult(locationWork {
                 try {
@@ -172,10 +190,6 @@ class SettingsViewModel(
         }
     }
 
-    private fun locationWork(work: suspend () -> Event) = AsyncWork {
-        locationOperationMutex.withLock { work() }
-    }
-
     override fun State.toViewState(): ViewState {
         return ViewState(
             isLocationServiceRunning = locationServiceState,
@@ -194,7 +208,12 @@ class SettingsViewModel(
             logoutTextId = R.string.settings_logout,
             proximityDistance = proximityDistance,
             isCarMode = isCarMode,
+            mapFpsLimit = mapFpsLimit,
         )
+    }
+
+    private fun locationWork(work: suspend () -> Event) = AsyncWork {
+        locationOperationMutex.withLock { work() }
     }
 
     sealed class Action {
@@ -204,6 +223,8 @@ class SettingsViewModel(
     }
 
     sealed class Event {
+        data class OnMapFpsLimitUpdate(val limit: MapFpsLimit) : Event()
+        data class ChangeMapFpsLimit(val limit: MapFpsLimit) : Event()
         data class OnCarModeUpdate(val enabled: Boolean) : Event()
         data object ToggleCarMode : Event()
         data class OnLocationServiceStateUpdate(val isRunning: Boolean, val isSharingEnabled: Boolean) : Event()
@@ -224,6 +245,7 @@ class SettingsViewModel(
         val isSharingEnabled: Boolean = true,
         val proximityDistance: Int = 50,
         val isCarMode: Boolean = false,
+        val mapFpsLimit: MapFpsLimit = MapFpsLimit.FPS_120,
     )
 
     @Immutable
@@ -236,6 +258,7 @@ class SettingsViewModel(
         @param:StringRes val logoutTextId: Int,
         val proximityDistance: Int,
         val isCarMode: Boolean = false,
+        val mapFpsLimit: MapFpsLimit = MapFpsLimit.FPS_120,
     )
 
     companion object {

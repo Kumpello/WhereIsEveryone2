@@ -14,6 +14,7 @@ import com.kumpello.whereiseveryone.feature.main.ui.mapper.MapLocationUseCase
 import com.kumpello.whereiseveryone.feature.main.ui.model.Friend
 import com.kumpello.whereiseveryone.data.model.FriendLocalData
 import com.kumpello.whereiseveryone.feature.main.ui.model.Location
+import com.kumpello.whereiseveryone.feature.main.ui.model.MapFpsLimit
 import com.kumpello.whereiseveryone.data.model.LocationData
 import com.kumpello.whereiseveryone.data.model.toLocalData
 import com.kumpello.whereiseveryone.data.network.model.SharingResponse
@@ -81,6 +82,11 @@ class MapViewModel(
             }
         }
         viewModelScope.launch {
+            preferencesManager.observe(PreferencesKey.MapFpsLimit).distinctUntilChanged().collect {
+                trigger(Event.OnMapFpsLimitChanged(MapFpsLimit.fromPreference(it)))
+            }
+        }
+        viewModelScope.launch {
             try {
                 friendsManager.observeFriends().collect { response ->
                     val event = when (response) {
@@ -106,6 +112,9 @@ class MapViewModel(
 
     override fun reduce(state: State, event: Event): ReducerResult<State, Event, Action> {
         return when (event) {
+            is Event.OnMapFpsLimitChanged -> state.copy(
+                mapSettings = state.mapSettings.copy(fpsLimit = event.limit),
+            ).toResult()
             is Event.OnLocationUpdate -> state.copy(
                 user = event.location?.copy(isCarMode = state.isCarMode),
                 showCarSuggestion = state.showCarSuggestion ||
@@ -431,6 +440,7 @@ class MapViewModel(
         data object CancelNavigation : Event()
         data class OnCameraUpdate(val bearing: Double) : Event()
         data class OnCarModeChanged(val enabled: Boolean) : Event()
+        data class OnMapFpsLimitChanged(val limit: MapFpsLimit) : Event()
         data object AcceptCarSuggestion : Event()
         data object DismissCarSuggestion : Event()
         data class OnMapVisibilityChanged(val visible: Boolean) : Event()

@@ -38,6 +38,7 @@ class CarModeViewModelTest {
     private val setting = MutableStateFlow<Boolean?>(false)
     private val preferences = mockk<PreferencesManager> {
         every { observe(PreferencesKey.CarMode) } returns setting
+        every { observe(PreferencesKey.MapFpsLimit) } returns emptyFlow()
         coEvery { save(PreferencesKey.CarMode, any()) } answers { setting.value = secondArg() }
     }
     private val roads = mockk<RoadNavigationRepository> {

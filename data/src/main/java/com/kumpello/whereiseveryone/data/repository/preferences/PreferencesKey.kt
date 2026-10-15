@@ -12,5 +12,6 @@ sealed class PreferencesKey<T>(val key: String) {
     data object UserMessage : PreferencesKey<String>("user_message")
     data object LocationSharingEnabled : PreferencesKey<Boolean>("location_sharing_enabled")
     data object CarMode : PreferencesKey<Boolean>("car_mode")
+    data object MapFpsLimit : PreferencesKey<Int>("map_fps_limit")
     data object ProximityDistance : PreferencesKey<Int>("proximity_distance")
 }

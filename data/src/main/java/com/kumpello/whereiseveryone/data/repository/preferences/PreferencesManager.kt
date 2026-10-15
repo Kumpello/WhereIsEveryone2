@@ -169,7 +169,7 @@ class PreferencesManager internal constructor(
         return when (key) {
             is PreferencesKey.LocationSharingEnabled, is PreferencesKey.CarMode,
             is PreferencesKey.RestoreSignOutPending -> value?.toBoolean() as T?
-            is PreferencesKey.ProximityDistance -> value?.toIntOrNull() as T?
+            is PreferencesKey.ProximityDistance, is PreferencesKey.MapFpsLimit -> value?.toIntOrNull() as T?
             else -> value as T?
         }
     }

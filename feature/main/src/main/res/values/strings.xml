@@ -108,6 +108,11 @@
     <string name="nfc_sharing_title">NFC Sharing</string>
     <string name="nfc_sharing_message">Sharing profile via NFC. Bring devices together.</string>
     <string name="settings_title">Settings</string>
+    <string name="map_fps_limit">Map FPS limit</string>
+    <string name="map_fps_limit_description">Higher limits make map movement smoother and use more battery.</string>
+    <string name="map_fps_format">%1$d FPS</string>
+    <string name="map_fps_requires_refresh_rate">Requires a %1$d Hz display</string>
+    <string name="map_fps_limit_save_error">Could not save the map FPS limit. Please try again.</string>
     <string name="proximity_distance_label">Proximity Notification Distance</string>
     <string name="distance_m_format">%d m</string>
     <string name="about_title">About</string>

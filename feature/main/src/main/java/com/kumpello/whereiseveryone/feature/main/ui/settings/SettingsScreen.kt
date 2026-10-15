@@ -19,8 +19,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -49,6 +52,8 @@ import com.kumpello.whereiseveryone.core.ui.components.ScreenHeader
 import com.kumpello.whereiseveryone.core.ui.theme.AppSize
 import com.kumpello.whereiseveryone.core.ui.theme.AppSpacing
 import com.kumpello.whereiseveryone.core.ui.theme.WhereIsEveryoneTheme
+import com.kumpello.whereiseveryone.feature.main.ui.components.rememberMaxDisplayRefreshRate
+import com.kumpello.whereiseveryone.feature.main.ui.model.MapFpsLimit
 import kotlin.math.ln
 import kotlin.math.pow
 
@@ -81,6 +86,7 @@ fun SettingsScreen(
 
     SettingsScreen(
         viewState = state,
+        maxRefreshRate = rememberMaxDisplayRefreshRate(),
         versionName = versionName,
         trigger = viewModel::trigger,
         onBack = { navController.popBackStack() }
@@ -90,6 +96,7 @@ fun SettingsScreen(
 @Composable
 private fun SettingsScreen(
     viewState: SettingsViewModel.ViewState,
+    maxRefreshRate: Float,
     versionName: String,
     onBack: () -> Unit = {},
     trigger: (SettingsViewModel.Event) -> Unit
@@ -148,6 +155,13 @@ private fun SettingsScreen(
                 }
             }
             item {
+                MapFpsLimitSetting(
+                    selectedLimit = viewState.mapFpsLimit.forDisplay(maxRefreshRate),
+                    maxRefreshRate = maxRefreshRate,
+                    onSelect = { trigger(SettingsViewModel.Event.ChangeMapFpsLimit(it)) },
+                )
+            }
+            item {
                 SettingsCard {
                     SectionTitle(proximityLabel)
                     Text(
@@ -186,6 +200,55 @@ private fun SettingsScreen(
                 }
             }
             item { SettingsCard { AboutSection(versionName) } }
+        }
+    }
+}
+
+@Composable
+private fun MapFpsLimitSetting(
+    selectedLimit: MapFpsLimit,
+    maxRefreshRate: Float,
+    onSelect: (MapFpsLimit) -> Unit,
+) {
+    SettingsCard {
+        SectionTitle(stringResource(R.string.map_fps_limit))
+        Text(
+            text = stringResource(R.string.map_fps_limit_description),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Column(modifier = Modifier.selectableGroup()) {
+            MapFpsLimit.entries.forEach { limit ->
+                val enabled = limit.isSupported(maxRefreshRate)
+                Row(
+                    modifier = Modifier.fillMaxWidth().heightIn(min = AppSize.touchTarget)
+                        .selectable(
+                            selected = selectedLimit == limit,
+                            enabled = enabled,
+                            role = Role.RadioButton,
+                            onClick = { onSelect(limit) },
+                        )
+                        .padding(vertical = AppSpacing.xs),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(AppSpacing.md),
+                ) {
+                    RadioButton(selected = selectedLimit == limit, onClick = null, enabled = enabled)
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.map_fps_format, limit.fps),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (enabled) 1f else 0.38f),
+                        )
+                        if (!enabled) {
+                            Text(
+                                text = stringResource(R.string.map_fps_requires_refresh_rate, limit.fps),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -255,6 +318,7 @@ private fun AboutSection(versionName: String) {
 fun SettingsPreview() {
     WhereIsEveryoneTheme {
         SettingsScreen(
+            maxRefreshRate = 60f,
             versionName = "Preview",
             viewState = SettingsViewModel.ViewState(
                 isLocationServiceRunning = true,
@@ -266,5 +330,31 @@ fun SettingsPreview() {
                 proximityDistance = 50
             )
         ) {}
+    }
+}
+
+@Preview(name = "60 Hz display", showBackground = true, widthDp = 360)
+@Preview(name = "60 Hz display, dark", showBackground = true, widthDp = 360, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(name = "60 Hz display, large text", showBackground = true, widthDp = 320, fontScale = 2f)
+@Composable
+private fun MapFpsLimit60HzPreview() {
+    WhereIsEveryoneTheme {
+        MapFpsLimitSetting(selectedLimit = MapFpsLimit.FPS_60, maxRefreshRate = 60f, onSelect = {})
+    }
+}
+
+@Preview(name = "90 Hz display", showBackground = true, widthDp = 360)
+@Composable
+private fun MapFpsLimit90HzPreview() {
+    WhereIsEveryoneTheme {
+        MapFpsLimitSetting(selectedLimit = MapFpsLimit.FPS_90, maxRefreshRate = 90f, onSelect = {})
+    }
+}
+
+@Preview(name = "120 Hz display", showBackground = true, widthDp = 360)
+@Composable
+private fun MapFpsLimit120HzPreview() {
+    WhereIsEveryoneTheme {
+        MapFpsLimitSetting(selectedLimit = MapFpsLimit.FPS_120, maxRefreshRate = 120f, onSelect = {})
     }
 }

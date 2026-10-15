@@ -33,6 +33,7 @@ import androidx.compose.ui.res.stringResource
 import com.kumpello.whereiseveryone.core.ui.theme.AppSize
 import com.kumpello.whereiseveryone.core.ui.theme.AppSpacing
 import com.kumpello.whereiseveryone.core.ui.theme.USER_PUCK_COLOR
+import com.kumpello.whereiseveryone.feature.main.ui.components.rememberMaxDisplayRefreshRate
 import com.kumpello.whereiseveryone.feature.main.ui.model.Friend
 import com.mapbox.geojson.FeatureCollection
 import com.mapbox.maps.ImageHolder
@@ -110,6 +111,7 @@ fun Map(
         return
     }
 
+    val fpsLimit = state.fpsLimit.forDisplay(rememberMaxDisplayRefreshRate())
     val roadAheadPadding = LocalWindowInfo.current.containerSize.height * 0.35
     val mapViewportState = rememberMapViewportState {
         transitionToFollowPuckState(
@@ -226,6 +228,10 @@ fun Map(
             )
         }
     ) {
+        MapEffect(fpsLimit) { mapView ->
+            mapView.setMaximumFps(fpsLimit.fps)
+        }
+
         val context = LocalContext.current
         val puckImages by produceState<PuckImages?>(null, context) {
             value = withContext(Dispatchers.Default) {

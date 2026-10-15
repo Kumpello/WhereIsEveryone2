@@ -10,6 +10,7 @@ import com.kumpello.whereiseveryone.data.model.CodeResponse
 import com.kumpello.whereiseveryone.data.session.LogoutUseCase
 import com.kumpello.whereiseveryone.feature.main.domain.usecase.WipeLocationUseCase
 import com.kumpello.whereiseveryone.feature.main.location.LocationService
+import com.kumpello.whereiseveryone.feature.main.ui.model.MapFpsLimit
 import com.kumpello.whereiseveryone.core.testing.MainDispatcherRule
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -42,18 +43,41 @@ class SettingsViewModelTest {
         every { observe(PreferencesKey.ProximityDistance) } returns emptyFlow()
         every { observe(PreferencesKey.LocationSharingEnabled) } returns sharingEnabled
         every { observe(PreferencesKey.CarMode) } returns emptyFlow()
+        every { observe(PreferencesKey.MapFpsLimit) } returns emptyFlow()
     }
     private val logoutUseCase: LogoutUseCase = mockk(relaxed = true)
 
     private lateinit var viewModel: SettingsViewModel
 
-    private fun setupViewModel() {
-        viewModel = SettingsViewModel(
-            locationService,
-            wipeLocationUseCase,
-            preferencesManager,
-            logoutUseCase
-        )
+    @Test
+    fun `map FPS limit restores saved value and persists every available choice`() = runTest {
+        val fps = MutableStateFlow<Int?>(90)
+        every { preferencesManager.observe(PreferencesKey.MapFpsLimit) } returns fps
+        coEvery { preferencesManager.save(PreferencesKey.MapFpsLimit, any()) } answers {
+            fps.value = secondArg()
+        }
+        setupViewModel()
+
+        assertEquals(MapFpsLimit.FPS_90, viewModel.state.first { it.mapFpsLimit == MapFpsLimit.FPS_90 }.mapFpsLimit)
+        MapFpsLimit.entries.forEach { limit ->
+            viewModel.trigger(SettingsViewModel.Event.ChangeMapFpsLimit(limit))
+            assertEquals(limit, viewModel.state.first { it.mapFpsLimit == limit }.mapFpsLimit)
+            coVerify { preferencesManager.save(PreferencesKey.MapFpsLimit, limit.fps) }
+        }
+    }
+
+    @Test
+    fun `failed map FPS save keeps previous selection and reports error`() = runTest {
+        every { preferencesManager.observe(PreferencesKey.MapFpsLimit) } returns MutableStateFlow<Int?>(60)
+        coEvery { preferencesManager.save(PreferencesKey.MapFpsLimit, 120) } throws IOException("disk failure")
+        setupViewModel()
+        assertEquals(MapFpsLimit.FPS_60, viewModel.state.first { it.mapFpsLimit == MapFpsLimit.FPS_60 }.mapFpsLimit)
+
+        viewModel.action.test {
+            viewModel.trigger(SettingsViewModel.Event.ChangeMapFpsLimit(MapFpsLimit.FPS_120))
+            assertEquals(SettingsViewModel.Action.Toast(R.string.map_fps_limit_save_error), awaitItem())
+        }
+        assertEquals(MapFpsLimit.FPS_60, viewModel.state.value.mapFpsLimit)
     }
 
     @Test
@@ -235,5 +259,14 @@ class SettingsViewModelTest {
             viewModel.trigger(SettingsViewModel.Event.ChangeProximityDistance(100))
             assertEquals(100, awaitItem().proximityDistance)
         }
+    }
+
+    private fun setupViewModel() {
+        viewModel = SettingsViewModel(
+            locationService,
+            wipeLocationUseCase,
+            preferencesManager,
+            logoutUseCase
+        )
     }
 }
