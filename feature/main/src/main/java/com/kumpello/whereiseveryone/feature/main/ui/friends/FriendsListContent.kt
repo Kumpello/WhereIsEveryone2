@@ -35,6 +35,8 @@ import com.kumpello.whereiseveryone.core.ui.theme.AppSize
 import com.kumpello.whereiseveryone.core.ui.theme.AppSpacing
 import com.kumpello.whereiseveryone.core.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.data.model.FriendState
+import com.kumpello.whereiseveryone.core.presentation.AsyncState
+import com.kumpello.whereiseveryone.feature.main.ui.model.Friend
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -48,6 +50,7 @@ fun FriendsListContent(viewModel: FriendsViewModel = koinViewModel()) {
 fun FriendsListContent(
     modifier: Modifier = Modifier,
     viewState: FriendsViewModel.ViewState,
+    initialCategory: FriendState = FriendState.ACCEPTED,
     onEvent: (FriendsViewModel.Event) -> Unit
 ) {
     val categories = listOf(FriendState.ACCEPTED, FriendState.PENDING_INCOMING, FriendState.PENDING_OUTGOING)
@@ -57,7 +60,7 @@ fun FriendsListContent(
         stringResource(R.string.friends_outgoing_tab)
     )
     val groups = remember(viewState.friends) { viewState.friends.groupBy { it.state } }
-    val pagerState = rememberPagerState { categories.size }
+    val pagerState = rememberPagerState(initialPage = categories.indexOf(initialCategory)) { categories.size }
     val scope = rememberCoroutineScope()
 
     Column(modifier = modifier.fillMaxSize()) {
@@ -155,6 +158,28 @@ fun FriendsListContentPreview() {
                 friendUsername = "Janusz"
             ),
             onEvent = {}
+        )
+    }
+}
+
+@Preview(name = "Incoming requests", showBackground = true, widthDp = 360, heightDp = 600)
+@Composable
+private fun IncomingFriendRequestsPreview() {
+    WhereIsEveryoneTheme {
+        FriendsListContent(
+            viewState = FriendsViewModel.ViewState(
+                friends = listOf(Friend("Alex", "", FriendState.PENDING_INCOMING, null)),
+                deleteFriendDialogState = FriendsViewModel.DeleteFriendDialogState.Closed,
+                selectedFriend = null,
+                actionState = AsyncState.Idle,
+                isShareDialogOpen = false,
+                isNfcSharingDialogOpen = false,
+                isNfcReadingDialogOpen = false,
+                username = "Sam",
+                friendUsername = "",
+            ),
+            initialCategory = FriendState.PENDING_INCOMING,
+            onEvent = {},
         )
     }
 }

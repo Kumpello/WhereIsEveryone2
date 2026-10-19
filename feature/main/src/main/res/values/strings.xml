@@ -22,6 +22,16 @@
     <string name="direction_to_format">Direction to %s</string>
     <string name="message_cd">Message</string>
     <string name="friends_cd">Friends</string>
+    <plurals name="friends_pending_requests_cd">
+        <item quantity="one">Friends, %1$d request awaiting acceptance</item>
+        <item quantity="other">Friends, %1$d requests awaiting acceptance</item>
+    </plurals>
+    <plurals name="friend_requests_notification_title">
+        <item quantity="one">Friend request</item>
+        <item quantity="other">%1$d friend requests</item>
+    </plurals>
+    <string name="friend_requests_notification_names">Awaiting acceptance: %1$s</string>
+    <string name="friend_requests_channel_name">Friend requests</string>
     <string name="settings_cd">Settings</string>
     <string name="status_label">Status</string>
     <string name="draft_label">Draft</string>

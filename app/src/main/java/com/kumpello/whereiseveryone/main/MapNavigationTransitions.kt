@@ -111,7 +111,7 @@ internal class MapNavigationTransitions(
 
     fun updateIconCenter(route: MainRoute, center: Offset) {
         when (route) {
-            MainRoute.Friends -> friendsCenter = center
+            is MainRoute.Friends -> friendsCenter = center
             MainRoute.Settings -> settingsCenter = center
             MainRoute.Map -> Unit
         }

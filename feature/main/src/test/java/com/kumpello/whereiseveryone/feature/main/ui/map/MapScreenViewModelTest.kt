@@ -2,6 +2,8 @@ package com.kumpello.whereiseveryone.feature.main.ui.map
 
 import com.kumpello.whereiseveryone.feature.main.location.LocationService
 import app.cash.turbine.test
+import androidx.lifecycle.ViewModelStore
+import com.kumpello.whereiseveryone.data.repository.FriendsStateRepository
 import com.kumpello.whereiseveryone.core.presentation.ScreenState
 import com.kumpello.whereiseveryone.feature.main.ui.permissions.GetPermissionsStatusUseCase
 import com.kumpello.whereiseveryone.core.testing.MainDispatcherRule
@@ -28,9 +30,39 @@ class MapScreenViewModelTest {
         ).asStateFlow()
     }
     private lateinit var viewModel: MapScreenViewModel
+    private val incomingRequests = MutableStateFlow<List<String>>(emptyList())
+    private val friendsStateRepository: FriendsStateRepository = mockk {
+        every { incomingFriendRequests } returns incomingRequests.asStateFlow()
+    }
 
-    private fun setupViewModel() {
-        viewModel = MapScreenViewModel(getPermissionsStatusUseCase, locationService)
+    @Test
+    fun `friends badge follows incoming request count and disappears after last request`() = runTest {
+        setupViewModel()
+        val store = ViewModelStore().apply { put("mapScreen", viewModel) }
+        try {
+            viewModel.state.test {
+                assertEquals(0, awaitItem().incomingFriendRequestCount)
+                incomingRequests.value = listOf("alice", "bob")
+                assertEquals(2, awaitItem().incomingFriendRequestCount)
+                incomingRequests.value = listOf("bob")
+                assertEquals(1, awaitItem().incomingFriendRequestCount)
+                incomingRequests.value = emptyList()
+                assertEquals(0, awaitItem().incomingFriendRequestCount)
+            }
+        } finally {
+            store.clear()
+        }
+    }
+
+    @Test
+    fun `notification navigation remains pending until friends screen opens`() = runTest {
+        setupViewModel()
+        viewModel.trigger(MapScreenViewModel.Event.OpenIncomingFriendRequests)
+        viewModel.state.test {
+            assertTrue(awaitItem().openIncomingFriendRequests)
+            viewModel.trigger(MapScreenViewModel.Event.IncomingFriendRequestsOpened)
+            assertFalse(awaitItem().openIncomingFriendRequests)
+        }
     }
 
     @Test
@@ -94,5 +126,9 @@ class MapScreenViewModelTest {
             
             secondCollector.cancel()
         }
+    }
+
+    private fun setupViewModel() {
+        viewModel = MapScreenViewModel(getPermissionsStatusUseCase, locationService, friendsStateRepository)
     }
 }

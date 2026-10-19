@@ -8,12 +8,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.kumpello.whereiseveryone.core.ui.theme.WhereIsEveryoneTheme
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Badge
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -25,8 +29,10 @@ import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.kumpello.whereiseveryone.core.ui.theme.AppElevation
@@ -57,6 +63,7 @@ fun ControlButton(
     modifier: Modifier = Modifier,
     imageVector: ImageVector,
     contentDescription: String,
+    badgeCount: Int = 0,
     onClick: () -> Unit
 ) {
     TooltipBox(
@@ -64,8 +71,17 @@ fun ControlButton(
         tooltip = { PlainTooltip { Text(contentDescription) } },
         state = rememberTooltipState()
     ) {
-        IconButton(onClick = onClick, modifier = modifier.size(AppSize.touchTarget)) {
-            Icon(imageVector, contentDescription = contentDescription, modifier = Modifier.size(AppSize.icon))
+        Box(modifier = modifier.widthIn(min = AppSize.touchTarget).height(AppSize.touchTarget)) {
+            IconButton(onClick = onClick, modifier = Modifier.matchParentSize()) {
+                Icon(imageVector, contentDescription = contentDescription, modifier = Modifier.size(AppSize.icon))
+            }
+            if (badgeCount > 0) {
+                Badge(
+                    modifier = Modifier.align(Alignment.TopEnd)
+                        .padding(top = AppSpacing.xxs, end = AppSpacing.xxs)
+                        .clearAndSetSemantics {}
+                ) { Text(badgeCount.toString()) }
+            }
         }
     }
 }
@@ -96,6 +112,21 @@ private fun ControlButtonPreview() {
                 contentDescription = "Friends",
                 onClick = {}
             )
+        }
+    }
+}
+
+@Preview(name = "Pending requests", showBackground = true)
+@Preview(name = "Pending requests, dark", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(name = "Pending requests, large text", showBackground = true, fontScale = 2f)
+@Composable
+private fun ControlButtonBadgePreview() {
+    WhereIsEveryoneTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            ControlBar {
+                ControlButton(imageVector = Icons.Default.Person, contentDescription = "Friends, 3 requests awaiting acceptance", badgeCount = 3, onClick = {})
+                ControlButton(imageVector = Icons.Default.Person, contentDescription = "Friends, 2048 requests awaiting acceptance", badgeCount = 2048, onClick = {})
+            }
         }
     }
 }

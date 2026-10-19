@@ -96,6 +96,7 @@ const val TAG = "FRIENDS_SCREEN"
 @Composable
 fun FriendsScreen(
     navController: NavController,
+    initialCategory: FriendState = FriendState.ACCEPTED,
     friendsViewModel: FriendsViewModel = koinViewModel(),
     addFriendViewModel: AddFriendViewModel = koinViewModel(
         viewModelStoreOwner = LocalActivity.current as ComponentActivity
@@ -187,6 +188,7 @@ fun FriendsScreen(
 
     FriendsScreen(
         friendsViewState = friendsState,
+        initialCategory = initialCategory,
         pendingLinkedFriend = addFriendState.pendingLinkedFriend,
         onAddFriendEvent = addFriendViewModel::trigger,
         onFriendsEvent = friendsViewModel::trigger,
@@ -203,6 +205,7 @@ private fun FriendsScreen(
     onFriendAdded: () -> Unit,
     onOpenNfcReading: () -> Unit,
     pendingLinkedFriend: String? = null,
+    initialCategory: FriendState = FriendState.ACCEPTED,
     onAddFriendEvent: (AddFriendViewModel.Event) -> Unit = {},
     onBack: () -> Unit = {},
 ) {
@@ -304,6 +307,7 @@ private fun FriendsScreen(
                     )
                     FriendsListContent(
                         viewState = friendsViewState,
+                        initialCategory = initialCategory,
                         onEvent = onFriendsEvent,
                         modifier = Modifier.weight(1f)
                     )

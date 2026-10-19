@@ -14,5 +14,5 @@ sealed interface MainRoute {
     data object Settings : MainRoute
     @Serializable
     @SerialName("com.kumpello.whereiseveryone.main.common.MainRoute.Friends")
-    data object Friends : MainRoute
+    data class Friends(val showIncomingRequests: Boolean = false) : MainRoute
 }

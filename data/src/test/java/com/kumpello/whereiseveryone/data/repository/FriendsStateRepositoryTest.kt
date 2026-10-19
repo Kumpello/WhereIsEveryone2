@@ -4,11 +4,14 @@ import app.cash.turbine.test
 import com.kumpello.whereiseveryone.data.local.database.FriendDao
 import com.kumpello.whereiseveryone.data.local.database.FriendDatabaseEntity
 import com.kumpello.whereiseveryone.data.model.FriendsResponse
+import com.kumpello.whereiseveryone.data.network.model.FriendData
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
@@ -23,6 +26,77 @@ class FriendsStateRepositoryTest {
 
     private val friendsRepository: FriendsRepository = mockk()
     private val friendDao: FriendDao = mockk(relaxed = true)
+
+    @Test
+    fun `resolving a request clears it without waiting for another successful refresh`() = runTest {
+        val manager = FriendsStateRepository(friendsRepository, friendDao, StandardTestDispatcher(testScheduler))
+        coEvery { friendsRepository.getFriends() } returns FriendsResponse.FriendsData(listOf(
+            FriendData("alice", state = "pending_incoming", location = null, friend_since = null),
+            FriendData("bob", state = "pending_incoming", location = null, friend_since = null),
+        ))
+        try {
+            manager.refresh()
+            manager.resolveIncomingFriendRequest("alice")
+            assertEquals(listOf("bob"), manager.incomingFriendRequests.value)
+            coEvery { friendsRepository.getFriends() } returns FriendsResponse.ErrorData(503, "Unavailable", "Unavailable")
+            manager.refresh()
+            assertEquals(listOf("bob"), manager.incomingFriendRequests.value)
+            manager.resolveIncomingFriendRequest("bob")
+            assertTrue(manager.incomingFriendRequests.value.isEmpty())
+        } finally {
+            manager.cancel()
+        }
+    }
+
+    @Test
+    fun `incoming requests track complete refreshes and retain names through errors`() = runTest {
+        val manager = FriendsStateRepository(friendsRepository, friendDao, StandardTestDispatcher(testScheduler))
+        coEvery { friendsRepository.getFriends() } returnsMany listOf(
+            FriendsResponse.FriendsData(listOf(
+                FriendData("alice", state = "pending_incoming", location = null, friend_since = null),
+                FriendData("alice", state = "pending_incoming", location = null, friend_since = null),
+                FriendData("outgoing", state = "pending_outgoing", location = null, friend_since = null),
+                FriendData("accepted", state = "accepted", location = null, friend_since = null),
+            )),
+            FriendsResponse.ErrorData(503, "Unavailable", "Unavailable"),
+            FriendsResponse.FriendsData(listOf(
+                FriendData("alice", state = "accepted", location = null, friend_since = null),
+                FriendData("bob", state = "pending_incoming", location = null, friend_since = null),
+            )),
+            FriendsResponse.FriendsData(emptyList()),
+        )
+        try {
+            manager.refresh()
+            assertEquals(listOf("alice"), manager.incomingFriendRequests.value)
+            manager.refresh()
+            assertEquals(listOf("alice"), manager.incomingFriendRequests.value)
+            manager.refresh()
+            assertEquals(listOf("bob"), manager.incomingFriendRequests.value)
+            manager.refresh()
+            assertEquals(emptyList<String>(), manager.incomingFriendRequests.value)
+        } finally {
+            manager.cancel()
+        }
+    }
+
+    @Test
+    fun `ending a session clears requests and ignores an earlier in flight refresh`() = runTest {
+        val manager = FriendsStateRepository(friendsRepository, friendDao, StandardTestDispatcher(testScheduler))
+        val delayedResponse = CompletableDeferred<FriendsResponse>()
+        val incoming = FriendsResponse.FriendsData(listOf(
+            FriendData("alice", state = "pending_incoming", location = null, friend_since = null)
+        ))
+        coEvery { friendsRepository.getFriends() } returns incoming
+        manager.refresh()
+        assertEquals(listOf("alice"), manager.incomingFriendRequests.value)
+        coEvery { friendsRepository.getFriends() } coAnswers { delayedResponse.await() }
+        val refresh = async { manager.refresh() }
+        runCurrent()
+        manager.cancel()
+        delayedResponse.complete(incoming)
+        refresh.await()
+        assertTrue(manager.incomingFriendRequests.value.isEmpty())
+    }
 
     @Test
     fun `observeFriends emits cached data then fresh data`() = runTest {

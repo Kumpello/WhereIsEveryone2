@@ -6,17 +6,24 @@ import androidx.compose.runtime.Immutable
 import androidx.lifecycle.viewModelScope
 import com.kumpello.whereiseveryone.core.presentation.ScreenState
 import com.kumpello.whereiseveryone.core.presentation.BaseViewModel
+import com.kumpello.whereiseveryone.data.repository.FriendsStateRepository
 import com.kumpello.whereiseveryone.feature.main.ui.permissions.GetPermissionsStatusUseCase
 import kotlinx.coroutines.launch
 
 class MapScreenViewModel(
     private val getPermissionsStatusUseCase: GetPermissionsStatusUseCase,
-    private val locationService: LocationService
+    private val locationService: LocationService,
+    private val friendsStateRepository: FriendsStateRepository,
 ) : BaseViewModel<MapScreenViewModel.State, MapScreenViewModel.ViewState, MapScreenViewModel.Event, MapScreenViewModel.Action>(
     State()
 ) {
 
     init {
+        viewModelScope.launch {
+            friendsStateRepository.incomingFriendRequests.collect { requests ->
+                trigger(Event.OnIncomingFriendRequestsUpdate(requests.size))
+            }
+        }
         viewModelScope.launch {
             locationService.observeForcedForegroundStatus().collect { status ->
                 trigger(Event.OnForcedForegroundStatusChanged(status))
@@ -26,6 +33,9 @@ class MapScreenViewModel(
 
     override fun reduce(state: State, event: Event): ReducerResult<State, Event, Action> {
         return when (event) {
+            is Event.OnIncomingFriendRequestsUpdate -> state.copy(incomingFriendRequestCount = event.count).toResult()
+            Event.OpenIncomingFriendRequests -> state.copy(openIncomingFriendRequests = true).toResult()
+            Event.IncomingFriendRequestsOpened -> state.copy(openIncomingFriendRequests = false).toResult()
             is Event.SetPermissions -> state.copy(permissionsState = event.permissions).toResult()
 
             Event.OnPermissionAllow -> state.copy(permissionNotificationShown = true).toResult(
@@ -76,7 +86,9 @@ class MapScreenViewModel(
             permissions = permissionsState,
             showFindMeDialog = showFindMeDialog,
             isForcedForegroundEnabled = isForcedForegroundEnabled,
-            forcedForegroundEndTime = forcedForegroundEndTime
+            forcedForegroundEndTime = forcedForegroundEndTime,
+            incomingFriendRequestCount = incomingFriendRequestCount,
+            openIncomingFriendRequests = openIncomingFriendRequests,
         )
     }
 
@@ -92,6 +104,9 @@ class MapScreenViewModel(
     }
 
     sealed class Event {
+        data class OnIncomingFriendRequestsUpdate(val count: Int) : Event()
+        data object OpenIncomingFriendRequests : Event()
+        data object IncomingFriendRequestsOpened : Event()
         data class SetPermissions(val permissions: Map<String, Boolean>) : Event()
         data object OnPermissionAllow : Event()
         data object OnPermissionDeny : Event()
@@ -114,7 +129,9 @@ class MapScreenViewModel(
         val screenState: ScreenState = ScreenState.Map,
         val showFindMeDialog: Boolean = false,
         val isForcedForegroundEnabled: Boolean = false,
-        val forcedForegroundEndTime: Long? = null
+        val forcedForegroundEndTime: Long? = null,
+        val incomingFriendRequestCount: Int = 0,
+        val openIncomingFriendRequests: Boolean = false,
     )
 
     @Immutable
@@ -124,6 +141,8 @@ class MapScreenViewModel(
         val screenState: ScreenState,
         val showFindMeDialog: Boolean,
         val isForcedForegroundEnabled: Boolean,
-        val forcedForegroundEndTime: Long?
+        val forcedForegroundEndTime: Long?,
+        val incomingFriendRequestCount: Int = 0,
+        val openIncomingFriendRequests: Boolean = false,
     )
 }

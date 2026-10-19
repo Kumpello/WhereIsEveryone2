@@ -28,6 +28,7 @@ import com.kumpello.whereiseveryone.feature.main.ui.map.MapScreenViewModel
 import com.kumpello.whereiseveryone.feature.main.ui.map.MapViewModel
 import com.kumpello.whereiseveryone.feature.main.ui.map.MessageViewModel
 import com.kumpello.whereiseveryone.feature.main.ui.settings.SettingsViewModel
+import com.kumpello.whereiseveryone.feature.main.notifications.FriendRequestNotifications
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
@@ -49,7 +50,8 @@ val mainModule = module {
     viewModel {
         MapScreenViewModel(
             getPermissionsStatusUseCase = get(),
-            locationService = get()
+            locationService = get(),
+            friendsStateRepository = get(),
         )
     }
     viewModel {
@@ -85,6 +87,7 @@ val mainModule = module {
     viewModel { ShareProfileViewModel(get()) }
 
     single { NfcSharingSession() }
+    single { FriendRequestNotifications(androidContext(), get(), get(), get()) }
 
     single {
         LocationServiceProxy(androidContext()).also { service ->
@@ -111,8 +114,8 @@ val mainModule = module {
 
     single { AddFriendUseCase(get()) }
     single { RemoveFriendUseCase(get()) }
-    single { AcceptFriendUseCase(get()) }
-    single { RejectFriendUseCase(get()) }
+    single { AcceptFriendUseCase(get(), get()) }
+    single { RejectFriendUseCase(get(), get()) }
 
     single { StopSharingUseCase(get()) }
     single { ResumeSharingUseCase(get()) }

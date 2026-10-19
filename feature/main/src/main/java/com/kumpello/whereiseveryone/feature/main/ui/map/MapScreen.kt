@@ -39,7 +39,7 @@ fun MapScreen(
     LaunchedEffect(Unit) {
         screenViewModel.action.collect { action ->
             when (action) {
-                MapScreenViewModel.Action.NavigateFriends -> navController.navigate(MainRoute.Friends)
+                MapScreenViewModel.Action.NavigateFriends -> navController.navigate(MainRoute.Friends())
                 MapScreenViewModel.Action.NavigateSettings -> navController.navigate(MainRoute.Settings)
                 is MapScreenViewModel.Action.Toast -> Toast.makeText(
                     context,
@@ -75,6 +75,7 @@ private fun MapScreenContent(
 
         MapTopControls(
             modifier = Modifier.align(Alignment.TopEnd),
+            incomingFriendRequestCount = screenViewState.incomingFriendRequestCount,
             onNavigationIconPositioned = onNavigationIconPositioned,
             onEvent = onScreenEvent
         )

@@ -12,6 +12,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.kumpello.whereiseveryone.core.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.feature.main.navigation.MainRoute
@@ -19,6 +20,7 @@ import com.kumpello.whereiseveryone.feature.main.navigation.MainRoute
 @Composable
 fun MapTopControls(
     modifier: Modifier = Modifier,
+    incomingFriendRequestCount: Int = 0,
     onNavigationIconPositioned: (MainRoute, Offset) -> Unit = { _, _ -> },
     onEvent: (MapScreenViewModel.Event) -> Unit
 ) {
@@ -35,10 +37,15 @@ fun MapTopControls(
         )
         ControlButton(
             imageVector = Icons.Default.Person,
-            contentDescription = stringResource(R.string.friends_cd),
+            contentDescription = if (incomingFriendRequestCount > 0) {
+                pluralStringResource(R.plurals.friends_pending_requests_cd, incomingFriendRequestCount, incomingFriendRequestCount)
+            } else {
+                stringResource(R.string.friends_cd)
+            },
+            badgeCount = incomingFriendRequestCount,
             modifier = Modifier.onGloballyPositioned {
                 onNavigationIconPositioned(
-                    MainRoute.Friends,
+                    MainRoute.Friends(),
                     it.positionInRoot() + Offset(it.size.width / 2f, it.size.height / 2f)
                 )
             },
@@ -62,6 +69,6 @@ fun MapTopControls(
 @Composable
 fun MapTopControlsPreview() {
     WhereIsEveryoneTheme {
-        MapTopControls(onEvent = {})
+        MapTopControls(incomingFriendRequestCount = 3, onEvent = {})
     }
 }

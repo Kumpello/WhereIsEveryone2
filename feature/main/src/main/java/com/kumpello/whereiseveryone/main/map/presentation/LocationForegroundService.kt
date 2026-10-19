@@ -35,6 +35,7 @@ import com.kumpello.whereiseveryone.data.model.CodeResponse
 import com.kumpello.whereiseveryone.data.repository.preferences.PreferencesKey
 import com.kumpello.whereiseveryone.data.repository.preferences.PreferencesManager
 import com.kumpello.whereiseveryone.feature.main.navigation.MainActivityIntentFactory
+import com.kumpello.whereiseveryone.feature.main.notifications.FriendRequestNotifications
 import com.kumpello.whereiseveryone.data.model.LocationData
 import com.kumpello.whereiseveryone.data.repository.UserLocationRepository
 import com.kumpello.whereiseveryone.feature.main.domain.manager.ProximityManager
@@ -74,6 +75,7 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
     private val locationServiceProxy: LocationServiceProxy by inject()
     private val proximityManager: ProximityManager by inject()
     private val preferencesManager: PreferencesManager by inject()
+    private val friendRequestNotifications: FriendRequestNotifications by inject()
 
     private val locationSendChannel = Channel<LocationUpload>(
         capacity = Channel.CONFLATED
@@ -105,6 +107,8 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
         Timber.tag(TAG).d("LocationForegroundService onCreate")
         super.onCreate()
         locationServiceProxy.registerDelegate(this)
+
+        scope.launch { friendRequestNotifications.observe() }
 
         scope.launch {
             chargingStatus().collect { charging ->

@@ -32,6 +32,7 @@ import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import com.kumpello.whereiseveryone.authentication.AuthenticationActivity
 import com.kumpello.whereiseveryone.BuildConfig
 import com.kumpello.whereiseveryone.data.repository.preferences.PreferencesKey
@@ -40,6 +41,9 @@ import com.kumpello.whereiseveryone.data.restore.RestoreCredentialsManager
 import com.kumpello.whereiseveryone.core.util.isAddFriendDeepLink
 import com.kumpello.whereiseveryone.core.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.feature.main.navigation.MainRoute
+import com.kumpello.whereiseveryone.feature.main.navigation.MainActivityIntentFactory
+import com.kumpello.whereiseveryone.feature.main.notifications.FriendRequestNotifications
+import com.kumpello.whereiseveryone.data.model.FriendState
 import com.kumpello.whereiseveryone.data.repository.FriendsStateRepository
 import com.kumpello.whereiseveryone.feature.main.ui.friends.AddFriendViewModel
 import com.kumpello.whereiseveryone.feature.main.ui.friends.ShareProfileViewModel
@@ -67,6 +71,7 @@ class MainActivity : ComponentActivity() {
     private val restoreCredentialsManager: RestoreCredentialsManager by inject()
     private val locationService: LocationService by inject()
     private val friendsManager: FriendsStateRepository by inject()
+    private val friendRequestNotifications: FriendRequestNotifications by inject()
 
     private lateinit var permissionsLauncher: ActivityResultLauncher<Array<String>>
 
@@ -78,6 +83,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         enableEdgeToEdge()
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                friendRequestNotifications.observe()
+            }
+        }
 
         lifecycleScope.launch {
             val token = preferencesManager.get(PreferencesKey.AuthToken)
@@ -207,19 +218,21 @@ class MainActivity : ComponentActivity() {
         locationService.setAppForeground(false)
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        friendsManager.cancel()
-    }
-
     private fun navigateToAuthentication() {
         if (isFinishing) return
+        friendsManager.cancel()
+        friendRequestNotifications.clear()
         startActivity(Intent(this, AuthenticationActivity::class.java).apply { data = intent.data })
         finish()
     }
 
     private fun handleIntent(intent: Intent?) {
         Timber.tag(TAG).d("Handling intent")
+        if (intent?.action == MainActivityIntentFactory.ACTION_OPEN_FRIEND_REQUESTS) {
+            mapScreenViewModel.trigger(MapScreenViewModel.Event.OpenIncomingFriendRequests)
+            intent.action = null
+            return
+        }
         intent?.data?.let { uri ->
             Timber.tag(TAG).d("Intent contains a URI")
             if (uri.isAddFriendDeepLink()) {
@@ -279,15 +292,23 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun MainScreen() {
         val addFriendState by addFriendViewModel.state.collectAsStateWithLifecycle()
+        val mapScreenState by mapScreenViewModel.state.collectAsStateWithLifecycle()
         val controller = rememberNavController()
         val transitions by rememberUpdatedState(rememberMapNavigationTransitions())
         val screenShape by rememberUpdatedState(rememberDisplayCornerShape())
         navController = controller
+        LaunchedEffect(mapScreenState.openIncomingFriendRequests) {
+            if (mapScreenState.openIncomingFriendRequests) {
+                controller.popBackStack(MainRoute.Map, inclusive = false)
+                controller.navigate(MainRoute.Friends(showIncomingRequests = true))
+                mapScreenViewModel.trigger(MapScreenViewModel.Event.IncomingFriendRequestsOpened)
+            }
+        }
         LaunchedEffect(addFriendState.pendingLinkedFriend) {
             if (addFriendState.pendingLinkedFriend != null &&
                 controller.currentDestination?.hasRoute<MainRoute.Friends>() != true
             ) {
-                controller.navigate(MainRoute.Friends) {
+                controller.navigate(MainRoute.Friends()) {
                     launchSingleTop = true
                 }
             }
@@ -314,9 +335,13 @@ class MainActivity : ComponentActivity() {
                     }
                 )
             }
-            composable<MainRoute.Friends> {
+            composable<MainRoute.Friends> { entry ->
+                val route = entry.toRoute<MainRoute.Friends>()
                 Box(modifier = Modifier.fillMaxSize().clip(screenShape)) {
-                    FriendsScreen(navController = controller)
+                    FriendsScreen(
+                        navController = controller,
+                        initialCategory = if (route.showIncomingRequests) FriendState.PENDING_INCOMING else FriendState.ACCEPTED,
+                    )
                 }
             }
             composable<MainRoute.Settings> {
