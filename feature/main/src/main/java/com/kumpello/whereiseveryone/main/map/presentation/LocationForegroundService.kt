@@ -4,7 +4,7 @@ import com.kumpello.whereiseveryone.feature.main.location.LocationService
 import com.kumpello.whereiseveryone.feature.main.location.LocationServiceProxy
 import com.kumpello.whereiseveryone.feature.main.location.LocationUpload
 import com.kumpello.whereiseveryone.feature.main.location.sendLocationWithRetry
-import com.kumpello.whereiseveryone.feature.main.location.chargingStatus
+import com.kumpello.whereiseveryone.data.device.chargingStatus
 import com.kumpello.whereiseveryone.feature.main.location.resolveLocationUpdateType
 import com.kumpello.whereiseveryone.feature.main.location.shouldAcquireLocations
 import com.kumpello.whereiseveryone.feature.main.location.uploadIntervalMillis

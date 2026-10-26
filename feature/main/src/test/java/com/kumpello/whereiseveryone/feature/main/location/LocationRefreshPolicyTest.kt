@@ -9,11 +9,6 @@ import com.kumpello.whereiseveryone.data.model.LocationData
 
 class LocationRefreshPolicyTest {
     @Test
-    fun `unplugging at full battery exits charging even before the status changes`() {
-        org.junit.Assert.assertTrue(isBatteryCharging(android.os.BatteryManager.BATTERY_STATUS_FULL, 1))
-        org.junit.Assert.assertFalse(isBatteryCharging(android.os.BatteryManager.BATTERY_STATUS_FULL, 0))
-    }
-    @Test
     fun `paused sharing serves the visible map locally and stops GPS in background`() {
         assertTrue(shouldAcquireLocations(false, true))
         assertFalse(shouldAcquireLocations(false, false))

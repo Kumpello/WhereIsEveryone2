@@ -8,6 +8,7 @@ import com.kumpello.whereiseveryone.data.local.database.AppDatabase
 import com.kumpello.whereiseveryone.data.device.DeviceIdProviderImpl
 import com.kumpello.whereiseveryone.data.repository.preferences.PreferencesManager
 import com.kumpello.whereiseveryone.data.device.DeviceIdProvider
+import com.kumpello.whereiseveryone.data.device.chargingStatus
 import com.kumpello.whereiseveryone.data.local.preferences.EncryptedDataStoreRepository
 import com.kumpello.whereiseveryone.data.session.LogoutUseCase
 import com.kumpello.whereiseveryone.data.session.RefreshTokenUseCase
@@ -25,7 +26,7 @@ val commonModule = module {
     }
     single { get<AppDatabase>().friendDao() }
     single { get<AppDatabase>().userLocationDao() }
-    single { FriendsStateRepository(get(), get()) }
+    single { FriendsStateRepository(get(), get(), chargingStatus = androidContext().chargingStatus()) }
     single { UserLocationRepository(get()) }
     single { RememberedCredentialsRepository(get()) }
     single { EncryptedDataStoreRepository(androidContext()) }

@@ -83,6 +83,13 @@ The external API contracts are documented by Mapbox's
 | Normal foreground | 5 seconds, no batching | At most one per 5 seconds |
 | Background | Existing 10-minute request | At most one per 5 seconds when fixes arrive |
 
+Friends polling uses a one-second interval while connected to power (charging or
+full battery) and the existing 15-second interval otherwise. Plugging in or
+unplugging immediately restarts polling with the new interval; retries use the
+same interval. Each delay follows completion of the previous fetch, so slow
+requests do not overlap. Power observation runs with the friends subscription
+independently of the location service and stops with polling.
+
 `LocationForegroundService` owns one state and resolves acquisition priority as
 Charging → Car Mode → Foreground → Background. Activity visibility, charging,
 the saved car preference, forced foreground, and sharing all enter the same

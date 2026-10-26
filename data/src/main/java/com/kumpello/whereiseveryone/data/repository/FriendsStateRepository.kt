@@ -9,6 +9,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
@@ -17,7 +18,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.flow.stateIn
@@ -32,11 +36,11 @@ import kotlin.time.Duration.Companion.milliseconds
 class FriendsStateRepository internal constructor(
     private val friendsRepository: FriendsRepository,
     private val friendDao: FriendDao,
-    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val chargingStatus: Flow<Boolean> = flowOf(false),
 ) {
     private var job = SupervisorJob()
     private var scope = CoroutineScope(dispatcher + job)
-    private val pollingInterval = 15_000L
     private var currentResponse: FriendsResponse.FriendsData? = null
     private val refreshMutex = Mutex()
     private val sessionVersion = AtomicLong()
@@ -82,24 +86,12 @@ class FriendsStateRepository internal constructor(
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun observeFriends(): Flow<FriendsResponse> {
         ensureActiveScope()
         val version = sessionVersion.get()
-        return flow {
-            while (currentCoroutineContext().isActive) {
-                Timber.tag(TAG).d("Polling for fresh friends data")
-                val response = refresh()
-                if (response is FriendsResponse.FriendsData) {
-                    Timber.tag(TAG).d("Successfully fetched %d friends", response.positions.size)
-                }
-                emit(response)
-                delay(pollingInterval.milliseconds)
-            }
-        }.retryWhen { cause, _ ->
-            if (cause is CancellationException) throw cause
-            Timber.tag(TAG).w(cause, "Friends polling failed; will retry")
-            delay(pollingInterval.milliseconds)
-            true
+        return chargingStatus.distinctUntilChanged().flatMapLatest { isCharging ->
+            pollFriends(if (isCharging) 1_000L else 15_000L)
         }.stateIn(
             scope = scope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -118,6 +110,23 @@ class FriendsStateRepository internal constructor(
             job = SupervisorJob()
             scope = CoroutineScope(dispatcher + job)
         }
+    }
+
+    private fun pollFriends(pollingInterval: Long): Flow<FriendsResponse> = flow {
+        while (currentCoroutineContext().isActive) {
+            Timber.tag(TAG).d("Polling for fresh friends data")
+            val response = refresh()
+            if (response is FriendsResponse.FriendsData) {
+                Timber.tag(TAG).d("Successfully fetched %d friends", response.positions.size)
+            }
+            emit(response)
+            delay(pollingInterval.milliseconds)
+        }
+    }.retryWhen { cause, _ ->
+        if (cause is CancellationException) throw cause
+        Timber.tag(TAG).w(cause, "Friends polling failed; will retry")
+        delay(pollingInterval.milliseconds)
+        true
     }
 
     companion object {
