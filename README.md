@@ -9,6 +9,8 @@ WhereIsEveryone is a real-time location sharing Android application that allows 
 - **Car mode**: Road-aware driving map, speed display, driver speed comparison,
   road-based interception and arrival estimates, and fastest GPS acquisition while charging. See
   [car mode and refresh behavior](docs/CAR_MODE.md).
+- **Points of interest**: Save up to five named places, share them with accepted
+  friends, and navigate with the in-app compass. See [points of interest](docs/POINTS_OF_INTEREST.md).
 - **Friend Management**:
     - **NFC Sharing**: Share your profile by tapping devices.
     - **QR/URI Support**: Add friends via deep links or scanning.

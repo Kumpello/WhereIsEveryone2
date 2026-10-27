@@ -266,6 +266,7 @@ class MapViewModelTest {
             getPausedFriendsUseCase,
             preferencesManager,
             roadNavigationRepository,
+            pointsOfInterestRepository = mockk(relaxed = true),
             defaultDispatcher = defaultDispatcher,
         )
     }

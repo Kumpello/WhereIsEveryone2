@@ -35,6 +35,7 @@ import com.kumpello.whereiseveryone.core.ui.theme.AppSpacing
 import com.kumpello.whereiseveryone.core.ui.theme.USER_PUCK_COLOR
 import com.kumpello.whereiseveryone.feature.main.ui.components.rememberMaxDisplayRefreshRate
 import com.kumpello.whereiseveryone.feature.main.ui.model.Friend
+import com.kumpello.whereiseveryone.data.model.PointOfInterest
 import com.mapbox.geojson.FeatureCollection
 import com.mapbox.maps.ImageHolder
 import com.mapbox.maps.EdgeInsets
@@ -95,6 +96,8 @@ fun Map(
     event: (MapViewModel.Event) -> Unit,
     trackCameraBearing: Boolean = true,
     isCarMode: Boolean = false,
+    pointsOfInterest: List<PointOfInterest> = emptyList(),
+    showPointsOfInterest: Boolean = true,
 ) {
     if (LocalInspectionMode.current) {
         Box(
@@ -183,6 +186,10 @@ fun Map(
         modifier.fillMaxSize(),
         mapViewportState = mapViewportState,
         mapState = mapState,
+        onMapLongClickListener = { point ->
+            currentEvent(MapViewModel.Event.OnMapLongClick(point.latitude(), point.longitude()))
+            true
+        },
         scaleBar = {
             MapScaleBar()
         },
@@ -224,6 +231,9 @@ fun Map(
                             )
                         }
                     )
+                    if (showPointsOfInterest) {
+                        PointsOfInterestLayer(pointsOfInterest) { currentEvent(MapViewModel.Event.OnPointClick(it)) }
+                    }
                 }
             )
         }

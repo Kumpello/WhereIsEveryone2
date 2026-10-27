@@ -45,6 +45,7 @@ val mainModule = module {
             getPausedFriendsUseCase = get(),
             preferencesManager = get(),
             roadNavigationRepository = get(),
+            pointsOfInterestRepository = get(),
         )
     }
     viewModel {

@@ -1,13 +1,15 @@
 package com.kumpello.whereiseveryone.data.model
 
 import com.kumpello.whereiseveryone.data.network.model.FriendData
+import com.kumpello.whereiseveryone.data.network.model.toPointOfInterest
 
 data class FriendLocalData(
     val username: String,
     val status: String,
     val state: FriendState,
     val location: LocationData?,
-    val friendSince: Long?
+    val friendSince: Long?,
+    val pointsOfInterest: List<PointOfInterest> = emptyList(),
 )
 
 fun FriendData.toLocalData() = FriendLocalData(
@@ -26,5 +28,6 @@ fun FriendData.toLocalData() = FriendLocalData(
             isCarMode = loc.isCarMode,
         )
     },
-    friendSince = friend_since
+    friendSince = friend_since,
+    pointsOfInterest = pointsOfInterest.map { it.toPointOfInterest() },
 )

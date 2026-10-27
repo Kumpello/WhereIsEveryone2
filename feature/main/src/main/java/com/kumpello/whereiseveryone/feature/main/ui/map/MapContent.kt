@@ -76,9 +76,26 @@ fun MapContent(
             actions = viewModel.action,
             friendsPositions = state.friends,
             event = viewModel::trigger,
-            trackCameraBearing = state.navigatingFriend != null,
+            trackCameraBearing = state.navigatingFriend != null || state.navigatingPoint != null,
             isCarMode = state.isCarMode,
+            pointsOfInterest = state.points,
+            showPointsOfInterest = state.pointsOfInterest.showLayer,
         )
+
+        PointLayerButton(
+            modifier = Modifier.align(Alignment.BottomStart).padding(bottom = AppSize.mapControl * 2),
+            ownCount = state.pointsOfInterest.ownPoints.size,
+            onClick = { viewModel.trigger(MapViewModel.Event.ShowPointManager) },
+        )
+        if (state.pointsOfInterest.showManager) PointManagerDialog(state.pointsOfInterest, viewModel::trigger)
+        if (state.pointsOfInterest.draft != null) PointEditorDialog(state.pointsOfInterest, viewModel::trigger)
+        state.selectedPoint?.let { point ->
+            if (state.pointsOfInterest.deleteConfirmationId == point.id) {
+                DeletePointDialog(point, state.pointsOfInterest, viewModel::trigger)
+            } else {
+                PointDetailsDialog(point, viewModel::trigger)
+            }
+        }
 
         if (state.isCarMode) {
             DrivingSpeedCard(
@@ -117,7 +134,9 @@ fun MapContent(
             )
         }
 
-        if (state.navigatingFriend != null && state.bearingToFriend != null) {
+        val navigationBearing = state.bearingToFriend ?: state.bearingToPoint
+        val navigationName = state.navigatingFriend?.username ?: state.navigatingPoint?.name
+        if (navigationName != null && navigationBearing != null) {
             NavigationCompass(
                 modifier = Modifier
                     .align(Alignment.TopStart)
@@ -128,9 +147,9 @@ fun MapContent(
                         start = AppSpacing.md,
                         end = AppSpacing.md
                     ),
-                bearing = state.bearingToFriend!!,
-                friendName = state.navigatingFriend!!.username,
-                distance = state.navigatingFriend!!.formattedDistance,
+                bearing = navigationBearing,
+                friendName = navigationName,
+                distance = state.navigatingFriend?.formattedDistance ?: state.distanceToPoint,
                 carTrackingInfo = state.carTrackingInfo,
                 onCancel = { viewModel.trigger(MapViewModel.Event.CancelNavigation) }
             )

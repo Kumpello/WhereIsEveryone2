@@ -16,6 +16,11 @@ import com.kumpello.whereiseveryone.data.model.FriendLocalData
 import com.kumpello.whereiseveryone.feature.main.ui.model.Location
 import com.kumpello.whereiseveryone.feature.main.ui.model.MapFpsLimit
 import com.kumpello.whereiseveryone.data.model.LocationData
+import com.kumpello.whereiseveryone.data.model.MAX_POINTS_OF_INTEREST
+import com.kumpello.whereiseveryone.data.model.PointOfInterest
+import com.kumpello.whereiseveryone.data.repository.PointsOfInterestRepository
+import com.kumpello.whereiseveryone.core.util.formatDistance
+import retrofit2.HttpException
 import com.kumpello.whereiseveryone.data.model.toLocalData
 import com.kumpello.whereiseveryone.data.network.model.SharingResponse
 import com.kumpello.whereiseveryone.feature.main.domain.usecase.GetPausedFriendsUseCase
@@ -52,6 +57,7 @@ class MapViewModel(
     private val getPausedFriendsUseCase: GetPausedFriendsUseCase,
     private val preferencesManager: PreferencesManager,
     private val roadNavigationRepository: RoadNavigationRepository,
+    private val pointsOfInterestRepository: PointsOfInterestRepository,
     private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val currentTimeMillis: () -> Long = System::currentTimeMillis,
 ) : BaseViewModel<MapViewModel.State, MapViewModel.ViewState, MapViewModel.Event, MapViewModel.Action>(
@@ -157,7 +163,11 @@ class MapViewModel(
                     }
                 })
             Event.DismissCarSuggestion -> state.copy(showCarSuggestion = false, suggestCarAfter = currentTimeMillis() + 3_600_000L).toResult()
-            is Event.OnMapVisibilityChanged -> state.copy(isMapVisible = event.visible, travelEstimate = null, interceptionPrediction = null).restartRoadWork()
+            is Event.OnMapVisibilityChanged -> state.copy(
+                isMapVisible = event.visible, travelEstimate = null, interceptionPrediction = null,
+                roadVersion = state.roadVersion + 1,
+            )
+                .toResult(roadWork(), SideEffect.InternalEvent(if (event.visible) Event.LoadOwnPoints else Event.NoOp))
             is Event.CheckCarFreshness -> if (state.isMapVisible) state.copy(freshnessCheckTime = event.time).toResult() else state.toResult()
             is Event.OnRoadUpdate -> {
                 // A cancelled request cannot update a different navigation target or disabled mode.
@@ -250,16 +260,99 @@ class MapViewModel(
             Event.DismissFriendDetails -> state.copy(selectedFriend = null).toResult()
             is Event.NavigateToFriend -> state.copy(
                 navigatingFriend = event.friend,
+                pointsOfInterest = state.pointsOfInterest.copy(navigatingId = null),
                 selectedFriend = null,
                 friendRoad = null,
                 travelEstimate = null,
                 interceptionPrediction = null,
             ).restartRoadWork()
 
-            Event.CancelNavigation -> state.copy(navigatingFriend = null, friendRoad = null, travelEstimate = null, interceptionPrediction = null).restartRoadWork()
+            Event.CancelNavigation -> state.copy(
+                navigatingFriend = null, friendRoad = null, travelEstimate = null, interceptionPrediction = null,
+                pointsOfInterest = state.pointsOfInterest.copy(navigatingId = null),
+            ).restartRoadWork()
             is Event.OnCameraUpdate -> state.copy(
                 mapSettings = state.mapSettings.copy(bearing = event.bearing)
             ).toResult()
+            Event.LoadOwnPoints -> if (state.pointsOfInterest.isLoading || state.pointsOfInterest.isSaving) state.toResult()
+                else state.copy(pointsOfInterest = state.pointsOfInterest.copy(isLoading = true, error = null))
+                    .toResult(SideEffect.AsyncWork {
+                        try {
+                            Event.OnOwnPointsLoaded(pointsOfInterestRepository.getOwnPoints())
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (_: Exception) {
+                            Event.OnPointError(R.string.poi_load_error)
+                        }
+                    })
+            is Event.OnOwnPointsLoaded -> state.copy(pointsOfInterest = state.pointsOfInterest.copy(
+                ownPoints = event.points, isLoaded = true, isLoading = false,
+            )).toResult()
+            Event.ShowPointManager -> state.copy(pointsOfInterest = state.pointsOfInterest.copy(showManager = true))
+                .toResult(SideEffect.InternalEvent(Event.LoadOwnPoints))
+            Event.DismissPointManager -> state.copy(pointsOfInterest = state.pointsOfInterest.copy(showManager = false)).toResult()
+            is Event.SetPointLayerVisible -> state.copy(pointsOfInterest = state.pointsOfInterest.copy(showLayer = event.visible)).toResult()
+            is Event.OnMapLongClick -> when {
+                state.pointsOfInterest.isSaving -> state.toResult()
+                !state.pointsOfInterest.isLoaded -> state.copy(pointsOfInterest = state.pointsOfInterest.copy(showManager = true))
+                    .toResult(SideEffect.InternalEvent(Event.LoadOwnPoints))
+                state.pointsOfInterest.ownPoints.size >= MAX_POINTS_OF_INTEREST -> state.copy(
+                    pointsOfInterest = state.pointsOfInterest.copy(showManager = true, error = R.string.poi_limit_reached),
+                ).toResult()
+                else -> state.copy(pointsOfInterest = state.pointsOfInterest.copy(
+                    draft = PointDraft(event.latitude, event.longitude), selectedId = null, showManager = false, error = null,
+                )).toResult()
+            }
+            is Event.OnPointClick -> state.copy(pointsOfInterest = state.pointsOfInterest.copy(
+                selectedId = event.id, showManager = false, error = null,
+            ), selectedFriend = null).toResult()
+            Event.DismissPointDetails -> if (state.pointsOfInterest.isSaving) state.toResult() else state.copy(
+                pointsOfInterest = state.pointsOfInterest.copy(selectedId = null, deleteConfirmationId = null, error = null),
+            ).toResult()
+            Event.EditSelectedPoint -> {
+                val point = state.pointsOfInterest.ownPoints.find { it.id == state.pointsOfInterest.selectedId }
+                if (point == null || state.pointsOfInterest.isSaving) state.toResult() else state.copy(
+                    pointsOfInterest = state.pointsOfInterest.copy(
+                        draft = PointDraft(point.latitude, point.longitude, point.name, point.description, point.id),
+                        selectedId = null, error = null,
+                    ),
+                ).toResult()
+            }
+            is Event.ChangePointName -> state.copy(pointsOfInterest = state.pointsOfInterest.copy(
+                draft = state.pointsOfInterest.draft?.copy(name = event.name), error = null,
+            )).toResult()
+            is Event.ChangePointDescription -> state.copy(pointsOfInterest = state.pointsOfInterest.copy(
+                draft = state.pointsOfInterest.draft?.copy(description = event.description), error = null,
+            )).toResult()
+            Event.DismissPointEditor -> if (state.pointsOfInterest.isSaving) state.toResult() else state.copy(
+                pointsOfInterest = state.pointsOfInterest.copy(draft = null, error = null),
+            ).toResult()
+            Event.SavePoint -> savePoint(state)
+            is Event.OnPointSaved -> state.copy(pointsOfInterest = state.pointsOfInterest.copy(
+                ownPoints = (state.pointsOfInterest.ownPoints.filterNot { it.id == event.point.id } + event.point)
+                    .sortedByDescending { it.createdAt },
+                draft = null, isSaving = false, showLayer = true, error = null,
+            )).toResult()
+            Event.RequestPointDeletion -> state.copy(pointsOfInterest = state.pointsOfInterest.copy(
+                deleteConfirmationId = state.pointsOfInterest.selectedId?.takeIf { id -> state.pointsOfInterest.ownPoints.any { it.id == id } },
+                error = null,
+            )).toResult()
+            Event.CancelPointDeletion -> if (state.pointsOfInterest.isSaving) state.toResult() else state.copy(
+                pointsOfInterest = state.pointsOfInterest.copy(deleteConfirmationId = null, error = null),
+            ).toResult()
+            Event.DeletePoint -> deletePoint(state)
+            is Event.OnPointDeleted -> state.copy(pointsOfInterest = state.pointsOfInterest.copy(
+                ownPoints = state.pointsOfInterest.ownPoints.filterNot { it.id == event.id }, selectedId = null,
+                deleteConfirmationId = null, isSaving = false, error = null,
+                navigatingId = state.pointsOfInterest.navigatingId?.takeUnless { it == event.id },
+            )).toResult()
+            is Event.OnPointError -> state.copy(pointsOfInterest = state.pointsOfInterest.copy(
+                isSaving = false, isLoading = false, error = event.message,
+            )).toResult()
+            is Event.NavigateToPoint -> state.copy(
+                navigatingFriend = null, friendRoad = null, travelEstimate = null, interceptionPrediction = null,
+                pointsOfInterest = state.pointsOfInterest.copy(navigatingId = event.id, selectedId = null, showManager = false),
+            ).restartRoadWork()
         }
     }
 
@@ -277,6 +370,16 @@ class MapViewModel(
         }
         val currentFriend = mappedFriends.find { it.username == navigatingFriend?.username } ?: navigatingFriend
         val currentSelected = mappedFriends.find { it.username == selectedFriend?.username } ?: selectedFriend
+        val allPoints = pointsOfInterest.ownPoints + friends.flatMap { it.pointsOfInterest }
+        val selectedPoint = allPoints.find { it.id == pointsOfInterest.selectedId }
+        val navigatingPoint = allPoints.find { it.id == pointsOfInterest.navigatingId }
+        val pointBearing = if (mappedUser != null && navigatingPoint != null) {
+            ((LocationUtils.calculateBearing(mappedUser.lat, mappedUser.lon, navigatingPoint.latitude, navigatingPoint.longitude) -
+                mapSettings.bearing + 360) % 360).toFloat()
+        } else null
+        val pointDistance = if (user != null && navigatingPoint != null) {
+            formatDistance(LocationUtils.calculateDistance(user.lat, user.lon, null, navigatingPoint.latitude, navigatingPoint.longitude, null))
+        } else null
         val bearing = if (mappedUser != null && currentFriend != null) {
             currentFriend.location?.let { loc ->
                 val geographicBearing = LocationUtils.calculateBearing(
@@ -318,7 +421,49 @@ class MapViewModel(
             speedKmh = user?.speedKmh()?.takeIf { user.isFresh(now, 10_000L) },
             carTrackingInfo = tracking,
             mapDisplayLocation = displayUser?.takeIf { isMapVisible && isCarMode && it.isFresh(now, 10_000L) },
+            pointsOfInterest = pointsOfInterest,
+            points = allPoints,
+            selectedPoint = selectedPoint,
+            navigatingPoint = navigatingPoint,
+            bearingToPoint = pointBearing,
+            distanceToPoint = pointDistance,
         )
+    }
+
+    private fun savePoint(state: State): ReducerResult<State, Event, Action> {
+        val points = state.pointsOfInterest
+        val draft = points.draft ?: return state.toResult()
+        if (points.isSaving || points.isLoading || !draft.isValid()) return state.toResult()
+        if (draft.editingId == null && points.ownPoints.size >= MAX_POINTS_OF_INTEREST) {
+            return state.copy(pointsOfInterest = points.copy(error = R.string.poi_limit_reached)).toResult()
+        }
+        return state.copy(pointsOfInterest = points.copy(isSaving = true, error = null)).toResult(SideEffect.AsyncWork {
+            try {
+                val point = if (draft.editingId == null) pointsOfInterestRepository.create(draft.request())
+                    else pointsOfInterestRepository.update(draft.editingId, draft.request())
+                Event.OnPointSaved(point)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Event.OnPointError(if (e is HttpException && e.code() == 409) R.string.poi_limit_reached else R.string.poi_save_error)
+            }
+        })
+    }
+
+    private fun deletePoint(state: State): ReducerResult<State, Event, Action> {
+        val points = state.pointsOfInterest
+        val id = points.deleteConfirmationId ?: return state.toResult()
+        if (points.isSaving || points.isLoading || points.ownPoints.none { it.id == id }) return state.toResult()
+        return state.copy(pointsOfInterest = points.copy(isSaving = true, error = null)).toResult(SideEffect.AsyncWork {
+            try {
+                pointsOfInterestRepository.delete(id)
+                Event.OnPointDeleted(id)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                Event.OnPointError(R.string.poi_delete_error)
+            }
+        })
     }
 
     private suspend fun checkPaused(): Event {
@@ -422,6 +567,26 @@ class MapViewModel(
     }
 
     sealed class Event {
+        data object LoadOwnPoints : Event()
+        data class OnOwnPointsLoaded(val points: List<PointOfInterest>) : Event()
+        data object ShowPointManager : Event()
+        data object DismissPointManager : Event()
+        data class SetPointLayerVisible(val visible: Boolean) : Event()
+        data class OnMapLongClick(val latitude: Double, val longitude: Double) : Event()
+        data class OnPointClick(val id: String) : Event()
+        data object DismissPointDetails : Event()
+        data object EditSelectedPoint : Event()
+        data class ChangePointName(val name: String) : Event()
+        data class ChangePointDescription(val description: String) : Event()
+        data object DismissPointEditor : Event()
+        data object SavePoint : Event()
+        data class OnPointSaved(val point: PointOfInterest) : Event()
+        data object RequestPointDeletion : Event()
+        data object CancelPointDeletion : Event()
+        data object DeletePoint : Event()
+        data class OnPointDeleted(val id: String) : Event()
+        data class OnPointError(@param:StringRes val message: Int) : Event()
+        data class NavigateToPoint(val id: String) : Event()
         data class OnLocationUpdate(val location: LocationData?) : Event()
         data class OnFriendsLoaded(val friends: List<FriendLocalData>) : Event()
         data class OnPausedFriendsLoaded(val pausedFriends: List<String>) : Event()
@@ -476,6 +641,7 @@ class MapViewModel(
         val roadVersion: Long = 0L,
         // Re-evaluate stale readings only when a freshness boundary changes, without a UI frame timer.
         val freshnessCheckTime: Long = 0L,
+        val pointsOfInterest: PointsOfInterestState = PointsOfInterestState(),
     )
 
     @Immutable
@@ -491,6 +657,12 @@ class MapViewModel(
         val speedKmh: Double? = null,
         val carTrackingInfo: CarTrackingInfo? = null,
         val mapDisplayLocation: LocationData? = null,
+        val pointsOfInterest: PointsOfInterestState = PointsOfInterestState(),
+        val points: List<PointOfInterest> = emptyList(),
+        val selectedPoint: PointOfInterest? = null,
+        val navigatingPoint: PointOfInterest? = null,
+        val bearingToPoint: Float? = null,
+        val distanceToPoint: String? = null,
     )
 
     companion object {

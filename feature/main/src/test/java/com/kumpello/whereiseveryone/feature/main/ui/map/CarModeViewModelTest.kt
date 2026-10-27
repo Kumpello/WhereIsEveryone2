@@ -220,6 +220,7 @@ class CarModeViewModelTest {
         mapFriendUseCase = MapFriendUseCase(),
         stopSharingUseCase = mockk(), resumeSharingUseCase = mockk(), getPausedFriendsUseCase = mockk(),
         preferencesManager = preferences, roadNavigationRepository = roads,
+        pointsOfInterestRepository = mockk(relaxed = true),
         defaultDispatcher = mainDispatcherRule.testDispatcher,
         currentTimeMillis = { epoch + mainDispatcherRule.testDispatcher.scheduler.currentTime },
     ).also { store.put("map", it) }

@@ -28,6 +28,8 @@ import org.koin.dsl.module
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import com.kumpello.whereiseveryone.data.network.api.MapboxRoadsApi
+import com.kumpello.whereiseveryone.data.network.api.PointsOfInterestApi
+import com.kumpello.whereiseveryone.data.repository.PointsOfInterestRepository
 import com.kumpello.whereiseveryone.data.repository.RoadNavigationRepository
 import com.kumpello.whereiseveryone.data.restore.RestoreCredentialsApi
 import org.koin.android.ext.koin.androidContext
@@ -75,6 +77,8 @@ fun networkModule(baseUrl: String) = module {
     single { get<Retrofit>().create(FriendApi::class.java) }
     single { get<Retrofit>().create(StatusApi::class.java) }
     single { get<Retrofit>().create(SharingApi::class.java) }
+    single { get<Retrofit>().create(PointsOfInterestApi::class.java) }
+    single { PointsOfInterestRepository(get()) }
 
     single { AuthenticationRepositoryImpl(get()) } bind AuthenticationRepository::class
     single { LocationRepositoryImpl(get()) } bind LocationRepository::class
