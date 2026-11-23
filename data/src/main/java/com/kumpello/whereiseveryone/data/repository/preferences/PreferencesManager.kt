@@ -51,6 +51,10 @@ class PreferencesManager internal constructor(
         return runBlocking { get(key) }
     }
 
+    /** Nonblocking metadata snapshot. A cold cache deliberately returns null. */
+    @Suppress("UNCHECKED_CAST")
+    fun <T> peek(key: PreferencesKey<T>): T? = cache[key.key] as? T
+
     fun <T> observe(key: PreferencesKey<T>): Flow<T?> {
         val prefKey = stringPreferencesKey(key.key)
         return encryptedDataStoreRepository.dataStore().data.map { prefs ->

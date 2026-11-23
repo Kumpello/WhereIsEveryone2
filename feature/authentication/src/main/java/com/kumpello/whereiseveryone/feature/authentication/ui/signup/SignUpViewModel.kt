@@ -32,25 +32,10 @@ class SignUpViewModel(
                 }
             } catch (e: CancellationException) {
                 throw e
-            } catch (_: Exception) {
+            } catch (exception: Exception) {
+                Timber.tag(TAG).w("Unable to read remembered credentials (%s)", exception.javaClass.simpleName)
                 trigger(Event.OnRememberedCredentialsLoaded(null, failed = true))
             }
-        }
-    }
-
-    private suspend fun updateRememberedCredentials(state: State): Boolean {
-        return try {
-            if (state.rememberPassword) {
-                rememberedCredentialsRepository.save(state.username, state.password)
-            } else {
-                rememberedCredentialsRepository.clear()
-            }
-            true
-        } catch (e: CancellationException) {
-            throw e
-        } catch (_: Exception) {
-            Timber.tag(TAG).w("Unable to update remembered credentials")
-            false
         }
     }
 
@@ -115,7 +100,8 @@ class SignUpViewModel(
                             Event.OnRememberedCredentialsCleared(true)
                         } catch (e: CancellationException) {
                             throw e
-                        } catch (_: Exception) {
+                        } catch (exception: Exception) {
+                            Timber.tag(TAG).w("Unable to clear remembered credentials (%s)", exception.javaClass.simpleName)
                             Event.OnRememberedCredentialsCleared(false)
                         }
                     }
@@ -158,6 +144,22 @@ class SignUpViewModel(
             passwordState = validatePasswordUseCase.execute(password),
             signUpState = signUpState
         )
+    }
+
+    private suspend fun updateRememberedCredentials(state: State): Boolean {
+        return try {
+            if (state.rememberPassword) {
+                rememberedCredentialsRepository.save(state.username, state.password)
+            } else {
+                rememberedCredentialsRepository.clear()
+            }
+            true
+        } catch (e: CancellationException) {
+            throw e
+        } catch (exception: Exception) {
+            Timber.tag(TAG).w("Unable to update remembered credentials (%s)", exception.javaClass.simpleName)
+            false
+        }
     }
 
     sealed class Action {

@@ -364,7 +364,7 @@ fun FriendsSymbolLayer(
                         stretchX = image.stretchX,
                         stretchY = image.stretchY,
                         content = image.content,
-                    ).onError { Timber.tag("MAP_UI").w("Unable to add marker ring: %s", it) }
+                    ).onError { Timber.tag("MAP_UI").w("Unable to add marker ring") }
                 }
                 val uploaded = mutableMapOf<String, Boolean>()
                 snapshotFlow { currentAvatarModes }.collect { modes ->
@@ -390,7 +390,7 @@ fun FriendsSymbolLayer(
                         val style = map.style ?: return@collect
                         images.forEach { (username, bitmap) ->
                             style.addImage("avatar-$username", bitmap)
-                                .onError { Timber.tag("MAP_UI").w("Unable to add friend avatar: %s", it) }
+                                .onError { Timber.tag("MAP_UI").w("Unable to add friend avatar") }
                                 .onValue { uploaded[username] = modes.getValue(username) }
                         }
                     }

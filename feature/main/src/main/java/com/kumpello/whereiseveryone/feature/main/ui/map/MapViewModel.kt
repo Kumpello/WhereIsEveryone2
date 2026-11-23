@@ -159,6 +159,7 @@ class MapViewModel(
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
+                        Timber.tag(TAG).w(e, "Unable to save car mode")
                         Event.OnError(R.string.car_mode_save_error)
                     }
                 })
@@ -281,7 +282,8 @@ class MapViewModel(
                             Event.OnOwnPointsLoaded(pointsOfInterestRepository.getOwnPoints())
                         } catch (e: CancellationException) {
                             throw e
-                        } catch (_: Exception) {
+                        } catch (e: Exception) {
+                            Timber.tag(TAG).w(e, "Unable to load points of interest")
                             Event.OnPointError(R.string.poi_load_error)
                         }
                     })
@@ -445,6 +447,7 @@ class MapViewModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                Timber.tag(TAG).w(e, "Unable to save point of interest")
                 Event.OnPointError(if (e is HttpException && e.code() == 409) R.string.poi_limit_reached else R.string.poi_save_error)
             }
         })
@@ -460,7 +463,8 @@ class MapViewModel(
                 Event.OnPointDeleted(id)
             } catch (e: CancellationException) {
                 throw e
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Timber.tag(TAG).w(e, "Unable to delete point of interest")
                 Event.OnPointError(R.string.poi_delete_error)
             }
         })
@@ -552,7 +556,7 @@ class MapViewModel(
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
-                        Timber.tag(TAG).w("Road data unavailable")
+                        Timber.tag(TAG).w(e, "Road data unavailable")
                     }
                 }
                 delay(2_000L)

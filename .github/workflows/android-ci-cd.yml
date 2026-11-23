@@ -6,7 +6,18 @@ on:
   pull_request:
     branches: [ master ]
 
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Upload to internal testing (requires PLAY_PUBLISH_ENABLED)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
 env:
+  MAPBOX_PUBLIC_TOKEN: ${{ secrets.MAPBOX_PUBLIC_TOKEN }}
   MAPBOX_TOKEN: ${{ secrets.MAPBOX_TOKEN }}
 
 jobs:
@@ -106,11 +117,27 @@ jobs:
           path: '**/build/reports/lint-results-*.html'
 
   deploy:
-    name: Deploy to Google Play (internal)
+    name: Production Vulkan bundle / Play internal testing
     needs: [ test, lint ]
-    # Temporarily disabled; remove `false &&` to re-enable Google Play deployment.
-    if: false && github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: >-
+      github.ref == 'refs/heads/master' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'push' && vars.PLAY_PUBLISH_ENABLED == 'true'))
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      actions: read
+    concurrency:
+      group: google-play-internal
+      cancel-in-progress: false
+    env:
+      KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+      KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+      KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+      KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      KEYSTORE_FILE: ${{ runner.temp }}/upload.keystore
+      PLAY_VERSION_CODE_BASE: ${{ vars.PLAY_VERSION_CODE_BASE || '1000' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -121,6 +148,9 @@ jobs:
           distribution: temurin
           java-version: '21'
 
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Cache Gradle
         uses: actions/cache@v4
         with:
@@ -130,48 +160,91 @@ jobs:
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: gradle-${{ runner.os }}-
 
-      - name: Grant execute permission to gradlew
-        run: chmod +x gradlew
-
-      - name: Configure Gradle memory limits for CI
+      - name: Check configuration and decode upload key
+        shell: bash
         run: |
-          cat >> gradle.properties << 'EOF'
-          org.gradle.jvmargs=-Xmx3200m -XX:MaxMetaspaceSize=1024m
-          kotlin.daemon.jvmargs=-Xmx3200m
-          org.gradle.parallel=false
-          EOF
+          set -euo pipefail
+          for name in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD MAPBOX_TOKEN MAPBOX_PUBLIC_TOKEN; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Missing GitHub Actions secret: $name"
+              exit 1
+            fi
+          done
+          if [[ "$MAPBOX_PUBLIC_TOKEN" != pk.* ]]; then
+            echo "::error::MAPBOX_PUBLIC_TOKEN must be a public pk. token"
+            exit 1
+          fi
+          if [[ ! "$PLAY_VERSION_CODE_BASE" =~ ^[0-9]{1,9}$ ]]; then
+            echo "::error::PLAY_VERSION_CODE_BASE must be a nonnegative integer of at most 9 digits"
+            exit 1
+          fi
+          umask 077
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_FILE"
+          echo "PLAY_VERSION_CODE=$((10#$PLAY_VERSION_CODE_BASE + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
 
-      - name: Decode signing keystore
-        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > app/release.keystore
+      - name: Build signed production Vulkan App Bundle
+        run: >-
+          ./gradlew :app:bundleProductionRelease -PmapboxVulkan=true
+          -PversionCode="$PLAY_VERSION_CODE" --stacktrace --max-workers=2
+          -Dorg.gradle.jvmargs="-Xmx3200m -XX:MaxMetaspaceSize=1024m"
+          -Dorg.gradle.parallel=false
 
-      - name: Build release App Bundle (production)
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew bundleProductionRelease --stacktrace
+      - name: Save bundle and deobfuscation mapping
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-vulkan-${{ env.PLAY_VERSION_CODE }}
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            app/build/outputs/bundle/productionRelease/*.aab
+            app/build/outputs/mapping/productionRelease/mapping.txt
 
-      - name: Build release App Bundle (production premium)
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew bundleProductionPremiumRelease --stacktrace
+      - name: Check release supersession before publishing
+        id: publish_order
+        if: vars.PLAY_PUBLISH_ENABLED == 'true' && (github.event_name == 'push' || inputs.publish)
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const params = {
+              ...context.repo,
+              workflow_id: 'android-ci-cd.yml',
+              branch: 'master',
+              per_page: 1,
+            };
+            const [master, pushes, manualRuns] = await Promise.all([
+              github.rest.git.getRef({ ...context.repo, ref: 'heads/master' }),
+              github.rest.actions.listWorkflowRuns({ ...params, event: 'push' }),
+              github.rest.actions.listWorkflowRuns({ ...params, event: 'workflow_dispatch' }),
+            ]);
+            const runNumber = Number(process.env.GITHUB_RUN_NUMBER);
+            const ownRuns = context.eventName === 'push' ? pushes : manualRuns;
+            if (!ownRuns.data.workflow_runs[0] ||
+                ownRuns.data.workflow_runs[0].run_number < runNumber) {
+              core.setFailed('Cannot verify the current workflow run; refusing to publish.');
+              return;
+            }
+            const newerRun = [...pushes.data.workflow_runs, ...manualRuns.data.workflow_runs]
+              .find(run => run.run_number > runNumber);
+            const allowed = master.data.object.sha === context.sha && !newerRun;
+            core.setOutput('allowed', allowed ? 'true' : 'false');
+            if (!allowed) {
+              core.notice(newerRun
+                ? `Skipping Play upload: superseded by master workflow run ${newerRun.run_number}.`
+                : 'Skipping Play upload: master has advanced to another commit.');
+            }
 
-      - name: Upload Production to Google Play (internal track)
+      - name: Upload production Vulkan to internal testing
+        if: steps.publish_order.outputs.allowed == 'true'
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.kumpello.whereiseveryone
           releaseFiles: app/build/outputs/bundle/productionRelease/app-production-release.aab
+          mappingFile: app/build/outputs/mapping/productionRelease/mapping.txt
           track: internal
           status: completed
+          releaseName: Vulkan beta ${{ env.PLAY_VERSION_CODE }}
 
-      - name: Upload Premium to Google Play (internal track)
-        uses: r0adkll/upload-google-play@v1
-        with:
-          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
-          packageName: com.kumpello.whereiseveryone.premium
-          releaseFiles: app/build/outputs/bundle/productionPremiumRelease/app-productionPremium-release.aab
-          track: internal
-          status: completed
+      - name: Remove upload key
+        if: always()
+        run: rm -f "$KEYSTORE_FILE"

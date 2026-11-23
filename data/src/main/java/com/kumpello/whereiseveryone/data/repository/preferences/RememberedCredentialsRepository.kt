@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+import timber.log.Timber
 
 class RememberedCredentialsRepository(private val preferencesManager: PreferencesManager) {
     private val json = Json { ignoreUnknownKeys = true }
@@ -19,17 +20,6 @@ class RememberedCredentialsRepository(private val preferencesManager: Preference
         .distinctUntilChanged()
         .map { decode(it) }
 
-    private suspend fun decode(value: String?): RememberedCredentials? {
-        if (value == null) return null
-        return try {
-            json.decodeFromString<RememberedCredentials>(value)
-        } catch (_: SerializationException) {
-            // Decoder errors may contain the input, so never log them.
-            clear()
-            null
-        }
-    }
-
     suspend fun save(username: String, password: String) {
         // One encrypted entry keeps the username and password consistent on disk.
         preferencesManager.save(
@@ -40,5 +30,17 @@ class RememberedCredentialsRepository(private val preferencesManager: Preference
 
     suspend fun clear() {
         preferencesManager.remove(PreferencesKey.RememberedCredentials)
+    }
+
+    private suspend fun decode(value: String?): RememberedCredentials? {
+        if (value == null) return null
+        return try {
+            json.decodeFromString<RememberedCredentials>(value)
+        } catch (_: SerializationException) {
+            // Decoder errors may contain credentials: report only a fixed operation name.
+            Timber.tag("AUTH").w("Unable to decode remembered credentials")
+            clear()
+            null
+        }
     }
 }

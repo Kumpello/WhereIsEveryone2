@@ -12,4 +12,7 @@ internal interface UserLocationDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateUserLocation(userLocation: UserLocationEntity)
+
+    @Query("DELETE FROM user_location")
+    suspend fun clearAll()
 }

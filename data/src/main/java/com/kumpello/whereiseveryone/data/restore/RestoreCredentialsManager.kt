@@ -1,5 +1,10 @@
 package com.kumpello.whereiseveryone.data.restore
 
+import androidx.credentials.exceptions.CreateCredentialCancellationException
+import androidx.credentials.exceptions.CreateCredentialUnsupportedException
+import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.GetCredentialUnsupportedException
+import androidx.credentials.exceptions.NoCredentialException
 import com.kumpello.whereiseveryone.data.device.DeviceIdProvider
 import com.kumpello.whereiseveryone.data.repository.preferences.PreferencesKey
 import com.kumpello.whereiseveryone.data.repository.preferences.PreferencesManager
@@ -12,6 +17,7 @@ import kotlinx.serialization.json.Json
 import retrofit2.HttpException
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.seconds
 
 /** Coordinates system-managed restore keys without changing password sign-in. */
 class RestoreCredentialsManager internal constructor(
@@ -120,6 +126,7 @@ class RestoreCredentialsManager internal constructor(
         return try {
             Json.decodeFromString<PendingRestoreRegistration>(encoded)
         } catch (_: IllegalArgumentException) {
+            Timber.tag(TAG).w("Unable to decode pending restore enrollment")
             // Serialized WebAuthn payloads must never appear in diagnostic logs.
             preferences.remove(PreferencesKey.PendingRestoreRegistration)
             null
@@ -127,17 +134,31 @@ class RestoreCredentialsManager internal constructor(
     }
 
     private suspend fun <T> bestEffort(operation: String, block: suspend () -> T): T? = try {
-        withTimeoutOrNull(OPERATION_TIMEOUT_MILLIS) { block() }
+        val result = withTimeoutOrNull(OPERATION_TIMEOUT) { Result.success(block()) }
+        if (result == null) Timber.tag(TAG).w("Restore credential %s timed out", operation)
+        result?.getOrThrow()
     } catch (exception: CancellationException) {
         throw exception
     } catch (exception: Exception) {
-        Timber.tag(TAG).d("Restore credential %s unavailable (%s)", operation, exception.javaClass.simpleName)
+        when (exception) {
+            is NoCredentialException,
+            is GetCredentialCancellationException,
+            is CreateCredentialCancellationException,
+            is GetCredentialUnsupportedException,
+            is CreateCredentialUnsupportedException,
+            -> {
+                Timber.tag(TAG).d("Restore credential %s unavailable (%s)", operation, exception.javaClass.simpleName)
+            }
+            else -> {
+                Timber.tag(TAG).w("Restore credential %s failed (%s)", operation, exception.javaClass.simpleName)
+            }
+        }
         null
     }
 
     private companion object {
         const val TAG = "RestoreCredentials"
-        const val OPERATION_TIMEOUT_MILLIS = 15_000L
+        val OPERATION_TIMEOUT = 15.seconds
         const val CHALLENGE_LIFETIME_MILLIS = 5 * 60 * 1000L
         val KEY_RENEWAL_MILLIS = TimeUnit.DAYS.toMillis(180)
     }

@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 abstract class BaseViewModel<S : Any, VS : Any, E : Any, Ef : Any>(
     initialState: S,
@@ -49,6 +50,17 @@ abstract class BaseViewModel<S : Any, VS : Any, E : Any, Ef : Any>(
         viewModelScope.launch { processEvent(event) }
     }
 
+    protected open fun handleGlobalError(e: Exception) {
+        Timber.tag("VIEW_MODEL").e(e, "Unhandled presentation operation failure")
+    }
+
+    protected abstract fun reduce(state: S, event: E): ReducerResult<S, E, Ef>
+    protected abstract fun S.toViewState(): VS
+
+    protected fun S.toResult(vararg sideEffects: SideEffect<E, Ef>): ReducerResult<S, E, Ef> {
+        return ReducerResult(this, sideEffects.toList())
+    }
+
     @MainThread
     private fun processEvent(event: E) {
         val result = reduce(_state.value, event)
@@ -79,13 +91,6 @@ abstract class BaseViewModel<S : Any, VS : Any, E : Any, Ef : Any>(
         }
     }
 
-    protected open fun handleGlobalError(e: Exception) {
-        // To be overridden by subclasses if needed
-    }
-
-    protected abstract fun reduce(state: S, event: E): ReducerResult<S, E, Ef>
-    protected abstract fun S.toViewState(): VS
-
     sealed class SideEffect<out E, out Ef> {
         data class Effect<Ef>(val effect: Ef) : SideEffect<Nothing, Ef>()
         data class InternalEvent<E>(val event: E) : SideEffect<E, Nothing>()
@@ -97,8 +102,4 @@ abstract class BaseViewModel<S : Any, VS : Any, E : Any, Ef : Any>(
         val sideEffects: List<SideEffect<E, Ef>> = emptyList()
     )
 
-    // Helper functions for ReducerResult creation
-    protected fun S.toResult(vararg sideEffects: SideEffect<E, Ef>): ReducerResult<S, E, Ef> {
-        return ReducerResult(this, sideEffects.toList())
-    }
 }

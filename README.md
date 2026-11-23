@@ -184,3 +184,8 @@ This project uses several open-source libraries. Below is a list of their respec
 | MockK | Apache License 2.0 |
 | Turbine | Apache License 2.0 |
 | JUnit 4 | Eclipse Public License 1.0 |
+
+## Google Play beta releases
+
+See [Google Play beta setup](docs/GOOGLE_PLAY_BETA.md) for the first internal release,
+signing and service-account secrets, and automatic production Vulkan uploads from master.

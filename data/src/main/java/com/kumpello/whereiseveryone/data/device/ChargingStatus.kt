@@ -14,9 +14,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 
 fun Context.chargingStatus(): Flow<Boolean> = callbackFlow {
     fun publish(intent: Intent?) {
-        val status = intent?.getIntExtra(BatteryManager.EXTRA_STATUS, -1) ?: -1
-        val plugged = intent?.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) ?: 0
-        trySend(isBatteryCharging(status, plugged))
+        trySend(intent?.isBatteryCharging() == true)
     }
     val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) = publish(intent)
@@ -29,6 +27,11 @@ fun Context.chargingStatus(): Flow<Boolean> = callbackFlow {
     ))
     awaitClose { unregisterReceiver(receiver) }
 }.distinctUntilChanged().conflate()
+
+internal fun Intent.isBatteryCharging() = isBatteryCharging(
+    getIntExtra(BatteryManager.EXTRA_STATUS, -1),
+    getIntExtra(BatteryManager.EXTRA_PLUGGED, 0),
+)
 
 internal fun isBatteryCharging(status: Int, plugged: Int) = plugged != 0 &&
     (status == BatteryManager.BATTERY_STATUS_CHARGING || status == BatteryManager.BATTERY_STATUS_FULL)

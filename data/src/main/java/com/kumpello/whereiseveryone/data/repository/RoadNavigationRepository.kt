@@ -7,6 +7,7 @@ import com.squareup.moshi.JsonDataException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 
 class RoadNavigationRepository internal constructor(
     private val api: MapboxRoadsApi,
@@ -24,9 +25,11 @@ class RoadNavigationRepository internal constructor(
                 timestamps = points.joinToString(";") { (it.lastUpdate / 1_000).toString() },
                 radiuses = points.joinToString(";") { (it.accuracy?.takeIf { accuracy -> accuracy.isFinite() }?.toDouble() ?: 25.0).coerceIn(5.0, 50.0).toString() },
             )
-        } catch (_: IOException) {
+        } catch (exception: IOException) {
+            Timber.tag("ROAD_NAVIGATION").w(exception, "Road service request failed")
             return null
-        } catch (_: JsonDataException) {
+        } catch (exception: JsonDataException) {
+            Timber.tag("ROAD_NAVIGATION").w(exception, "Road service response could not be decoded")
             return null
         }
         val response = result.body()?.takeIf { result.isSuccessful && it.code == "Ok" } ?: return null
@@ -42,9 +45,11 @@ class RoadNavigationRepository internal constructor(
         if (token.isBlank() || !from.validCoordinate() || !to.validCoordinate()) return null
         val result = try {
             api.route("${from.lon},${from.lat};${to.lon},${to.lat}", token)
-        } catch (_: IOException) {
+        } catch (exception: IOException) {
+            Timber.tag("ROAD_NAVIGATION").w(exception, "Road service request failed")
             return null
-        } catch (_: JsonDataException) {
+        } catch (exception: JsonDataException) {
+            Timber.tag("ROAD_NAVIGATION").w(exception, "Road service response could not be decoded")
             return null
         }
         val response = result.body()?.takeIf { result.isSuccessful && it.code == "Ok" } ?: return null
@@ -118,9 +123,11 @@ class RoadNavigationRepository internal constructor(
         val radius = (fix.accuracy?.toDouble()?.takeIf { it.isFinite() } ?: 25.0).coerceIn(10.0, 50.0)
         val result = try {
             api.forwardRoad("${fix.lon},${fix.lat};${probe.lon},${probe.lat}", token, "$bearing,45;", "$radius;unlimited")
-        } catch (_: IOException) {
+        } catch (exception: IOException) {
+            Timber.tag("ROAD_NAVIGATION").w(exception, "Road service request failed")
             return null
-        } catch (_: JsonDataException) {
+        } catch (exception: JsonDataException) {
+            Timber.tag("ROAD_NAVIGATION").w(exception, "Road service response could not be decoded")
             return null
         }
         return result.body()?.takeIf { result.isSuccessful && it.code == "Ok" }?.routes?.firstOrNull()?.currentRoad(fix, bearing)
@@ -143,9 +150,11 @@ class RoadNavigationRepository internal constructor(
                 destinations = (1..points.size).joinToString(";"),
                 bearings = heading?.let { "$it,45" + ";".repeat(points.size) },
             )
-        } catch (_: IOException) {
+        } catch (exception: IOException) {
+            Timber.tag("ROAD_NAVIGATION").w(exception, "Road service request failed")
             return null
-        } catch (_: JsonDataException) {
+        } catch (exception: JsonDataException) {
+            Timber.tag("ROAD_NAVIGATION").w(exception, "Road service response could not be decoded")
             return null
         }
         val distances = result.body()?.takeIf { result.isSuccessful && it.code == "Ok" }?.distances?.singleOrNull()

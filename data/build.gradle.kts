@@ -6,16 +6,25 @@ plugins {
 
 android {
     namespace = "com.kumpello.whereiseveryone.data"
-    compileSdk = 37
+    compileSdk {
+        version = release(37) {
+            minorApiLevel = 1
+        }
+    }
 
     defaultConfig {
         minSdk = 28
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+    sourceSets.getByName("androidTest").assets.srcDir("$projectDir/schemas")
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_19
         targetCompatibility = JavaVersion.VERSION_19
     }
+}
+
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 dependencies {
@@ -44,8 +53,8 @@ dependencies {
     testImplementation(testFixtures(project(":core")))
     testImplementation(libs.test.junit)
     testImplementation(libs.mockk)
-    testImplementation(libs.coroutines.test)
     testImplementation(libs.turbine)
     androidTestImplementation(libs.android.test.junit)
+    androidTestImplementation(libs.room.testing)
     androidTestImplementation(libs.coroutines.test)
 }

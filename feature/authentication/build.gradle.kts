@@ -6,7 +6,11 @@ plugins {
 
 android {
     namespace = "com.kumpello.whereiseveryone.feature.authentication"
-    compileSdk = 37
+    compileSdk {
+        version = release(37) {
+            minorApiLevel = 1
+        }
+    }
 
     defaultConfig { minSdk = 28 }
     buildFeatures { compose = true }

@@ -18,16 +18,16 @@ class LogoutUseCaseTest {
     private val logoutUseCase = LogoutUseCase(preferencesManager, appDatabase, restoreCredentialsManager)
 
     @Test
-    fun `execute clears session data and database tables`() = runTest {
+    fun `execute clears session caches and retains diagnostics queues`() = runTest {
         coEvery { preferencesManager.clearSession() } returns Unit
-        coEvery { appDatabase.clearAllTables() } returns Unit
+        coEvery { appDatabase.clearSessionData() } returns Unit
 
         logoutUseCase.execute()
 
         coVerify {
             preferencesManager.save(PreferencesKey.RestoreSignOutPending, true)
             preferencesManager.clearSession()
-            appDatabase.clearAllTables()
+            appDatabase.clearSessionData()
             restoreCredentialsManager.clear()
         }
     }

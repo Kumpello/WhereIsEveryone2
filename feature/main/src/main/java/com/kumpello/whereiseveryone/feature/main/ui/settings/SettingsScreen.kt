@@ -1,6 +1,5 @@
 package com.kumpello.whereiseveryone.feature.main.ui.settings
 
-import com.kumpello.whereiseveryone.feature.main.R
 import android.content.Intent
 import android.content.res.Configuration
 import android.widget.Toast
@@ -35,6 +34,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -52,8 +53,10 @@ import com.kumpello.whereiseveryone.core.ui.components.ScreenHeader
 import com.kumpello.whereiseveryone.core.ui.theme.AppSize
 import com.kumpello.whereiseveryone.core.ui.theme.AppSpacing
 import com.kumpello.whereiseveryone.core.ui.theme.WhereIsEveryoneTheme
+import com.kumpello.whereiseveryone.feature.main.R
 import com.kumpello.whereiseveryone.feature.main.ui.components.rememberMaxDisplayRefreshRate
 import com.kumpello.whereiseveryone.feature.main.ui.model.MapFpsLimit
+import timber.log.Timber
 import kotlin.math.ln
 import kotlin.math.pow
 
@@ -65,7 +68,11 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = viewModel(),
 ) {
     val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val onLinkUnavailable = {
+        Toast.makeText(context, R.string.settings_link_unavailable, Toast.LENGTH_SHORT).show()
+    }
 
     LaunchedEffect(Unit) {
         viewModel.action.collect { action ->
@@ -89,8 +96,21 @@ fun SettingsScreen(
         maxRefreshRate = rememberMaxDisplayRefreshRate(),
         versionName = versionName,
         trigger = viewModel::trigger,
-        onBack = { navController.popBackStack() }
+        onBack = { navController.popBackStack() },
+        onSupport = { openSettingsLink(uriHandler, "https://where-is-everyone.com/support/", onLinkUnavailable) },
+        onPrivacyPolicy = { openSettingsLink(uriHandler, "https://where-is-everyone.com/privacy/", onLinkUnavailable) },
+        onLicenses = { context.startActivity(Intent(context, OssLicensesMenuActivity::class.java)) },
     )
+}
+
+internal fun openSettingsLink(uriHandler: UriHandler, uri: String, onUnavailable: () -> Unit) {
+    try {
+        uriHandler.openUri(uri)
+    } catch (_: IllegalArgumentException) {
+        // UriHandler's exception message contains the URI; log only the safe operation.
+        Timber.tag("Settings").w("Unable to open settings link")
+        onUnavailable()
+    }
 }
 
 @Composable
@@ -99,7 +119,10 @@ private fun SettingsScreen(
     maxRefreshRate: Float,
     versionName: String,
     onBack: () -> Unit = {},
-    trigger: (SettingsViewModel.Event) -> Unit
+    onSupport: () -> Unit = {},
+    onPrivacyPolicy: () -> Unit = {},
+    onLicenses: () -> Unit = {},
+    trigger: (SettingsViewModel.Event) -> Unit,
 ) {
     val minDistance = 10f
     val maxDistance = 2000f
@@ -199,7 +222,16 @@ private fun SettingsScreen(
                     }
                 }
             }
-            item { SettingsCard { AboutSection(versionName) } }
+            item {
+                SettingsCard {
+                    AboutSection(
+                        versionName = versionName,
+                        onSupport = onSupport,
+                        onPrivacyPolicy = onPrivacyPolicy,
+                        onLicenses = onLicenses,
+                    )
+                }
+            }
         }
     }
 }
@@ -292,15 +324,25 @@ private fun SettingToggle(title: String, description: String, checked: Boolean, 
 }
 
 @Composable
-private fun AboutSection(versionName: String) {
-    val context = LocalContext.current
+private fun AboutSection(
+    versionName: String,
+    onSupport: () -> Unit,
+    onPrivacyPolicy: () -> Unit,
+    onLicenses: () -> Unit,
+) {
     SectionTitle(stringResource(R.string.about_title))
     Text(
         text = stringResource(R.string.about_description),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant
     )
-    TextButton(onClick = { context.startActivity(Intent(context, OssLicensesMenuActivity::class.java)) }) {
+    TextButton(onClick = onSupport) {
+        Text(stringResource(R.string.settings_support))
+    }
+    TextButton(onClick = onPrivacyPolicy) {
+        Text(stringResource(R.string.settings_privacy_policy))
+    }
+    TextButton(onClick = onLicenses) {
         Text(stringResource(R.string.settings_licenses))
     }
     Text(
@@ -308,6 +350,18 @@ private fun AboutSection(versionName: String) {
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant
     )
+}
+
+@Preview(name = "About, light", showBackground = true, widthDp = 360)
+@Preview(name = "About, dark", showBackground = true, widthDp = 360, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(name = "About, large text", showBackground = true, widthDp = 320, fontScale = 2f)
+@Composable
+private fun AboutSectionPreview() {
+    WhereIsEveryoneTheme {
+        SettingsCard {
+            AboutSection(versionName = "Preview", onSupport = {}, onPrivacyPolicy = {}, onLicenses = {})
+        }
+    }
 }
 
 @Preview(name = "Light", showBackground = true, widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_NO)

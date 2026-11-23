@@ -1,5 +1,6 @@
 package com.kumpello.whereiseveryone.core.presentation
 
+import android.util.Log
 import androidx.lifecycle.ViewModelStore
 import app.cash.turbine.test
 import com.kumpello.whereiseveryone.core.testing.MainDispatcherRule
@@ -16,6 +17,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import timber.log.Timber
 import java.util.concurrent.Executors
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -86,13 +88,51 @@ class BaseViewModelTest {
         }
     }
 
+    @Test
+    fun `default error handling reports async failures but excludes cancellation`() = runTest {
+        val reports = mutableListOf<Triple<Int, String?, Throwable?>>()
+        val tree = object : Timber.Tree() {
+            override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
+                reports += Triple(priority, tag, t)
+                assertTrue(message.startsWith("Unhandled presentation operation failure"))
+            }
+        }
+        Timber.plant(tree)
+        val failure = IllegalStateException("operation failed")
+        try {
+            for (exception in listOf(failure, CancellationException("screen closed"))) {
+                val viewModel = TestViewModel(
+                    mainDispatcherRule.testDispatcher,
+                    useDefaultErrorHandling = true,
+                ) { throw exception }
+                val store = ViewModelStore().apply { put("test", viewModel) }
+                try {
+                    viewModel.trigger(Event.Load)
+                    runCurrent()
+                } finally {
+                    store.clear()
+                }
+            }
+            assertEquals(1, reports.size)
+            assertEquals(Log.ERROR, reports.single().first)
+            assertEquals("VIEW_MODEL", reports.single().second)
+            assertSame(failure, reports.single().third)
+        } finally {
+            Timber.uproot(tree)
+        }
+    }
+
     private sealed interface Event {
         data object Load : Event
         data object Increment : Event
         data class Loaded(val value: Int) : Event
     }
 
-    private class TestViewModel(dispatcher: CoroutineDispatcher, val work: suspend () -> Int) :
+    private class TestViewModel(
+        dispatcher: CoroutineDispatcher,
+        private val useDefaultErrorHandling: Boolean = false,
+        val work: suspend () -> Int,
+    ) :
         BaseViewModel<Int, Int, Event, Unit>(0, dispatcher) {
         val reducerThreads = mutableListOf<Thread>()
         val mappingThreads = mutableListOf<Thread>()
@@ -113,7 +153,7 @@ class BaseViewModelTest {
         }
 
         override fun handleGlobalError(e: Exception) {
-            errors += e
+            if (useDefaultErrorHandling) super.handleGlobalError(e) else errors += e
         }
     }
 }

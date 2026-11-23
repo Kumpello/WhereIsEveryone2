@@ -6,7 +6,11 @@ plugins {
 
 android {
     namespace = "com.kumpello.whereiseveryone.feature.main"
-    compileSdk = 37
+    compileSdk {
+        version = release(37) {
+            minorApiLevel = 1
+        }
+    }
 
     defaultConfig {
         minSdk = 28
@@ -51,8 +55,6 @@ dependencies {
     androidTestImplementation(libs.android.test.junit)
     androidTestImplementation(libs.espresso)
     androidTestImplementation(libs.mockk.android)
-    androidTestImplementation(libs.coroutines.test)
-    androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.compose.ui.test.junit)
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)

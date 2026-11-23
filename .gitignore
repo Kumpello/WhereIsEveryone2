@@ -7,6 +7,7 @@
 /build
 **/build/
 /app/production/
+/app/*/release/
 /captures
 .externalNativeBuild
 .cxx
@@ -19,5 +20,5 @@ app/src/main/res/values/secrets.xml
 KEYSTORE_BASE64.txt
 .artifacts
 keystore.properties
-AGENTS.md
 /.codex
+/data/skills/

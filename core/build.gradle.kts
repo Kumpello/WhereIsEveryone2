@@ -5,7 +5,11 @@ plugins {
 
 android {
     namespace = "com.kumpello.whereiseveryone.core"
-    compileSdk = 37
+    compileSdk {
+        version = release(37) {
+            minorApiLevel = 1
+        }
+    }
 
     defaultConfig { minSdk = 28 }
     buildFeatures { compose = true }
@@ -23,6 +27,7 @@ dependencies {
     api(libs.lifecycle.viewmodel.ktx)
     api(libs.kotlinx.coroutines.core)
     implementation(libs.androidx.ktx)
+    implementation(libs.timber)
     implementation(libs.compose.material.icons.extended)
 
     testFixturesApi(libs.test.junit)

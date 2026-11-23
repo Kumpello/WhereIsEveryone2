@@ -1,6 +1,7 @@
 package com.kumpello.whereiseveryone.data.di
 
 import com.kumpello.whereiseveryone.data.network.api.AuthApi
+import com.kumpello.whereiseveryone.data.diagnostics.TelemetryApi
 import com.kumpello.whereiseveryone.data.repository.AuthenticationRepository
 import com.kumpello.whereiseveryone.data.repository.AuthenticationRepositoryImpl
 import com.kumpello.whereiseveryone.data.network.interceptor.AuthInterceptor
@@ -72,6 +73,15 @@ fun networkModule(baseUrl: String) = module {
             .build()
             .create(RestoreCredentialsApi::class.java)
     }
+    // Diagnostics use explicit authentication and never refresh/logout or report their own failures.
+    single<TelemetryApi> {
+        Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(OkHttpClient.Builder().callTimeout(15, TimeUnit.SECONDS).build())
+            .addConverterFactory(MoshiConverterFactory.create(get()))
+            .build()
+            .create(TelemetryApi::class.java)
+    }
     single { get<Retrofit>().create(LocationApi::class.java) }
     single { get<Retrofit>().create(FriendsApi::class.java) }
     single { get<Retrofit>().create(FriendApi::class.java) }
@@ -91,7 +101,7 @@ fun networkModule(baseUrl: String) = module {
     single<MapboxRoadsApi> {
         Retrofit.Builder()
             .baseUrl("https://api.mapbox.com/")
-            .client(OkHttpClient.Builder().callTimeout(8, TimeUnit.SECONDS).build())
+            .client(OkHttpClient.Builder().addInterceptor(RequestInterceptor).callTimeout(8, TimeUnit.SECONDS).build())
             .addConverterFactory(MoshiConverterFactory.create(get()))
             .build()
             .create(MapboxRoadsApi::class.java)

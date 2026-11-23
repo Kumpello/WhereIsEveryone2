@@ -39,6 +39,7 @@ import com.kumpello.whereiseveryone.core.ui.components.Button
 import com.kumpello.whereiseveryone.core.ui.theme.AppSize
 import com.kumpello.whereiseveryone.core.ui.theme.AppSpacing
 import org.koin.compose.viewmodel.koinViewModel
+import timber.log.Timber
 
 @Composable
 fun AddFriendContent(
@@ -75,7 +76,8 @@ fun AddFriendContent(
                                 viewModel.trigger(AddFriendViewModel.Event.OnUriReceived(uri))
                             }
                         }
-                        .addOnFailureListener {
+                        .addOnFailureListener { exception ->
+                            Timber.tag("QR_SCANNER").w(exception, "QR scan failed")
                             Toast.makeText(
                                 context,
                                 context.applicationContext.getString(R.string.scanning_failed),

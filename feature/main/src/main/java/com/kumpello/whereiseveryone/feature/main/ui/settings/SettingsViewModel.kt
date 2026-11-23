@@ -102,6 +102,7 @@ class SettingsViewModel(
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
+                    Timber.tag(TAG).w(e, "Unable to save car mode")
                     Toast(R.string.car_mode_save_error)
                 }
             })

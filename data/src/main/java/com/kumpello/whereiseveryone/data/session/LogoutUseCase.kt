@@ -30,7 +30,7 @@ class LogoutUseCase internal constructor(
             preferencesManager.clearSession()
         }
         try {
-            appDatabase.clearAllTables()
+            appDatabase.clearSessionData()
         } finally {
             restoreCredentialsManager.clear()
         }

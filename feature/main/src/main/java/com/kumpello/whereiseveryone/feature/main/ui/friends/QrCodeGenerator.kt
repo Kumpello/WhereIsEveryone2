@@ -6,6 +6,7 @@ import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.set
+import timber.log.Timber
 
 object QrCodeGenerator {
     fun generateQrCode(content: String, size: Int): Bitmap? {
@@ -19,6 +20,7 @@ object QrCodeGenerator {
             }
             bitmap
         } catch (e: Exception) {
+            Timber.tag("QRCode").w(e, "Unable to generate QR code")
             null
         }
     }

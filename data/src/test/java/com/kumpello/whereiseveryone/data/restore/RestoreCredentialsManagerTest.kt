@@ -1,5 +1,7 @@
 package com.kumpello.whereiseveryone.data.restore
 
+import android.util.Log
+import androidx.credentials.exceptions.NoCredentialException
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
@@ -25,6 +27,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
+import timber.log.Timber
 import java.io.IOException
 import java.util.Base64
 import java.util.concurrent.TimeUnit
@@ -211,6 +214,48 @@ class RestoreCredentialsManagerTest {
         assertFalse(preferences.replaceSessionTokens("rotated-refresh", "late-access", "late-refresh"))
         assertNull(preferences.get(PreferencesKey.AuthToken))
         assertTrue(preferences.get(PreferencesKey.RestoreSignOutPending) == true)
+    }
+
+    @Test
+    fun `provider failures report safe warning but absent credentials stay quiet`() = runTest {
+        val warnings = mutableListOf<String>()
+        val tree = object : Timber.Tree() {
+            override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
+                if (priority >= Log.WARN) warnings += message
+            }
+        }
+        Timber.plant(tree)
+        try {
+            coEvery { client.get(any()) } throws IOException("secret credential payload")
+            assertFalse(manager.restoreSession())
+            assertEquals(listOf("Restore credential sign-in failed (IOException)"), warnings)
+
+            warnings.clear()
+            coEvery { client.get(any()) } throws NoCredentialException("private provider details")
+            assertFalse(manager.restoreSession())
+            assertTrue(warnings.isEmpty())
+        } finally {
+            Timber.uproot(tree)
+        }
+    }
+
+    @Test
+    fun `timed out restore reports failure and leaves the session empty`() = runTest {
+        val warnings = mutableListOf<String>()
+        val tree = object : Timber.Tree() {
+            override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
+                if (priority >= Log.WARN) warnings += message
+            }
+        }
+        Timber.plant(tree)
+        try {
+            coEvery { client.get(any()) } coAnswers { CompletableDeferred<String>().await() }
+            assertFalse(manager.restoreSession())
+            assertNull(preferences.get(PreferencesKey.AuthToken))
+            assertEquals(listOf("Restore credential sign-in timed out"), warnings)
+        } finally {
+            Timber.uproot(tree)
+        }
     }
 
     private suspend fun signIn() {

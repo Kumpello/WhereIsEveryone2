@@ -5,6 +5,7 @@ import com.kumpello.whereiseveryone.data.repository.FriendsStateRepository
 import com.kumpello.whereiseveryone.data.repository.UserLocationRepository
 import com.kumpello.whereiseveryone.data.repository.preferences.RememberedCredentialsRepository
 import com.kumpello.whereiseveryone.data.local.database.AppDatabase
+import com.kumpello.whereiseveryone.data.local.database.MIGRATION_4_5
 import com.kumpello.whereiseveryone.data.device.DeviceIdProviderImpl
 import com.kumpello.whereiseveryone.data.repository.preferences.PreferencesManager
 import com.kumpello.whereiseveryone.data.device.DeviceIdProvider
@@ -21,11 +22,12 @@ import org.koin.dsl.module
 val commonModule = module {
     single {
         Room.databaseBuilder(androidContext(), AppDatabase::class.java, "where-is-everyone-db")
-            .fallbackToDestructiveMigration(false)
+            .addMigrations(MIGRATION_4_5)
             .build()
     }
     single { get<AppDatabase>().friendDao() }
     single { get<AppDatabase>().userLocationDao() }
+    single { get<AppDatabase>().diagnosticsEventDao() }
     single { FriendsStateRepository(get(), get(), chargingStatus = androidContext().chargingStatus()) }
     single { UserLocationRepository(get()) }
     single { RememberedCredentialsRepository(get()) }

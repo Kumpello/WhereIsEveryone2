@@ -46,7 +46,11 @@ fun signingProp(propKey: String, envKey: String): String? =
 
 android {
     namespace = "com.kumpello.whereiseveryone"
-    compileSdk = 37
+    compileSdk {
+        version = release(37) {
+            minorApiLevel = 1
+        }
+    }
 
     buildFeatures {
         buildConfig = true
@@ -57,15 +61,28 @@ android {
         applicationId = "com.kumpello.whereiseveryone"
         minSdk = if (useMapboxVulkan) 31 else 28
         targetSdk = 37
-        versionCode = 1
-        versionName = "0.8"
+        versionCode = providers.gradleProperty("versionCode")
+            .map { value ->
+                value.toIntOrNull()?.takeIf { it in 1..2_100_000_000 }
+                    ?: throw GradleException("versionCode must be an integer between 1 and 2100000000")
+            }
+            .orElse(1)
+            .get()
+        versionName = "0.9"
 
         if (useMapboxVulkan) {
             ndk.abiFilters += "arm64-v8a"
         }
 
-        val mapboxToken: String = project.findProperty("MAPBOX_TOKEN") as? String ?: ""
-        resValue("string", "mapbox_access_token", mapboxToken)
+        // Download credentials must never be embedded in the distributed application.
+        val mapboxPublicToken = providers.environmentVariable("MAPBOX_PUBLIC_TOKEN")
+            .orElse(providers.gradleProperty("MAPBOX_PUBLIC_TOKEN"))
+            .orElse("")
+            .get()
+        if (mapboxPublicToken.isNotEmpty() && !mapboxPublicToken.startsWith("pk.")) {
+            throw GradleException("MAPBOX_PUBLIC_TOKEN must be a public Mapbox token (pk.)")
+        }
+        resValue("string", "mapbox_access_token", mapboxPublicToken)
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

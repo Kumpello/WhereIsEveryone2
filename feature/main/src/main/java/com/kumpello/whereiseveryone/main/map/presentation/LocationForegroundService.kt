@@ -4,6 +4,7 @@ import com.kumpello.whereiseveryone.feature.main.location.LocationService
 import com.kumpello.whereiseveryone.feature.main.location.LocationServiceProxy
 import com.kumpello.whereiseveryone.feature.main.location.LocationUpload
 import com.kumpello.whereiseveryone.feature.main.location.sendLocationWithRetry
+import com.kumpello.whereiseveryone.data.device.BatteryTelemetryMonitor
 import com.kumpello.whereiseveryone.data.device.chargingStatus
 import com.kumpello.whereiseveryone.feature.main.location.resolveLocationUpdateType
 import com.kumpello.whereiseveryone.feature.main.location.shouldAcquireLocations
@@ -76,6 +77,7 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
     private val proximityManager: ProximityManager by inject()
     private val preferencesManager: PreferencesManager by inject()
     private val friendRequestNotifications: FriendRequestNotifications by inject()
+    private val batteryTelemetryMonitor: BatteryTelemetryMonitor by inject()
 
     private val locationSendChannel = Channel<LocationUpload>(
         capacity = Channel.CONFLATED
@@ -181,6 +183,7 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
 
     override fun onDestroy() {
         Timber.tag(TAG).d("LocationForegroundService stopping")
+        batteryTelemetryMonitor.setTrackingMode("inactive")
         isServiceStarted = false
         locationServiceProxy.unregisterDelegate()
         stopUpdates()
@@ -225,6 +228,7 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
 
     override fun stopService() {
         Timber.tag(TAG).d("stopService called")
+        batteryTelemetryMonitor.setTrackingMode("inactive")
         isServiceStarted = false
         stopUpdates()
         locationSendChannel.cancel()
@@ -495,6 +499,14 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
         if (snapshot.isSharingEnabled && locationUpdatesJob?.isActive == true) {
             if (locationSenderJob?.isActive != true) startLocationSender()
         } else stopLocationSender()
+        batteryTelemetryMonitor.setTrackingMode(
+            if (!state.value.isLocationUpdatesStarted) "inactive" else when (mode) {
+                LocationService.UpdateType.Charging -> "charging"
+                LocationService.UpdateType.CarMode -> "car"
+                LocationService.UpdateType.Foreground -> "foreground"
+                LocationService.UpdateType.Background -> "background"
+            }
+        )
         updateNotification()
     }
 
@@ -521,6 +533,7 @@ class LocationForegroundService : Service(), LocationServiceProxy.LocationServic
                 // A cancelled collection must not reset a replacement collection's state.
                 if (locationUpdatesJob === coroutineContext[Job]) {
                     stopUpdates()
+                    batteryTelemetryMonitor.setTrackingMode("inactive")
                     updateNotification()
                 }
             }
