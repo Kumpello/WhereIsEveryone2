@@ -20,11 +20,14 @@ import com.kumpello.whereiseveryone.feature.main.navigation.MainRoute
 @Composable
 fun MapTopControls(
     modifier: Modifier = Modifier,
+    pointCount: Int,
+    onOpenPoints: () -> Unit,
     incomingFriendRequestCount: Int = 0,
     onNavigationIconPositioned: (MainRoute, Offset) -> Unit = { _, _ -> },
     onEvent: (MapScreenViewModel.Event) -> Unit
 ) {
     ControlBar(modifier = modifier) {
+        PointLayerButton(ownCount = pointCount, onClick = onOpenPoints)
         ControlButton(
             imageVector = Icons.Default.Edit,
             contentDescription = stringResource(R.string.message_cd),
@@ -69,6 +72,11 @@ fun MapTopControls(
 @Composable
 fun MapTopControlsPreview() {
     WhereIsEveryoneTheme {
-        MapTopControls(incomingFriendRequestCount = 3, onEvent = {})
+        MapTopControls(
+            pointCount = 2,
+            onOpenPoints = {},
+            incomingFriendRequestCount = 3,
+            onEvent = {}
+        )
     }
 }

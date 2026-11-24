@@ -38,15 +38,13 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
 @Composable
-internal fun PointLayerButton(modifier: Modifier = Modifier, ownCount: Int, onClick: () -> Unit) {
-    ControlBar(modifier = modifier) {
-        ControlButton(
-            imageVector = Icons.Default.Flag,
-            contentDescription = stringResource(R.string.poi_layer_button, ownCount, MAX_POINTS_OF_INTEREST),
-            badgeCount = ownCount,
-            onClick = onClick,
-        )
-    }
+internal fun PointLayerButton(ownCount: Int, onClick: () -> Unit) {
+    ControlButton(
+        imageVector = Icons.Default.Flag,
+        contentDescription = stringResource(R.string.poi_layer_button, ownCount, MAX_POINTS_OF_INTEREST),
+        badgeCount = ownCount,
+        onClick = onClick,
+    )
 }
 
 @Composable
@@ -187,5 +185,7 @@ private fun DeletePointPreview() {
 @Preview(showBackground = true)
 @Composable
 private fun PointLayerButtonPreview() {
-    WhereIsEveryoneTheme { PointLayerButton(ownCount = 2, onClick = {}) }
+    WhereIsEveryoneTheme {
+        ControlBar { PointLayerButton(ownCount = 2, onClick = {}) }
+    }
 }

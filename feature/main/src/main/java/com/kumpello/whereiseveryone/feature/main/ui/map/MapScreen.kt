@@ -71,14 +71,16 @@ private fun MapScreenContent(
     onScreenEvent: (MapScreenViewModel.Event) -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
-        MapContent(Modifier.fillMaxSize())
-
-        MapTopControls(
-            modifier = Modifier.align(Alignment.TopEnd),
-            incomingFriendRequestCount = screenViewState.incomingFriendRequestCount,
-            onNavigationIconPositioned = onNavigationIconPositioned,
-            onEvent = onScreenEvent
-        )
+        MapContent(modifier = Modifier.fillMaxSize()) { pointCount, onOpenPoints ->
+            MapTopControls(
+                modifier = Modifier.align(Alignment.TopEnd),
+                pointCount = pointCount,
+                onOpenPoints = onOpenPoints,
+                incomingFriendRequestCount = screenViewState.incomingFriendRequestCount,
+                onNavigationIconPositioned = onNavigationIconPositioned,
+                onEvent = onScreenEvent
+            )
+        }
 
         if (screenViewState.screenState is ScreenState.Message) {
             AppDialog(onDismiss = { onScreenEvent(MapScreenViewModel.Event.BackToMap) }) {

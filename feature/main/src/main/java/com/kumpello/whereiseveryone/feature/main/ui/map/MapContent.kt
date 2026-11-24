@@ -7,6 +7,7 @@ import com.kumpello.whereiseveryone.core.ui.theme.WhereIsEveryoneTheme
 import com.kumpello.whereiseveryone.feature.main.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -34,7 +35,8 @@ import com.kumpello.whereiseveryone.feature.main.location.LocationService
 
 @Composable
 fun MapContent(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    topControls: @Composable BoxScope.(pointCount: Int, onOpenPoints: () -> Unit) -> Unit = { _, _ -> },
 ) {
     if (LocalInspectionMode.current) {
         Box(
@@ -44,6 +46,7 @@ fun MapContent(
             contentAlignment = Alignment.Center
         ) {
             Text(stringResource(R.string.map_placeholder))
+            topControls(0) {}
         }
         return
     }
@@ -82,11 +85,9 @@ fun MapContent(
             showPointsOfInterest = state.pointsOfInterest.showLayer,
         )
 
-        PointLayerButton(
-            modifier = Modifier.align(Alignment.BottomStart).padding(bottom = AppSize.mapControl * 2),
-            ownCount = state.pointsOfInterest.ownPoints.size,
-            onClick = { viewModel.trigger(MapViewModel.Event.ShowPointManager) },
-        )
+        topControls(state.pointsOfInterest.ownPoints.size) {
+            viewModel.trigger(MapViewModel.Event.ShowPointManager)
+        }
         if (state.pointsOfInterest.showManager) PointManagerDialog(state.pointsOfInterest, viewModel::trigger)
         if (state.pointsOfInterest.draft != null) PointEditorDialog(state.pointsOfInterest, viewModel::trigger)
         state.selectedPoint?.let { point ->
